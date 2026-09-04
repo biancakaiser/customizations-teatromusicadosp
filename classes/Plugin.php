@@ -4,10 +4,14 @@ namespace TeatroMusicadoSP\Customizations;
 
 use TeatroMusicadoSP\Customizations\Contracts\Module;
 use TeatroMusicadoSP\Customizations\Traits\Singleton;
+use TeatroMusicadoSP\Customizations\Form\CollectionForm;
 use TeatroMusicadoSP\Customizations\MetadataTypes\RegisterMetadatas;
 use TeatroMusicadoSP\Customizations\ViewModes\RegisterViewModes;
 use TeatroMusicadoSP\Customizations\RelatedItems\PessoaRelatedItemsOrder;
 use TeatroMusicadoSP\Customizations\Blocks\Bibliographic;
+use TeatroMusicadoSP\Customizations\Presentations\PresentationsPage;
+use TeatroMusicadoSP\Customizations\Presentations\PresentationsRepository;
+use TeatroMusicadoSP\Customizations\Presentations\PresentationsShortcode;
 
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
@@ -49,10 +53,14 @@ final class Plugin
         }
 
         $modules = array(
+            CollectionForm::get_instance(),
             RegisterMetadatas::get_instance(),
             RegisterViewModes::get_instance(),
             PessoaRelatedItemsOrder::get_instance(),
-            Bibliographic::get_instance()
+            Bibliographic::get_instance(),
+            PresentationsPage::get_instance(),
+            PresentationsRepository::get_instance(),
+            PresentationsShortcode::get_instance()
         );
 
         foreach ($modules as $module) {

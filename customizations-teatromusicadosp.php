@@ -38,13 +38,25 @@ require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/traits/singleton.php';
 
 require_once TMSP_CUSTOMIZATIONS_PATH
-    . 'classes/metadata-types/register-metadatas.php';
+    . 'classes/presentations/presentations-repository.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/presentations-shortcode.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/presentations-page.php';
 
-    /*
-    * Precisa ser registrado imediatamente (fora do ciclo 'plugins_loaded') porque
- * o Tainacan dispara 'tainacan-register-metadata-type' no carregamento do seu
- * próprio arquivo principal, antes de 'plugins_loaded' ser executado.
- */
+register_activation_hook(
+    __FILE__,
+    array( '\TeatroMusicadoSP\Customizations\Presentations\PresentationsRepository', 'install' )
+);
+
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/metadata-types/register-metadatas.php';
+    
+/*
+* Precisa ser registrado imediatamente (fora do ciclo 'plugins_loaded') porque
+* o Tainacan dispara 'tainacan-register-metadata-type' no carregamento do seu
+* próprio arquivo principal, antes de 'plugins_loaded' ser executado.
+*/
 add_action(
     'tainacan-register-metadata-type',
     array(
@@ -52,15 +64,18 @@ add_action(
         'register_metadata_type'
     )
 );
+            
+require_once TMSP_CUSTOMIZATIONS_PATH
+. 'classes/view-modes/register-viewmodes.php';
+
+require_once TMSP_CUSTOMIZATIONS_PATH
+. 'classes/related-items/pessoa-related-items-order.php';
+
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/form/collection-form.php';
     
 require_once TMSP_CUSTOMIZATIONS_PATH
-    . 'classes/view-modes/register-viewmodes.php';
-
-require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/blocks/bibliographic.php';
-
-require_once TMSP_CUSTOMIZATIONS_PATH
-    . 'classes/related-items/pessoa-related-items-order.php';
 
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/Plugin.php';

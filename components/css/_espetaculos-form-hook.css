@@ -1,0 +1,56 @@
+/*
+ * Espaço horizontal é justamente o que este spike quer validar, então a
+ * tabela nunca deve cortar conteúdo silenciosamente: se as 5 colunas não
+ * couberem, ela ganha um scroll horizontal próprio em vez de estourar o
+ * layout do Form Hook.
+ */
+.teatro-espetaculos-table-wrapper {
+    overflow-x: auto;
+}
+
+.teatro-espetaculos-table-wrapper table.wp-list-table td,
+.teatro-espetaculos-table-wrapper table.wp-list-table th {
+    vertical-align: middle;
+}
+
+.teatro-espetaculos-table-wrapper select,
+.teatro-espetaculos-table-wrapper input[type="date"] {
+    width: 100%;
+    max-width: 220px;
+}
+
+.teatro-espetaculos-table-wrapper input[type="number"] {
+    width: 100%;
+    max-width: 90px;
+}
+
+.teatro-espetaculos-table-wrapper .column-actions {
+    white-space: nowrap;
+}
+
+.teatro-espetaculos-table-wrapper tr.teatro-row-editing {
+    background-color: #e5f2ff;
+    box-shadow: inset 3px 0 0 #2271b1;
+}
+
+.teatro-espetaculos-table-wrapper tr.teatro-row-duplicated {
+    background-color: #fff8c5;
+    box-shadow: inset 3px 0 0 #dba617;
+}
+
+.teatro-espetaculos-table-wrapper .teatro-confirm-remove {
+    color: #d63638;
+    font-size: 13px;
+}
+
+.teatro-espetaculos-table-wrapper .teatro-confirm-remove .button {
+    margin-left: 4px;
+}
+
+.teatro-espetaculos-footer .teatro-legend-editing {
+    color: #2271b1;
+}
+
+.teatro-espetaculos-footer .teatro-legend-duplicated {
+    color: #dba617;
+}

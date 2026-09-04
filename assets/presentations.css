@@ -1,0 +1,254 @@
+/**
+ * Estilos do shortcode público [teatro_apresentacoes].
+ */
+
+.teatro-apresentacoes {
+	--tap-stripe: #f6f7f7;
+	--tap-head-fg: #ffffff;
+	margin: 1.5rem 10rem;
+	font-size: 0.95rem;
+}
+
+.teatro-apresentacoes *,
+.teatro-apresentacoes *::before,
+.teatro-apresentacoes *::after {
+	box-sizing: border-box;
+}
+
+/* Busca -------------------------------------------------------------------- */
+
+.teatro-apresentacoes__search {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+	margin-bottom: 1rem;
+}
+
+.teatro-apresentacoes__search-field,
+.teatro-apresentacoes__group-field {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.teatro-apresentacoes__search-label {
+	font-weight: 600;
+}
+
+.teatro-apresentacoes__group-field select {
+	padding: 0.45rem 0.6rem;
+	border: 1px solid var(--paletteColor6);
+	border-radius: 4px;
+	background: #fff;
+	cursor: pointer;
+}
+
+.teatro-apresentacoes__search input[type="search"] {
+	flex: 1 1 16rem;
+	min-width: 0;
+	padding: 0.45rem 0.6rem;
+	border: 1px solid var(--paletteColor6);
+	border-radius: 4px;
+}
+
+.teatro-apresentacoes__search button {
+	padding: 0.45rem 1rem;
+	border: 0;
+	border-radius: 4px;
+	background: var(--paletteColor1);
+	color: #fff;
+	cursor: pointer;
+}
+
+.teatro-apresentacoes__search button:hover {
+	filter: brightness(0.93);
+}
+
+/* Tabela ----------------------------------------------------------------- */
+
+.teatro-apresentacoes__table-wrap {
+	position: relative;
+	overflow-x: auto;
+	border: 1px solid var(--paletteColor6);
+	border-radius: 4px;
+}
+
+.teatro-apresentacoes__table-wrap[aria-busy="true"] {
+	opacity: 0.55;
+}
+
+.teatro-apresentacoes__table-wrap[aria-busy="true"]::after {
+	content: attr(data-loading-text);
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 600;
+}
+
+.teatro-apresentacoes__table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.teatro-apresentacoes__table th,
+.teatro-apresentacoes__table td {
+	padding: 0.55rem 0.75rem;
+	text-align: left;
+	vertical-align: middle;
+	border-bottom: 1px solid var(--paletteColor6);
+	white-space: nowrap;
+}
+
+.teatro-apresentacoes__table thead th {
+	position: sticky;
+	top: 0;
+	background: var(--paletteColor3);
+	color: var(--tap-head-fg);
+	font-weight: 600;
+}
+
+.teatro-apresentacoes__table tbody tr:nth-child(even) {
+	background: var(--tap-stripe);
+}
+
+.teatro-apresentacoes__table tbody tr:hover {
+	background: var(--paletteColor7);
+}
+
+.teatro-apresentacoes__empty {
+	margin: 0;
+	padding: 1.5rem;
+	text-align: center;
+}
+
+/* Agrupamento (tabela única, um <tbody> por grupo) ---------------------- */
+
+/* Faixa do 1º nível: abre cada grupo dentro do <tbody>. */
+.teatro-apresentacoes__group-row th {
+	background: #e0ddd1;
+	color: var(--paletteColor2);
+	font-size: 1rem;
+	font-weight: 700;
+	text-align: left;
+	white-space: normal;
+}
+
+/* Sem zebra nem hover nas linhas agrupadas (as células mescladas com rowspan
+   ficariam com faixas quebradas). */
+.teatro-apresentacoes__table--group tbody tr:nth-child(even),
+.teatro-apresentacoes__table--group tbody tr:hover {
+	background: transparent;
+}
+
+/* Bloco de identidade do 2º nível e "Total" (mesclados com rowspan). */
+.teatro-apresentacoes__group-cell {
+	vertical-align: top;
+	background: var(--tap-stripe);
+}
+
+/* Colunas numéricas (Nº de Sessões e Total) alinhadas à direita. */
+.teatro-apresentacoes__table--group thead th:nth-last-child(-n + 2),
+.teatro-apresentacoes__table--group td[data-label="Nº de Sessões"],
+.teatro-apresentacoes__table--group td[data-label="Total"] {
+	text-align: right;
+}
+
+.teatro-apresentacoes__table--group td[data-label="Total"] {
+	font-weight: 600;
+	text-align: center;
+    vertical-align: middle;
+}
+
+/* Rodapé --------------------------------------------------------------------- */
+
+.teatro-apresentacoes__pagination {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	margin-top: 1rem;
+}
+
+.teatro-apresentacoes__pagination .page-numbers {
+	display: inline-block;
+	padding: 0.35rem 0.7rem;
+	border: 1px solid var(--paletteColor6);
+	border-radius: 4px;
+	text-decoration: none;
+	color: var(--paletteColor1);
+}
+
+.teatro-apresentacoes__pagination .page-numbers.current {
+	background: var(--paletteColor1);
+	border-color: var(--paletteColor1);
+	color: #fff;
+}
+
+.teatro-apresentacoes__pagination .page-numbers.dots {
+	border-color: transparent;
+}
+
+.teatro-apresentacoes__count {
+	margin-top: 0.75rem;
+	color: #50575e;
+	font-size: 0.85rem;
+}
+
+/* Layout empilhado em telas pequenas -------------------------------------- */
+
+@media (max-width: 640px) {
+	.teatro-apresentacoes__table thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		clip-path: inset(50%);
+	}
+
+	.teatro-apresentacoes__table,
+	.teatro-apresentacoes__table tbody,
+	.teatro-apresentacoes__table tr,
+	.teatro-apresentacoes__table td {
+		display: block;
+		width: 100%;
+	}
+
+	.teatro-apresentacoes__table tr {
+		border-bottom: 2px solid var(--paletteColor6);
+	}
+
+	.teatro-apresentacoes__table td {
+		border: 0;
+		white-space: normal;
+		padding-left: 42%;
+		position: relative;
+	}
+
+	.teatro-apresentacoes__table td::before {
+		content: attr(data-label);
+		position: absolute;
+		left: 0.75rem;
+		width: 38%;
+		font-weight: 600;
+	}
+
+	/* Agrupado: o cabeçalho de colunas fica oculto (regra base do thead) e a
+	   faixa de cada grupo — que agora vive no <tbody> — vira um bloco. */
+	.teatro-apresentacoes__group-row th {
+		display: block;
+		width: 100%;
+		padding-left: 0.75rem;
+	}
+
+	.teatro-apresentacoes__group-cell {
+		background: transparent;
+	}
+
+	.teatro-apresentacoes__table--group td[data-label="Nº de Sessões"],
+	.teatro-apresentacoes__table--group td[data-label="Total"] {
+		text-align: left;
+	}
+}

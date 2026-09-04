@@ -8,12 +8,15 @@ module.exports = (env) => {
   const isDevServer = Boolean(env && env.WEBPACK_SERVE);
 
   return {
-    entry: "./components.js",
+    entry: {
+      components: "./components.js",
+      "espetaculos-form-hook": "./src/espetaculos-form-hook/espetaculos-form-hook.js",
+    },
     mode: "development",
     devtool: "eval-source-map",
     output: {
       path: path.resolve(__dirname, "build/"),
-      filename: "components.bundle.js",
+      filename: "[name].bundle.js",
       publicPath: isDevServer ? "http://127.0.0.1:8080/" : "",
     },
     devServer: {
