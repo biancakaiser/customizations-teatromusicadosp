@@ -2,7 +2,15 @@
  * Progressive enhancement do shortcode [teatro_apresentacoes].
  *
  * A tabela já vem renderizada do servidor; este script substitui a navegação
- * por chamadas à rota REST pública, sem recarregar a página.
+ * (busca, filtros por coluna, agrupamento e paginação) por chamadas à rota REST
+ * pública, sem recarregar a página.
+ *
+ * O modo agrupado não reimplementa o algoritmo de agrupamento em JS: a rota
+ * `.../presentations/grouped` roda PresentationGrouper + GroupedTableRenderer
+ * no servidor e devolve o HTML da tabela pronto (`{ html, total }`); este
+ * script só troca o innerHTML do wrapper. A lista de colunas filtráveis
+ * (`filterKeys`) vem de `window.TeatroApresentacoes`, localizada pelo PHP a
+ * partir de PresentationsSchema.
  */
 (function () {
 	'use strict';
@@ -18,42 +26,6 @@
 		}
 	}
 
-	// Espelha PresentationsShortcode::GROUPS (PHP). Hierarquia de 4 níveis:
-	// l1 (faixa) > l2 (bloco de identidade + Total) > teatro > tipo + ano.
-	var GROUP_MODES = {
-		company: {
-			l1: 'companyName',
-			l2: 'playName',
-			countLabel: 'Nº Peças',
-			identity: [
-				{ key: 'playName', label: 'Título da Peça' },
-				{ key: 'genre', label: 'Gênero' },
-				{ key: 'playNationality', label: 'Nacionalidade' },
-				{ key: 'playLanguage', label: 'Idioma' }
-			],
-			l1LabelFields: [
-				{ label: 'Companhia', key: 'companyName' },
-				{ label: 'Nacionalidade', key: 'companyNationality' }
-			]
-		},
-		play: {
-			l1: 'playName',
-			l2: 'companyName',
-			countLabel: 'Nº Companhias',
-			identity: [
-				{ key: 'companyName', label: 'Nome da Companhia' },
-				{ key: 'companyNationality', label: 'Nacionalidade da Companhia' },
-				{ key: 'settingLanguage', label: 'Idioma' }
-			],
-			l1LabelFields: [
-				{ label: 'Peça', key: 'playName' },
-				{ label: 'Gênero', key: 'genre' },
-				{ label: 'Nacionalidade', key: 'playNationality' }
-			]
-		}
-	};
-	var GROUP_LEAF_LABELS = ['Teatro', 'Tipo de Espetáculo', 'Ano', 'Nº de Sessões', 'Total'];
-
 	function escapeHtml(value) {
 		return String(value).replace(/[&<>"']/g, function (chr) {
 			return {
@@ -66,6 +38,12 @@
 		});
 	}
 
+	// tap_f[<col>]  ->  <col>
+	function filterColumnName(selectName) {
+		var match = /^tap_f\[(.+)\]$/.exec(selectName || '');
+		return match ? match[1] : '';
+	}
+
 	function enhance(root) {
 		var rest = root.getAttribute('data-rest');
 		if (!rest || typeof window.fetch !== 'function') {
@@ -75,8 +53,6 @@
 		var perPage = parseInt(root.getAttribute('data-per-page'), 10) || 25;
 		var orderby = root.getAttribute('data-orderby') || 'presentationDate';
 		var order = root.getAttribute('data-order') || 'ASC';
-		var theater = root.getAttribute('data-theater') || '';
-		var year = root.getAttribute('data-year') || '';
 
 		var columns = {};
 		try {
@@ -92,14 +68,15 @@
 		var form = root.querySelector('.teatro-apresentacoes__search');
 		var searchInput = root.querySelector('#teatro-apresentacoes-s');
 		var groupSelect = root.querySelector('#teatro-apresentacoes-group');
+		var filterSelects = root.querySelectorAll('select[name^="tap_f["]');
 		var wrap = root.querySelector('.teatro-apresentacoes__table-wrap');
 		var countEl = root.querySelector('.teatro-apresentacoes__count');
 		if (!wrap) {
 			return;
 		}
 
-		// Com o script ativo, a mudança do agrupamento é feita via REST; sem ele,
-		// o <select> recarrega a página (onchange no HTML do servidor).
+		// Com o script ativo, mudanças passam a ir via REST; sem ele, os <select>
+		// recarregam a página (onchange no HTML do servidor).
 		if (groupSelect) {
 			groupSelect.removeAttribute('onchange');
 		}
@@ -109,8 +86,31 @@
 			search: (searchInput && searchInput.value.trim()) ||
 				root.getAttribute('data-preset-search') || '',
 			group: (groupSelect && groupSelect.value) ||
-				root.getAttribute('data-group') || ''
+				root.getAttribute('data-group') || '',
+			filters: {}
 		};
+
+		// Estado inicial dos filtros: lê o valor selecionado de cada <select>
+		// (que o servidor já renderizou com o `selected` correto).
+		Array.prototype.forEach.call(filterSelects, function (sel) {
+			var col = filterColumnName(sel.name);
+			if (!col) {
+				return;
+			}
+			if (sel.value) {
+				state.filters[col] = sel.value;
+			}
+			sel.removeAttribute('onchange');
+			sel.addEventListener('change', function () {
+				if (sel.value) {
+					state.filters[col] = sel.value;
+				} else {
+					delete state.filters[col];
+				}
+				state.page = 1;
+				load();
+			});
+		});
 
 		function requestHeaders() {
 			var headers = { Accept: 'application/json' };
@@ -118,6 +118,15 @@
 				headers['X-WP-Nonce'] = cfg.nonce;
 			}
 			return headers;
+		}
+
+		function applyFilterParams(url) {
+			Object.keys(state.filters).forEach(function (col) {
+				var value = state.filters[col];
+				if (value !== null && value !== undefined && value !== '') {
+					url.searchParams.set('filters[' + col + ']', value);
+				}
+			});
 		}
 
 		function buildUrl() {
@@ -129,12 +138,7 @@
 			if (state.search) {
 				url.searchParams.set('search', state.search);
 			}
-			if (theater) {
-				url.searchParams.set('theater', theater);
-			}
-			if (year) {
-				url.searchParams.set('year', year);
-			}
+			applyFilterParams(url);
 			return url.toString();
 		}
 
@@ -195,169 +199,6 @@
 				});
 				tbody.appendChild(tr);
 			});
-		}
-
-		function str(value) {
-			return String(value == null ? '' : value).trim();
-		}
-
-		function fallback(value) {
-			return str(value) || '—';
-		}
-
-		function yearOf(date) {
-			var match = String(date == null ? '' : date).match(/(\d{4})/);
-			return match ? match[1] : '—';
-		}
-
-		function toInt(value) {
-			var n = parseInt(value, 10);
-			return isNaN(n) ? 0 : n;
-		}
-
-		function natCmp(a, b) {
-			return String(a).localeCompare(String(b), undefined, {
-				sensitivity: 'base',
-				numeric: true
-			});
-		}
-
-		function td(label, text, rowSpan) {
-			var cell = document.createElement('td');
-			cell.setAttribute('data-label', label);
-			cell.textContent = text;
-			if (rowSpan) {
-				cell.className = 'teatro-apresentacoes__group-cell';
-				if (rowSpan > 1) {
-					cell.rowSpan = rowSpan;
-				}
-			}
-			return cell;
-		}
-
-		function renderGroups(rows) {
-			if (!rows.length) {
-				wrap.innerHTML = '<p class="teatro-apresentacoes__empty">' +
-					escapeHtml(i18n.empty || '') + '</p>';
-				return;
-			}
-
-			var cfg = GROUP_MODES[state.group];
-			var tree = {};
-			var l1Order = [];
-
-			rows.forEach(function (row) {
-				var l1Name = fallback(row[cfg.l1]);
-				var l2Name = fallback(row[cfg.l2]);
-				var theater = fallback(row.theaterName);
-				var kind = fallback(row.settingKind);
-				var year = yearOf(row.presentationDate);
-				var sessions = toInt(row.sessionsNumber);
-
-				if (!tree[l1Name]) {
-					var label = cfg.l1LabelFields.map(function (f) {
-						return f.label + ': ' + fallback(row[f.key]);
-					}).join(' - ');
-					tree[l1Name] = { label: label, total: 0, l2: {}, l2Order: [] };
-					l1Order.push(l1Name);
-				}
-				var l1 = tree[l1Name];
-				l1.total += sessions;
-
-				if (!l1.l2[l2Name]) {
-					var identity = {};
-					cfg.identity.forEach(function (c) {
-						identity[c.key] = str(row[c.key]);
-					});
-					l1.l2[l2Name] = { identity: identity, total: 0, leaves: {}, leafOrder: [] };
-					l1.l2Order.push(l2Name);
-				}
-				var l2 = l1.l2[l2Name];
-				l2.total += sessions;
-
-				var leafKey = theater + '|' + kind + '|' + year;
-				if (!l2.leaves[leafKey]) {
-					l2.leaves[leafKey] = { theater: theater, kind: kind, year: year, sessions: 0 };
-					l2.leafOrder.push(leafKey);
-				}
-				l2.leaves[leafKey].sessions += sessions;
-			});
-
-			var identityLabels = cfg.identity.map(function (c) { return c.label; });
-			var headLabels = identityLabels.concat(GROUP_LEAF_LABELS);
-			var ncols = headLabels.length;
-
-			l1Order.sort(natCmp);
-
-			// Um único <table>: cabeçalho de colunas uma vez, um <tbody> por grupo.
-			var table = document.createElement('table');
-			table.className = 'teatro-apresentacoes__table teatro-apresentacoes__table--group';
-
-			var thead = document.createElement('thead');
-			var headRow = document.createElement('tr');
-			headLabels.forEach(function (lbl) {
-				var th = document.createElement('th');
-				th.scope = 'col';
-				th.textContent = lbl;
-				headRow.appendChild(th);
-			});
-			thead.appendChild(headRow);
-			table.appendChild(thead);
-
-			l1Order.forEach(function (l1Name) {
-				var l1 = tree[l1Name];
-				var tbody = document.createElement('tbody');
-				tbody.className = 'teatro-apresentacoes__group';
-
-				var bandRow = document.createElement('tr');
-				bandRow.className = 'teatro-apresentacoes__group-row';
-				var bandTh = document.createElement('th');
-				bandTh.setAttribute('scope', 'colgroup');
-				bandTh.colSpan = ncols;
-				bandTh.textContent = l1.label +
-					' - ' + cfg.countLabel + ': ' + l1.l2Order.length.toLocaleString() +
-					' - Total de Sessões: ' + l1.total.toLocaleString();
-				bandRow.appendChild(bandTh);
-				tbody.appendChild(bandRow);
-
-				l1.l2Order.sort(natCmp);
-				l1.l2Order.forEach(function (l2Name) {
-					var l2 = l1.l2[l2Name];
-					l2.leafOrder.sort(function (a, b) {
-						var x = l2.leaves[a];
-						var y = l2.leaves[b];
-						return natCmp(x.theater, y.theater) ||
-							natCmp(x.kind, y.kind) ||
-							natCmp(x.year, y.year);
-					});
-
-					var span = l2.leafOrder.length;
-					l2.leafOrder.forEach(function (leafKey, idx) {
-						var leaf = l2.leaves[leafKey];
-						var tr = document.createElement('tr');
-
-						if (idx === 0) {
-							cfg.identity.forEach(function (c) {
-								tr.appendChild(td(c.label, fallback(l2.identity[c.key]), span));
-							});
-						}
-						tr.appendChild(td('Teatro', leaf.theater));
-						tr.appendChild(td('Tipo de Espetáculo', leaf.kind));
-						tr.appendChild(td('Ano', leaf.year));
-						tr.appendChild(td('Nº de Sessões', leaf.sessions.toLocaleString()));
-						if (idx === 0) {
-							tr.appendChild(td('Total', l2.total.toLocaleString(), span));
-						}
-
-						tbody.appendChild(tr);
-					});
-				});
-
-				table.appendChild(tbody);
-			});
-
-			wrap.innerHTML = '';
-			wrap.appendChild(table);
 		}
 
 		function goTo(page) {
@@ -456,56 +297,53 @@
 			} else {
 				url.searchParams.delete('tap_group');
 			}
+			var staleFilterKeys = [];
+			url.searchParams.forEach(function (value, key) {
+				if (key.indexOf('tap_f[') === 0) {
+					staleFilterKeys.push(key);
+				}
+			});
+			staleFilterKeys.forEach(function (key) {
+				url.searchParams.delete(key);
+			});
+			Object.keys(state.filters).forEach(function (col) {
+				if (state.filters[col]) {
+					url.searchParams.set('tap_f[' + col + ']', state.filters[col]);
+				}
+			});
 			window.history.replaceState({}, '', url.toString());
 		}
 
-		// Agrupamento ativo: varre todas as páginas da rota REST e monta as
-		// micro-tabelas por grupo (a paginação some).
+		// Agrupamento ativo: o servidor monta a árvore e devolve o HTML da
+		// tabela pronto (`{ html, total }`); aqui só trocamos o innerHTML do
+		// wrapper (a paginação some).
 		function loadGrouped() {
 			setBusy(true);
 			wrap.classList.add('teatro-apresentacoes__table-wrap--grouped');
-			var collected = [];
 
-			function fetchPage(page) {
-				var url = new URL(rest, window.location.origin);
-				url.searchParams.set('page', page);
-				url.searchParams.set('per_page', 200);
-				url.searchParams.set('orderby', orderby);
-				url.searchParams.set('order', order);
-				if (state.search) {
-					url.searchParams.set('search', state.search);
-				}
-				if (theater) {
-					url.searchParams.set('theater', theater);
-				}
-				if (year) {
-					url.searchParams.set('year', year);
-				}
+			var url = new URL(rest + '/grouped', window.location.origin);
+			url.searchParams.set('group', state.group);
+			url.searchParams.set('orderby', orderby);
+			url.searchParams.set('order', order);
+			if (state.search) {
+				url.searchParams.set('search', state.search);
+			}
+			applyFilterParams(url);
 
-				return window.fetch(url.toString(), {
-					headers: requestHeaders(),
-					credentials: 'same-origin'
-				}).then(function (response) {
+			window.fetch(url.toString(), { headers: requestHeaders(), credentials: 'same-origin' })
+				.then(function (response) {
 					if (!response.ok) {
 						throw new Error('HTTP ' + response.status);
 					}
-					var totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '1', 10);
-					return response.json().then(function (data) {
-						collected = collected.concat(data || []);
-						if (page < totalPages && page < 50) {
-							return fetchPage(page + 1);
-						}
-						return collected;
-					});
-				});
-			}
-
-			fetchPage(1)
-				.then(function (rows) {
-					renderGroups(rows);
+					return response.json();
+				})
+				.then(function (payload) {
+					wrap.innerHTML = payload.total ?
+						payload.html :
+						'<p class="teatro-apresentacoes__empty">' + escapeHtml(i18n.empty || '') + '</p>';
 					renderPagination(1);
 					if (countEl && i18n.results) {
-						countEl.textContent = i18n.results.replace('%s', rows.length.toLocaleString());
+						countEl.textContent = i18n.results.replace('%s', (payload.total || 0).toLocaleString());
 					}
 					syncHistory();
 				})
@@ -519,7 +357,7 @@
 		}
 
 		function load() {
-			if (state.group && GROUP_MODES[state.group]) {
+			if (state.group) {
 				loadGrouped();
 				return;
 			}

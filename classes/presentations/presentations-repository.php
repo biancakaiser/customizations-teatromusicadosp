@@ -13,6 +13,12 @@ namespace TeatroMusicadoSP\Customizations\Presentations;
 
 use TeatroMusicadoSP\Customizations\Contracts\Module;
 use TeatroMusicadoSP\Customizations\Traits\Singleton;
+use TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema;
+use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilters;
+use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilterClause;
+use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingModes;
+use TeatroMusicadoSP\Customizations\Presentations\Grouping\PresentationGrouper;
+use TeatroMusicadoSP\Customizations\Presentations\Rendering\GroupedTableRenderer;
 
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
@@ -31,24 +37,14 @@ class PresentationsRepository implements Module
     const SCHEMA_VERSION = '1.0.0';
 
     /**
-     * Colunas da "tabela nova". A ordem aqui é a ordem das colunas exibidas.
-     *
-     * @var array<string,string> nome da coluna => rótulo
+     * As colunas da "tabela nova" agora vivem em
+     * {@see \TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema}
+     * (fonte única, compartilhada com o shortcode). Use `PresentationsSchema::labels()`
+     * para o antigo mapa `coluna => rótulo`.
      */
-    const COLUMNS = [
-        'presentationDate'    => 'Data da apresentação',
-        'sessionsNumber'      => 'Nº de sessões',
-        'settingYear'         => 'Ano da temporada',
-        'settingLanguage'     => 'Idioma da temporada',
-        'settingKind'         => 'Tipo de temporada',
-        'playName'            => 'Peça',
-        'genre'               => 'Gênero',
-        'playLanguage'        => 'Idioma da peça',
-        'playNationality'     => 'Nacionalidade da peça',
-        'companyName'         => 'Companhia',
-        'companyNationality'  => 'Nacionalidade da companhia',
-        'theaterName'         => 'Teatro',
-    ];
+
+    /** Prefixo da chave de transient que guarda os valores distintos de uma coluna. */
+    const FACET_CACHE_PREFIX = 'tmsp_pres_facet_';
 
     /** Lock (transient) para evitar seed concorrente (ex.: requisições paralelas / wp-cron). */
     const INSTALL_LOCK = 'teatromusicadosp_presentations_installing';
@@ -121,25 +117,18 @@ class PresentationsRepository implements Module
         $table           = self::table_name();
         $charset_collate = $wpdb->get_charset_collate();
 
-        $column_defs = [];
-        foreach ( array_keys( self::COLUMNS ) as $column ) {
-            if ( 'sessionsNumber' === $column || 'settingYear' === $column ) {
-                $column_defs[] = "`{$column}` INT NULL";
-                continue;
-            }
-            if ( 'presentationDate' === $column ) {
-                $column_defs[] = "`{$column}` DATETIME NULL";
-                continue;
-            }
-            $column_defs[] = "`{$column}` VARCHAR(255) NULL";
-        }
+        $column_defs = PresentationsSchema::sql_column_definitions();
+
+        $key_defs = array_map(
+            static fn( string $key ): string => "  KEY {$key} ({$key})",
+            PresentationsSchema::indexed_keys()
+        );
 
         $sql = "CREATE TABLE {$table} (\n"
             . "  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,\n  "
             . implode( ",\n  ", $column_defs ) . ",\n"
             . "  PRIMARY KEY  (id),\n"
-            . "  KEY settingYear (settingYear),\n"
-            . "  KEY theaterName (theaterName)\n"
+            . implode( ",\n", $key_defs ) . "\n"
             . ") {$charset_collate};";
 
         dbDelta( $sql );
@@ -177,7 +166,7 @@ class PresentationsRepository implements Module
         }
         $header = array_map( [ $this, 'fix_mojibake' ], $header );
 
-        $columns = array_keys( self::COLUMNS );
+        $columns = PresentationsSchema::keys();
 
         while ( ( $raw = fgetcsv( $handle, 0, ',', '"', '' ) ) !== false ) {
             if ( [ null ] === $raw || [] === $raw ) {
@@ -195,7 +184,7 @@ class PresentationsRepository implements Module
                 $value = $assoc[ $column ] ?? null;
                 $value = ( null === $value || 'NULL' === $value || '' === $value ) ? null : $this->fix_mojibake( $value );
 
-                if ( 'sessionsNumber' === $column || 'settingYear' === $column ) {
+                if ( PresentationsSchema::column( $column )->is_numeric() ) {
                     $data[ $column ]    = ( null === $value ) ? null : (int) $value;
                     $formats[]          = '%d';
                     continue;
@@ -213,6 +202,11 @@ class PresentationsRepository implements Module
         }
 
         fclose( $handle );
+
+        // O seed mudou o conjunto de valores: invalida os caches de DISTINCT.
+        foreach ( array_keys( PresentationsSchema::facetable_columns() ) as $facet_column ) {
+            delete_transient( self::facet_cache_key( $facet_column ) );
+        }
     }
 
     /**
@@ -249,42 +243,138 @@ class PresentationsRepository implements Module
                 'methods'             => \WP_REST_Server::READABLE,
                 'permission_callback' => '__return_true',
                 'callback'            => [ $this, 'rest_get_presentations' ],
-                'args'                => [
-                    'page' => [
-                        'default'           => 1,
-                        'sanitize_callback' => 'absint',
+                'args'                => array_merge(
+                    [
+                        'page' => [
+                            'default'           => 1,
+                            'sanitize_callback' => 'absint',
+                        ],
+                        'per_page' => [
+                            'default'           => 50,
+                            'sanitize_callback' => 'absint',
+                        ],
                     ],
-                    'per_page' => [
-                        'default'           => 50,
-                        'sanitize_callback' => 'absint',
-                    ],
-                    'orderby' => [
-                        'default'           => 'presentationDate',
-                        'validate_callback' => static function ( $value ) {
-                            return array_key_exists( $value, self::COLUMNS ) || 'id' === $value;
-                        },
-                    ],
-                    'order' => [
-                        'default'           => 'ASC',
-                        'validate_callback' => static function ( $value ) {
-                            return in_array( strtoupper( (string) $value ), [ 'ASC', 'DESC' ], true );
-                        },
-                    ],
-                    'search' => [
-                        'default'           => '',
-                        'sanitize_callback' => 'sanitize_text_field',
-                    ],
-                    'theater' => [
-                        'default'           => '',
-                        'sanitize_callback' => 'sanitize_text_field',
-                    ],
-                    'year' => [
-                        'default'           => 0,
-                        'sanitize_callback' => 'absint',
-                    ],
-                ],
+                    self::shared_query_args()
+                ),
             ]
         );
+
+        register_rest_route(
+            self::REST_NAMESPACE,
+            self::REST_ROUTE . '/grouped',
+            [
+                'methods'             => \WP_REST_Server::READABLE,
+                'permission_callback' => '__return_true',
+                'callback'            => [ $this, 'rest_get_presentations_grouped' ],
+                'args'                => array_merge(
+                    [
+                        'group' => [
+                            'required'          => true,
+                            'sanitize_callback' => 'sanitize_key',
+                            'validate_callback' => static function ( $value ) {
+                                return GroupingModes::has( (string) $value );
+                            },
+                        ],
+                    ],
+                    self::shared_query_args()
+                ),
+            ]
+        );
+    }
+
+    /**
+     * Argumentos de consulta comuns às duas rotas (a paginada e a agrupada):
+     * ordenação, busca e filtros por coluna.
+     *
+     * @return array<string,array<string,mixed>>
+     */
+    private static function shared_query_args(): array {
+        return [
+            'orderby' => [
+                'default'           => 'presentationDate',
+                'validate_callback' => static function ( $value ) {
+                    return PresentationsSchema::is_orderable( (string) $value );
+                },
+            ],
+            'order' => [
+                'default'           => 'ASC',
+                'validate_callback' => static function ( $value ) {
+                    return in_array( strtoupper( (string) $value ), [ 'ASC', 'DESC' ], true );
+                },
+            ],
+            'search' => [
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
+            ],
+            'theater' => [
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
+            ],
+            'year' => [
+                'default'           => 0,
+                'sanitize_callback' => 'absint',
+            ],
+            'filters' => [
+                'default'           => [],
+                'sanitize_callback' => static function ( $value ) {
+                    if ( ! is_array( $value ) ) {
+                        return [];
+                    }
+                    $out = [];
+                    foreach ( $value as $key => $raw ) {
+                        $column = PresentationsSchema::column( (string) $key );
+                        if ( null === $column || ! $column->facetable ) {
+                            continue;
+                        }
+                        $out[ (string) $key ] = $column->normalize_filter_value( $raw );
+                    }
+                    return $out;
+                },
+            ],
+        ];
+    }
+
+    /**
+     * Callback da rota agrupada: monta a árvore (`PresentationGrouper`) e devolve
+     * o HTML da tabela já pronto (`GroupedTableRenderer`), evitando que o cliente
+     * precise reimplementar o algoritmo de agrupamento.
+     */
+    public function rest_get_presentations_grouped( \WP_REST_Request $request ): \WP_REST_Response {
+        $mode = GroupingModes::get( (string) $request['group'] );
+        if ( null === $mode ) {
+            return new \WP_REST_Response(
+                [ 'message' => __( 'Modo de agrupamento inválido.', 'customizations-teatromusicadosp' ) ],
+                400
+            );
+        }
+
+        $rows = $this->query_all_presentations(
+            [
+                'orderby' => (string) $request['orderby'],
+                'order'   => strtoupper( (string) $request['order'] ) === 'DESC' ? 'DESC' : 'ASC',
+                'search'  => trim( (string) $request['search'] ),
+                'filters' => PresentationFilters::from_rest_request( $request )->values(),
+            ]
+        );
+
+        $html = ( new GroupedTableRenderer() )->render(
+            ( new PresentationGrouper() )->build( $rows, $mode ),
+            $mode
+        );
+
+        $response = new \WP_REST_Response(
+            [
+                'html'  => $html,
+                'total' => count( $rows ),
+            ],
+            200
+        );
+
+        if ( ! is_user_logged_in() ) {
+            $response->header( 'Cache-Control', 'public, max-age=300, s-maxage=300' );
+        }
+
+        return $response;
     }
 
     /**
@@ -299,8 +389,7 @@ class PresentationsRepository implements Module
             'orderby'  => (string) $request['orderby'],
             'order'    => strtoupper( (string) $request['order'] ) === 'DESC' ? 'DESC' : 'ASC',
             'search'   => trim( (string) $request['search'] ),
-            'theater'  => trim( (string) $request['theater'] ),
-            'year'     => (int) $request['year'],
+            'filters'  => PresentationFilters::from_rest_request( $request )->values(),
         ];
 
         $result = $this->query_presentations( $args );
@@ -308,7 +397,7 @@ class PresentationsRepository implements Module
         $response = new \WP_REST_Response( $result['data'], 200 );
         $response->header( 'X-WP-Total', (string) $result['total'] );
         $response->header( 'X-WP-TotalPages', (string) ( $per_page > 0 ? (int) ceil( $result['total'] / $per_page ) : 1 ) );
-        $response->header( 'X-TMSP-Columns', wp_json_encode( self::COLUMNS ) );
+        $response->header( 'X-TMSP-Columns', wp_json_encode( PresentationsSchema::labels() ) );
 
         // Catálogo estático: pode ser cacheado por proxies/CDN para visitantes
         // anônimos. Usuários logados recebem a resposta sem cache.
@@ -339,21 +428,38 @@ class PresentationsRepository implements Module
                 'search'   => '',
                 'theater'  => '',
                 'year'     => 0,
+                'filters'  => [],
             ]
         );
 
-        $orderby  = ( array_key_exists( $args['orderby'], self::COLUMNS ) || 'id' === $args['orderby'] ) ? $args['orderby'] : 'presentationDate';
+        $orderby  = PresentationsSchema::is_orderable( (string) $args['orderby'] ) ? (string) $args['orderby'] : 'presentationDate';
         $order    = 'DESC' === strtoupper( (string) $args['order'] ) ? 'DESC' : 'ASC';
         $per_page = min( 200, max( 1, (int) $args['per_page'] ) );
         $page     = max( 1, (int) $args['page'] );
         $offset   = ( $page - 1 ) * $per_page;
         $search   = trim( (string) $args['search'] );
-        $theater  = trim( (string) $args['theater'] );
-        $year     = (int) $args['year'];
+
+        // Filtros legados (`theater`/`year`) formam a base; `filters` explícito vence.
+        $filters = PresentationFilters::from_array(
+            array_merge(
+                [
+                    'theaterName' => (string) $args['theater'],
+                    'settingYear' => (int) $args['year'],
+                ],
+                (array) $args['filters']
+            )
+        );
 
         $cache_key = 'tmsp_pres_' . md5(
             self::SCHEMA_VERSION . '|' . wp_json_encode(
-                compact( 'orderby', 'order', 'per_page', 'page', 'search', 'theater', 'year' )
+                [
+                    'orderby'  => $orderby,
+                    'order'    => $order,
+                    'per_page' => $per_page,
+                    'page'     => $page,
+                    'search'   => $search,
+                    'filters'  => $filters->cache_fragment(),
+                ]
             )
         );
         $cached = get_transient( $cache_key );
@@ -361,31 +467,10 @@ class PresentationsRepository implements Module
             return $cached;
         }
 
-        $table   = self::table_name();
-        $clauses = [];
-        $params  = [];
-
-        if ( '' !== $search ) {
-            $like       = '%' . $wpdb->esc_like( $search ) . '%';
-            $sub        = [];
-            foreach ( array_keys( self::COLUMNS ) as $column ) {
-                $sub[]    = "`{$column}` LIKE %s";
-                $params[] = $like;
-            }
-            $clauses[] = '(' . implode( ' OR ', $sub ) . ')';
-        }
-
-        if ( '' !== $theater ) {
-            $clauses[] = '`theaterName` = %s';
-            $params[]  = $theater;
-        }
-
-        if ( $year > 0 ) {
-            $clauses[] = '`settingYear` = %d';
-            $params[]  = $year;
-        }
-
-        $where = $clauses ? ( 'WHERE ' . implode( ' AND ', $clauses ) ) : '';
+        $table  = self::table_name();
+        $clause = ( new PresentationFilterClause( $wpdb ) )->build( $filters, $search );
+        $params = $clause['params'];
+        $where  = '' !== $clause['sql'] ? ( 'WHERE ' . $clause['sql'] ) : '';
 
         $total_sql = "SELECT COUNT(*) FROM {$table} {$where}";
         // phpcs:ignore WordPress.DB.PreparedSQL, WordPress.DB.DirectDatabaseQuery
@@ -395,23 +480,147 @@ class PresentationsRepository implements Module
         // phpcs:ignore WordPress.DB.PreparedSQL, WordPress.DB.DirectDatabaseQuery
         $rows = $wpdb->get_results( $wpdb->prepare( $rows_sql, array_merge( $params, [ $per_page, $offset ] ) ), ARRAY_A );
 
-        $data = array_map(
-            static function ( array $row ): array {
-                $row['id']             = (int) $row['id'];
-                $row['sessionsNumber'] = ( null === $row['sessionsNumber'] ) ? null : (int) $row['sessionsNumber'];
-                $row['settingYear']    = ( null === $row['settingYear'] ) ? null : (int) $row['settingYear'];
-                return $row;
-            },
-            $rows ?: []
-        );
-
         $result = [
-            'data'  => $data,
+            'data'  => array_map( [ self::class, 'map_row' ], $rows ?: [] ),
             'total' => $total,
         ];
 
         set_transient( $cache_key, $result, 5 * MINUTE_IN_SECONDS );
 
         return $result;
+    }
+
+    /**
+     * Todas as linhas que satisfazem os filtros, sem paginação — usado apenas
+     * pelo modo agrupado, onde os grupos podem cruzar páginas e a tabela
+     * precisa do conjunto completo. Teto de segurança: nunca devolve mais que
+     * 10 mil linhas (mesmo limite que a antiga varredura página a página do
+     * shortcode aplicava: 200 × 50).
+     *
+     * @param array $args orderby, order, search, filters
+     * @return array<int,array<string,mixed>>
+     */
+    public function query_all_presentations( array $args ): array {
+        global $wpdb;
+
+        $args = wp_parse_args(
+            $args,
+            [
+                'orderby' => 'presentationDate',
+                'order'   => 'ASC',
+                'search'  => '',
+                'filters' => [],
+            ]
+        );
+
+        $orderby  = PresentationsSchema::is_orderable( (string) $args['orderby'] ) ? (string) $args['orderby'] : 'presentationDate';
+        $order    = 'DESC' === strtoupper( (string) $args['order'] ) ? 'DESC' : 'ASC';
+        $search   = trim( (string) $args['search'] );
+        $filters  = PresentationFilters::from_array( (array) $args['filters'] );
+        $max_rows = 10000;
+
+        $cache_key = 'tmsp_pres_all_' . md5(
+            self::SCHEMA_VERSION . '|' . wp_json_encode(
+                [
+                    'orderby' => $orderby,
+                    'order'   => $order,
+                    'search'  => $search,
+                    'filters' => $filters->cache_fragment(),
+                ]
+            )
+        );
+        $cached = get_transient( $cache_key );
+        if ( is_array( $cached ) ) {
+            return $cached;
+        }
+
+        $table  = self::table_name();
+        $clause = ( new PresentationFilterClause( $wpdb ) )->build( $filters, $search );
+        $params = $clause['params'];
+        $where  = '' !== $clause['sql'] ? ( 'WHERE ' . $clause['sql'] ) : '';
+
+        $rows_sql = "SELECT * FROM {$table} {$where} ORDER BY `{$orderby}` {$order}, id ASC LIMIT %d";
+        // phpcs:ignore WordPress.DB.PreparedSQL, WordPress.DB.DirectDatabaseQuery
+        $rows = $wpdb->get_results( $wpdb->prepare( $rows_sql, array_merge( $params, [ $max_rows ] ) ), ARRAY_A );
+
+        $data = array_map( [ self::class, 'map_row' ], $rows ?: [] );
+
+        set_transient( $cache_key, $data, 5 * MINUTE_IN_SECONDS );
+
+        return $data;
+    }
+
+    /**
+     * Normaliza os tipos de uma linha crua do `wpdb` (colunas numéricas vêm
+     * como string do banco).
+     *
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
+    private static function map_row( array $row ): array {
+        $row['id']             = (int) $row['id'];
+        $row['sessionsNumber'] = ( null === $row['sessionsNumber'] ) ? null : (int) $row['sessionsNumber'];
+        $row['settingYear']    = ( null === $row['settingYear'] ) ? null : (int) $row['settingYear'];
+        return $row;
+    }
+
+    /**
+     * Chave do transient que guarda os valores distintos de uma coluna.
+     */
+    public static function facet_cache_key( string $column ): string {
+        return self::FACET_CACHE_PREFIX . md5( self::SCHEMA_VERSION . '|' . $column );
+    }
+
+    /**
+     * Valores distintos, não vazios e ordenados de uma coluna facetável — usados
+     * para popular os `<select>` de filtro. Resultado cacheado por 1h (o seed é
+     * estático; `seed_from_csv()` limpa esses transients ao re-importar).
+     *
+     * @return list<string|int>
+     */
+    public function facet_values( string $column ): array {
+        if ( ! PresentationsSchema::is_facetable( $column ) ) {
+            return [];
+        }
+
+        $cache_key = self::facet_cache_key( $column );
+        $cached    = get_transient( $cache_key );
+        if ( is_array( $cached ) ) {
+            return $cached;
+        }
+
+        global $wpdb;
+
+        $table   = self::table_name();
+        $numeric = PresentationsSchema::column( $column )->is_numeric();
+        $order   = $numeric ? "`{$column}`+0 ASC" : "`{$column}` ASC";
+
+        // $column vem da whitelist do schema; não há valor de usuário na query.
+        // phpcs:ignore WordPress.DB.PreparedSQL, WordPress.DB.DirectDatabaseQuery
+        $raw = $wpdb->get_col(
+            "SELECT DISTINCT `{$column}` FROM {$table} WHERE `{$column}` IS NOT NULL AND `{$column}` <> '' ORDER BY {$order}"
+        );
+
+        $values = array_map(
+            static fn( $value ) => $numeric ? (int) $value : (string) $value,
+            $raw ?: []
+        );
+
+        set_transient( $cache_key, $values, HOUR_IN_SECONDS );
+
+        return $values;
+    }
+
+    /**
+     * Mapa `coluna => list<valor>` para todas as colunas facetáveis.
+     *
+     * @return array<string,list<string|int>>
+     */
+    public function all_facets(): array {
+        $facets = [];
+        foreach ( array_keys( PresentationsSchema::facetable_columns() ) as $column ) {
+            $facets[ $column ] = $this->facet_values( $column );
+        }
+        return $facets;
     }
 }

@@ -1,0 +1,137 @@
+<?php
+/**
+ * Renderiza o "casco" do shortcode: a `<div>` raiz com os `data-*` que o
+ * `assets/presentations.js` lê, o container da tabela (com a mensagem de vazio),
+ * a paginação (`paginate_links()`) e o parágrafo de contagem.
+ *
+ * O `<form>` de filtros e a tabela em si chegam prontos (`form_html` / `table_html`).
+ */
+
+namespace TeatroMusicadoSP\Customizations\Presentations\Rendering;
+
+use TeatroMusicadoSP\Customizations\Presentations\PresentationsRequest;
+use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilters;
+use TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema;
+
+defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
+
+final class ResultsViewRenderer
+{
+    /** @var string */
+    private $rest_url;
+
+    /** @var string */
+    private $page_url;
+
+    public function __construct( string $rest_url, string $page_url ) {
+        $this->rest_url = $rest_url;
+        $this->page_url = $page_url;
+    }
+
+    /**
+     * @param array{
+     *   is_grouped:bool,
+     *   rows:array<int,array<string,mixed>>,
+     *   total:int,
+     *   total_pages:int,
+     *   paged:int,
+     *   per_page:int,
+     *   orderby:string,
+     *   order:string,
+     *   search:string,
+     *   has_request_search:bool,
+     *   group:string,
+     *   filters:PresentationFilters,
+     *   form_html:string,
+     *   table_html:string
+     * } $ctx
+     */
+    public function render( array $ctx ): string {
+        $is_grouped  = (bool) $ctx['is_grouped'];
+        $rows        = (array) $ctx['rows'];
+        $total       = (int) $ctx['total'];
+        $total_pages = (int) $ctx['total_pages'];
+        $paged       = (int) $ctx['paged'];
+        /** @var PresentationFilters $filters */
+        $filters = $ctx['filters'];
+
+        ob_start();
+        ?>
+        <div
+            class="teatro-apresentacoes alignfull"
+            data-rest="<?php echo esc_url( $this->rest_url ); ?>"
+            data-per-page="<?php echo esc_attr( (string) $ctx['per_page'] ); ?>"
+            data-orderby="<?php echo esc_attr( (string) $ctx['orderby'] ); ?>"
+            data-order="<?php echo esc_attr( strtoupper( (string) $ctx['order'] ) === 'DESC' ? 'DESC' : 'ASC' ); ?>"
+            data-preset-search="<?php echo esc_attr( $ctx['has_request_search'] ? '' : (string) $ctx['search'] ); ?>"
+            data-group="<?php echo esc_attr( $is_grouped ? (string) $ctx['group'] : '' ); ?>"
+            data-columns="<?php echo esc_attr( (string) wp_json_encode( PresentationsSchema::flat_columns() ) ); ?>"
+        >
+            <?php echo $ctx['form_html']; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+
+            <div class="teatro-apresentacoes__table-wrap<?php echo $is_grouped ? ' teatro-apresentacoes__table-wrap--grouped' : ''; ?>" aria-live="polite">
+                <?php if ( empty( $rows ) ) : ?>
+                    <p class="teatro-apresentacoes__empty">
+                        <?php esc_html_e( 'Nenhuma apresentação encontrada.', 'customizations-teatromusicadosp' ); ?>
+                    </p>
+                <?php else : ?>
+                    <?php echo $ctx['table_html']; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+                <?php endif; ?>
+            </div>
+
+            <?php if ( $total_pages > 1 ) : ?>
+                <nav class="teatro-apresentacoes__pagination" aria-label="<?php esc_attr_e( 'Paginação', 'customizations-teatromusicadosp' ); ?>">
+                    <?php
+                    echo wp_kses_post(
+                        (string) paginate_links(
+                            [
+                                'base'      => add_query_arg( PresentationsRequest::QV_PAGED, '%#%', $this->page_url ),
+                                'format'    => '',
+                                'current'   => $paged,
+                                'total'     => $total_pages,
+                                'add_args'  => $this->pagination_args( $filters, (string) $ctx['group'], (bool) $ctx['has_request_search'], (string) $ctx['search'] ),
+                                'prev_text' => __( '&laquo; Anterior', 'customizations-teatromusicadosp' ),
+                                'next_text' => __( 'Próxima &raquo;', 'customizations-teatromusicadosp' ),
+                            ]
+                        )
+                    );
+                    ?>
+                </nav>
+            <?php endif; ?>
+
+            <p class="teatro-apresentacoes__count" role="status">
+                <?php
+                echo esc_html(
+                    sprintf(
+                        /* translators: %s: total de apresentações. */
+                        _n( '%s apresentação', '%s apresentações', $total, 'customizations-teatromusicadosp' ),
+                        number_format_i18n( $total )
+                    )
+                );
+                ?>
+            </p>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Args extra dos links de paginação: preserva busca, filtros e agrupamento
+     * ativos para quem navega sem JavaScript.
+     *
+     * @return array<string,mixed>
+     */
+    private function pagination_args( PresentationFilters $filters, string $group, bool $has_request_search, string $search ): array {
+        $args = $filters->to_query_args();
+
+        if ( $has_request_search ) {
+            $args[ PresentationsRequest::QV_SEARCH ] = $search;
+        }
+
+        if ( '' !== $group ) {
+            $args[ PresentationsRequest::QV_GROUP ] = $group;
+        }
+
+        return $args;
+    }
+}

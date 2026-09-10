@@ -37,8 +37,44 @@ require_once TMSP_CUSTOMIZATIONS_PATH
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/traits/singleton.php';
 
+/*
+ * Apresentações: schema (fonte única das colunas) e utilitários sem estado
+ * primeiro; depois o repositório; então as peças que dependem dele (facets,
+ * renderers, parser de request) e, por fim, o shortcode.
+ */
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/schema/presentation-column.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/schema/presentations-schema.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/filters/presentation-filters.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/filters/presentation-filter-clause.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/grouping/grouping-mode.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/grouping/grouping-modes.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/rendering/presentation-value.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/grouping/presentation-grouper.php';
+
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/presentations/presentations-repository.php';
+
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/filters/presentation-facets.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/rendering/flat-table-renderer.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/rendering/grouped-table-renderer.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/rendering/filter-form-renderer.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/rendering/results-view-renderer.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/presentation-request.php';
+
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/presentations/presentations-shortcode.php';
 require_once TMSP_CUSTOMIZATIONS_PATH

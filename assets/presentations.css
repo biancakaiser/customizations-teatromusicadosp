@@ -36,12 +36,31 @@
 	font-weight: 600;
 }
 
-.teatro-apresentacoes__group-field select {
+.teatro-apresentacoes__group-field select,
+.teatro-apresentacoes__filter-field select {
 	padding: 0.45rem 0.6rem;
 	border: 1px solid var(--paletteColor6);
 	border-radius: 4px;
 	background: #fff;
 	cursor: pointer;
+}
+
+/* Filtros por coluna (um <select> por dimensão) -------------------------- */
+
+.teatro-apresentacoes__filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem 1rem;
+}
+
+.teatro-apresentacoes__filter-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.teatro-apresentacoes__filter-field select {
+	max-width: 100%;
 }
 
 .teatro-apresentacoes__search input[type="search"] {
@@ -199,6 +218,16 @@
 /* Layout empilhado em telas pequenas -------------------------------------- */
 
 @media (max-width: 640px) {
+	.teatro-apresentacoes__filters {
+		flex-direction: column;
+		gap: 0.6rem;
+	}
+
+	.teatro-apresentacoes__filter-field,
+	.teatro-apresentacoes__filter-field select {
+		width: 100%;
+	}
+
 	.teatro-apresentacoes__table thead {
 		position: absolute;
 		width: 1px;
