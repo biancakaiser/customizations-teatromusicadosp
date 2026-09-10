@@ -25,7 +25,8 @@
 }
 
 .teatro-apresentacoes__search-field,
-.teatro-apresentacoes__group-field {
+.teatro-apresentacoes__group-field,
+.teatro-apresentacoes__sort-field {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -37,6 +38,7 @@
 }
 
 .teatro-apresentacoes__group-field select,
+.teatro-apresentacoes__sort-field select,
 .teatro-apresentacoes__filter-field select {
 	padding: 0.45rem 0.6rem;
 	border: 1px solid var(--paletteColor6);

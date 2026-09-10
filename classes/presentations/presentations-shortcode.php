@@ -165,7 +165,11 @@ class PresentationsShortcode implements Module
             $total       = count( $rows );
             $total_pages = 1;
             $table_html  = ( new GroupedTableRenderer() )->render(
-                ( new PresentationGrouper() )->build( $rows, $mode ),
+                ( new PresentationGrouper() )->build(
+                    $rows,
+                    $mode,
+                    [ 'orderby' => $request->orderby(), 'order' => $request->order() ]
+                ),
                 $mode
             );
         } else {
@@ -193,7 +197,9 @@ class PresentationsShortcode implements Module
             $request->search(),
             $request->has_request_search(),
             $group,
-            $filters
+            $filters,
+            $request->orderby(),
+            $request->order()
         );
 
         return ( new ResultsViewRenderer( $this->rest_endpoint_url(), $page_url ) )->render(
@@ -206,6 +212,7 @@ class PresentationsShortcode implements Module
                 'per_page'           => $request->per_page(),
                 'orderby'            => $request->orderby(),
                 'order'              => $request->order(),
+                'has_request_orderby' => $request->has_request_orderby(),
                 'search'             => $request->search(),
                 'has_request_search' => $request->has_request_search(),
                 'group'              => $group,

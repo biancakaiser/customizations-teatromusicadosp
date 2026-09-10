@@ -32,7 +32,14 @@ final class FilterFormRenderer
         $this->page_url = $page_url;
     }
 
-    public function render( string $search, bool $has_request_search, string $group, PresentationFilters $filters ): string {
+    public function render(
+        string $search,
+        bool $has_request_search,
+        string $group,
+        PresentationFilters $filters,
+        string $orderby = 'presentationDate',
+        string $order = 'ASC'
+    ): string {
         ob_start();
         ?>
         <form class="teatro-apresentacoes__search" method="get" action="<?php echo esc_url( $this->page_url ); ?>" role="search">
@@ -67,6 +74,7 @@ final class FilterFormRenderer
                     <?php endforeach; ?>
                 </select>
             </div>
+            <?php echo $this->sort_field( $group, $orderby, $order ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
             <div class="teatro-apresentacoes__filters">
                 <?php foreach ( PresentationsSchema::facetable_columns() as $key => $column ) : ?>
                     <?php echo $this->column_select( $key, $column, $filters->get( $key ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
@@ -75,6 +83,79 @@ final class FilterFormRenderer
         </form>
         <?php
         return (string) ob_get_clean();
+    }
+
+    /**
+     * `<select>` "Ordenado por:" + `<select>` de direção. As colunas oferecidas
+     * dependem do modo: no modo plano são as colunas da tabela plana; num modo
+     * agrupado são as colunas daquele agrupamento (identidade + folha + Total).
+     */
+    private function sort_field( string $group, string $orderby, string $order ): string {
+        $options = self::sort_options( $group );
+        $order   = strtoupper( $order ) === 'DESC' ? 'DESC' : 'ASC';
+
+        ob_start();
+        ?>
+        <div class="teatro-apresentacoes__sort-field">
+            <label for="teatro-apresentacoes-orderby" class="teatro-apresentacoes__search-label">
+                <?php esc_html_e( 'Ordenado por:', 'customizations-teatromusicadosp' ); ?>
+            </label>
+            <select
+                id="teatro-apresentacoes-orderby"
+                name="<?php echo esc_attr( PresentationsRequest::QV_ORDERBY ); ?>"
+                onchange="this.form.submit()"
+            >
+                <?php foreach ( $options as $value => $label ) : ?>
+                    <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $orderby, $value ); ?>>
+                        <?php echo esc_html( $label ); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <label for="teatro-apresentacoes-order" class="teatro-apresentacoes__search-label">
+                <?php esc_html_e( 'Ordem', 'customizations-teatromusicadosp' ); ?>
+            </label>
+            <select
+                id="teatro-apresentacoes-order"
+                name="<?php echo esc_attr( PresentationsRequest::QV_ORDER ); ?>"
+                onchange="this.form.submit()"
+            >
+                <option value="ASC" <?php selected( $order, 'ASC' ); ?>><?php esc_html_e( 'Crescente', 'customizations-teatromusicadosp' ); ?></option>
+                <option value="DESC" <?php selected( $order, 'DESC' ); ?>><?php esc_html_e( 'Decrescente', 'customizations-teatromusicadosp' ); ?></option>
+            </select>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Mapa `coluna => rótulo` do `<select>` "Ordenado por:" para um modo de
+     * agrupamento (`''` = modo plano). Também usado, agregado por modo, no
+     * `data-sort-columns` que o JS lê para repopular o campo sem recarregar.
+     *
+     * @return array<string,string>
+     */
+    public static function sort_options( string $group ): array {
+        $mode = '' !== $group ? GroupingModes::get( $group ) : null;
+
+        return null !== $mode
+            ? $mode->sortable_columns()
+            : PresentationsSchema::flat_columns();
+    }
+
+    /**
+     * `data-sort-columns`: as opções de "Ordenado por:" de cada modo, para o JS
+     * trocar o conteúdo do `<select>` quando o agrupamento muda sem reload.
+     *
+     * @return array<string,array<string,string>>
+     */
+    public static function sort_options_by_mode(): array {
+        $map = [ '' => self::sort_options( '' ) ];
+
+        foreach ( array_keys( GroupingModes::all() ) as $group_key ) {
+            $map[ $group_key ] = self::sort_options( $group_key );
+        }
+
+        return $map;
     }
 
     /**
@@ -117,6 +198,8 @@ final class FilterFormRenderer
             PresentationsRequest::QV_SEARCH,
             PresentationsRequest::QV_PAGED,
             PresentationsRequest::QV_GROUP,
+            PresentationsRequest::QV_ORDERBY,
+            PresentationsRequest::QV_ORDER,
             PresentationFilters::QUERY_VAR,
             'paged',
         ];

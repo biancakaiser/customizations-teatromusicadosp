@@ -9,10 +9,15 @@
 
 namespace TeatroMusicadoSP\Customizations\Presentations\Grouping;
 
+use TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema;
+
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 final class GroupingMode
 {
+    /** Chave sintética de ordenação pela coluna "Total" (soma de sessões do grupo de 1º nível). */
+    const SORT_TOTAL = '__total';
+
     /**
      * @param string                $key             'company' | 'play'
      * @param string                $label           Rótulo do <option>.
@@ -31,6 +36,42 @@ final class GroupingMode
         public array $identity,
         public array $l1_label_fields
     ) {}
+
+    /**
+     * Colunas oferecidas no `<select>` "Ordenado por:" quando este modo está
+     * ativo, na ordem em que aparecem na tabela: identidade do 1º nível (faixa),
+     * identidade do 2º nível, colunas folha e, por fim, "Total".
+     *
+     * @return array<string,string> chave da coluna => rótulo
+     */
+    public function sortable_columns(): array {
+        $columns = [];
+
+        // Faixa de 1º nível: `l1_label_fields` é `rótulo => coluna`.
+        foreach ( $this->l1_label_fields as $field ) {
+            $columns[ $field ] = $this->column_label( $field );
+        }
+
+        // Bloco de identidade de 2º nível: `identity` é `coluna => rótulo`.
+        foreach ( array_keys( $this->identity ) as $field ) {
+            $columns[ $field ] = $this->column_label( $field );
+        }
+
+        // Colunas folha, comuns aos dois modos.
+        $columns['theaterName']      = 'Teatro';
+        $columns['settingKind']      = 'Tipo de Espetáculo';
+        $columns['presentationDate'] = 'Ano';
+        $columns['sessionsNumber']   = 'Nº de Sessões';
+
+        $columns[ self::SORT_TOTAL ] = 'Total';
+
+        return $columns;
+    }
+
+    private function column_label( string $key ): string {
+        $column = PresentationsSchema::column( $key );
+        return null !== $column ? $column->label : $key;
+    }
 
     /**
      * Shape idêntico ao do antigo `GROUPS[<key>]`.

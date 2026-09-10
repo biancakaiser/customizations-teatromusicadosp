@@ -16,6 +16,7 @@ use TeatroMusicadoSP\Customizations\Traits\Singleton;
 use TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema;
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilters;
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilterClause;
+use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingMode;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingModes;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\PresentationGrouper;
 use TeatroMusicadoSP\Customizations\Presentations\Rendering\GroupedTableRenderer;
@@ -293,7 +294,10 @@ class PresentationsRepository implements Module
             'orderby' => [
                 'default'           => 'presentationDate',
                 'validate_callback' => static function ( $value ) {
-                    return PresentationsSchema::is_orderable( (string) $value );
+                    // `__total` só faz sentido no modo agrupado; a rota plana o
+                    // ignora (revalida em `query_presentations()`).
+                    return PresentationsSchema::is_orderable( (string) $value )
+                        || GroupingMode::SORT_TOTAL === (string) $value;
                 },
             ],
             'order' => [
@@ -348,17 +352,20 @@ class PresentationsRepository implements Module
             );
         }
 
+        $orderby = (string) $request['orderby'];
+        $order   = strtoupper( (string) $request['order'] ) === 'DESC' ? 'DESC' : 'ASC';
+
         $rows = $this->query_all_presentations(
             [
-                'orderby' => (string) $request['orderby'],
-                'order'   => strtoupper( (string) $request['order'] ) === 'DESC' ? 'DESC' : 'ASC',
+                'orderby' => $orderby,
+                'order'   => $order,
                 'search'  => trim( (string) $request['search'] ),
                 'filters' => PresentationFilters::from_rest_request( $request )->values(),
             ]
         );
 
         $html = ( new GroupedTableRenderer() )->render(
-            ( new PresentationGrouper() )->build( $rows, $mode ),
+            ( new PresentationGrouper() )->build( $rows, $mode, [ 'orderby' => $orderby, 'order' => $order ] ),
             $mode
         );
 

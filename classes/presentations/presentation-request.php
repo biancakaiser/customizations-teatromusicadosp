@@ -10,15 +10,19 @@
 namespace TeatroMusicadoSP\Customizations\Presentations;
 
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilters;
+use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingMode;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingModes;
+use TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema;
 
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 final class PresentationsRequest
 {
-    const QV_SEARCH = 'tap_s';
-    const QV_PAGED  = 'tap_paged';
-    const QV_GROUP  = 'tap_group';
+    const QV_SEARCH  = 'tap_s';
+    const QV_PAGED   = 'tap_paged';
+    const QV_GROUP   = 'tap_group';
+    const QV_ORDERBY = 'tap_orderby';
+    const QV_ORDER   = 'tap_order';
 
     /** @var array<string,mixed> */
     private $get;
@@ -57,11 +61,34 @@ final class PresentationsRequest
         return min( 200, max( 1, (int) ( $this->atts['per_page'] ?? 25 ) ) );
     }
 
+    /**
+     * O visitante escolheu a ordenação nesta requisição (query var `tap_orderby`)?
+     */
+    public function has_request_orderby(): bool {
+        return isset( $this->get[ self::QV_ORDERBY ] );
+    }
+
+    /**
+     * Coluna do `ORDER BY`. A escolha do visitante (`tap_orderby`) prevalece sobre
+     * o atributo do shortcode, desde que seja uma coluna ordenável conhecida.
+     *
+     * Não usar `sanitize_key()`: ele força minúsculas e quebraria chaves camelCase
+     * como `presentationDate`. A validação é por match exato na whitelist do schema.
+     */
     public function orderby(): string {
+        if ( $this->has_request_orderby() ) {
+            $key = sanitize_text_field( wp_unslash( $this->get[ self::QV_ORDERBY ] ) );
+            if ( PresentationsSchema::is_orderable( $key ) || GroupingMode::SORT_TOTAL === $key ) {
+                return $key;
+            }
+        }
         return (string) ( $this->atts['orderby'] ?? 'presentationDate' );
     }
 
     public function order(): string {
+        if ( isset( $this->get[ self::QV_ORDER ] ) ) {
+            return strtoupper( sanitize_text_field( wp_unslash( $this->get[ self::QV_ORDER ] ) ) ) === 'DESC' ? 'DESC' : 'ASC';
+        }
         return strtoupper( (string) ( $this->atts['order'] ?? 'ASC' ) ) === 'DESC' ? 'DESC' : 'ASC';
     }
 

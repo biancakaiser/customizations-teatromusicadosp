@@ -52,6 +52,7 @@ final class ResultsViewRenderer
         $total       = (int) $ctx['total'];
         $total_pages = (int) $ctx['total_pages'];
         $paged       = (int) $ctx['paged'];
+        $has_request_orderby = ! empty( $ctx['has_request_orderby'] );
         /** @var PresentationFilters $filters */
         $filters = $ctx['filters'];
 
@@ -66,6 +67,7 @@ final class ResultsViewRenderer
             data-preset-search="<?php echo esc_attr( $ctx['has_request_search'] ? '' : (string) $ctx['search'] ); ?>"
             data-group="<?php echo esc_attr( $is_grouped ? (string) $ctx['group'] : '' ); ?>"
             data-columns="<?php echo esc_attr( (string) wp_json_encode( PresentationsSchema::flat_columns() ) ); ?>"
+            data-sort-columns="<?php echo esc_attr( (string) wp_json_encode( FilterFormRenderer::sort_options_by_mode() ) ); ?>"
         >
             <?php echo $ctx['form_html']; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
@@ -89,7 +91,15 @@ final class ResultsViewRenderer
                                 'format'    => '',
                                 'current'   => $paged,
                                 'total'     => $total_pages,
-                                'add_args'  => $this->pagination_args( $filters, (string) $ctx['group'], (bool) $ctx['has_request_search'], (string) $ctx['search'] ),
+                                'add_args'  => $this->pagination_args(
+                                $filters,
+                                (string) $ctx['group'],
+                                (bool) $ctx['has_request_search'],
+                                (string) $ctx['search'],
+                                $has_request_orderby,
+                                (string) $ctx['orderby'],
+                                (string) $ctx['order']
+                            ),
                                 'prev_text' => __( '&laquo; Anterior', 'customizations-teatromusicadosp' ),
                                 'next_text' => __( 'Próxima &raquo;', 'customizations-teatromusicadosp' ),
                             ]
@@ -121,7 +131,15 @@ final class ResultsViewRenderer
      *
      * @return array<string,mixed>
      */
-    private function pagination_args( PresentationFilters $filters, string $group, bool $has_request_search, string $search ): array {
+    private function pagination_args(
+        PresentationFilters $filters,
+        string $group,
+        bool $has_request_search,
+        string $search,
+        bool $has_request_orderby = false,
+        string $orderby = 'presentationDate',
+        string $order = 'ASC'
+    ): array {
         $args = $filters->to_query_args();
 
         if ( $has_request_search ) {
@@ -130,6 +148,11 @@ final class ResultsViewRenderer
 
         if ( '' !== $group ) {
             $args[ PresentationsRequest::QV_GROUP ] = $group;
+        }
+
+        if ( $has_request_orderby ) {
+            $args[ PresentationsRequest::QV_ORDERBY ] = $orderby;
+            $args[ PresentationsRequest::QV_ORDER ]   = strtoupper( $order ) === 'DESC' ? 'DESC' : 'ASC';
         }
 
         return $args;

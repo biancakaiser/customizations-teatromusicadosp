@@ -51,8 +51,7 @@
 		}
 
 		var perPage = parseInt(root.getAttribute('data-per-page'), 10) || 25;
-		var orderby = root.getAttribute('data-orderby') || 'presentationDate';
-		var order = root.getAttribute('data-order') || 'ASC';
+		var DEFAULT_ORDERBY = 'presentationDate';
 
 		var columns = {};
 		try {
@@ -65,9 +64,20 @@
 			return;
 		}
 
+		// Opções de "Ordenado por:" por modo de agrupamento ('' = modo plano),
+		// para repopular o <select> quando o agrupamento muda sem recarregar.
+		var sortColumns = {};
+		try {
+			sortColumns = JSON.parse(root.getAttribute('data-sort-columns') || '{}');
+		} catch (e) {
+			sortColumns = {};
+		}
+
 		var form = root.querySelector('.teatro-apresentacoes__search');
 		var searchInput = root.querySelector('#teatro-apresentacoes-s');
 		var groupSelect = root.querySelector('#teatro-apresentacoes-group');
+		var orderbySelect = root.querySelector('#teatro-apresentacoes-orderby');
+		var orderSelect = root.querySelector('#teatro-apresentacoes-order');
 		var filterSelects = root.querySelectorAll('select[name^="tap_f["]');
 		var wrap = root.querySelector('.teatro-apresentacoes__table-wrap');
 		var countEl = root.querySelector('.teatro-apresentacoes__count');
@@ -87,6 +97,10 @@
 				root.getAttribute('data-preset-search') || '',
 			group: (groupSelect && groupSelect.value) ||
 				root.getAttribute('data-group') || '',
+			orderby: (orderbySelect && orderbySelect.value) ||
+				root.getAttribute('data-orderby') || DEFAULT_ORDERBY,
+			order: ((orderSelect && orderSelect.value) ||
+				root.getAttribute('data-order') || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC',
 			filters: {}
 		};
 
@@ -112,6 +126,52 @@
 			});
 		});
 
+		// Com JS, os <select> de ordenação vão via REST (o servidor os renderiza
+		// com onchange="this.form.submit()" para o fallback sem JS).
+		if (orderbySelect) {
+			orderbySelect.removeAttribute('onchange');
+			orderbySelect.addEventListener('change', function () {
+				state.orderby = orderbySelect.value;
+				state.page = 1;
+				load();
+			});
+		}
+		if (orderSelect) {
+			orderSelect.removeAttribute('onchange');
+			orderSelect.addEventListener('change', function () {
+				state.order = orderSelect.value.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+				state.page = 1;
+				load();
+			});
+		}
+
+		// Ao trocar o agrupamento, as colunas ordenáveis mudam: repopula o
+		// <select> "Ordenado por:" a partir de data-sort-columns e descarta uma
+		// seleção que não exista no novo modo.
+		function syncOrderbyOptions() {
+			if (!orderbySelect) {
+				return;
+			}
+			var opts = sortColumns[state.group] || sortColumns[''] || {};
+			var keys = Object.keys(opts);
+			if (!keys.length) {
+				return;
+			}
+			if (keys.indexOf(state.orderby) === -1) {
+				state.orderby = keys[0];
+			}
+			orderbySelect.innerHTML = '';
+			keys.forEach(function (key) {
+				var opt = document.createElement('option');
+				opt.value = key;
+				opt.textContent = opts[key];
+				if (key === state.orderby) {
+					opt.selected = true;
+				}
+				orderbySelect.appendChild(opt);
+			});
+		}
+
 		function requestHeaders() {
 			var headers = { Accept: 'application/json' };
 			if (cfg.nonce) {
@@ -133,8 +193,8 @@
 			var url = new URL(rest, window.location.origin);
 			url.searchParams.set('page', state.page);
 			url.searchParams.set('per_page', perPage);
-			url.searchParams.set('orderby', orderby);
-			url.searchParams.set('order', order);
+			url.searchParams.set('orderby', state.orderby);
+			url.searchParams.set('order', state.order);
 			if (state.search) {
 				url.searchParams.set('search', state.search);
 			}
@@ -297,6 +357,16 @@
 			} else {
 				url.searchParams.delete('tap_group');
 			}
+			if (state.orderby && state.orderby !== DEFAULT_ORDERBY) {
+				url.searchParams.set('tap_orderby', state.orderby);
+			} else {
+				url.searchParams.delete('tap_orderby');
+			}
+			if (state.order === 'DESC') {
+				url.searchParams.set('tap_order', 'DESC');
+			} else {
+				url.searchParams.delete('tap_order');
+			}
 			var staleFilterKeys = [];
 			url.searchParams.forEach(function (value, key) {
 				if (key.indexOf('tap_f[') === 0) {
@@ -323,8 +393,8 @@
 
 			var url = new URL(rest + '/grouped', window.location.origin);
 			url.searchParams.set('group', state.group);
-			url.searchParams.set('orderby', orderby);
-			url.searchParams.set('order', order);
+			url.searchParams.set('orderby', state.orderby);
+			url.searchParams.set('order', state.order);
 			if (state.search) {
 				url.searchParams.set('search', state.search);
 			}
@@ -398,6 +468,7 @@
 				event.preventDefault();
 				state.search = searchInput ? searchInput.value.trim() : '';
 				state.group = groupSelect ? groupSelect.value : '';
+				syncOrderbyOptions();
 				state.page = 1;
 				load();
 			});
@@ -406,6 +477,7 @@
 		if (groupSelect) {
 			groupSelect.addEventListener('change', function () {
 				state.group = groupSelect.value;
+				syncOrderbyOptions();
 				state.page = 1;
 				load();
 			});
