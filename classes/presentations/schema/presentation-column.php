@@ -28,6 +28,7 @@ final class PresentationColumn
      * @param bool        $facetable  A coluna ganha um <select> de valores distintos.
      * @param string|null $flat_label Rótulo na tabela plana do shortcode (null = não exibida).
      * @param int         $flat_order Posição na tabela plana (menor primeiro).
+     * @param bool        $searchable O <select> de filtro ganha busca interna (autocomplete).
      */
     public function __construct(
         public string $key,
@@ -37,7 +38,8 @@ final class PresentationColumn
         public bool $filterable = false,
         public bool $facetable = false,
         public ?string $flat_label = null,
-        public int $flat_order = 0
+        public int $flat_order = 0,
+        public bool $searchable = false
     ) {}
 
     public function is_numeric(): bool {

@@ -1,15 +1,18 @@
 <?php
 /**
- * Conjunto imutável de filtros de igualdade por coluna.
+ * Conjunto imutável de filtros por coluna, com **múltiplos valores por coluna**
+ * combinados em OR (equivale a `col IN (...)` no SQL — ver `PresentationFilterClause`).
+ * Colunas diferentes continuam combinadas em AND.
  *
- * Só guarda pares `coluna => valor` de colunas facetáveis (ver
+ * Só guarda `coluna => list<valor>` de colunas facetáveis (ver
  * `PresentationsSchema::facetable_columns()`) e apenas valores não vazios
- * (strings em branco e números <= 0 são descartados). Traduz o mesmo conjunto
- * de filtros para as três representações usadas pelo plugin:
+ * (strings em branco e números <= 0 são descartados; duplicatas removidas).
+ * Traduz o mesmo conjunto de filtros para as três representações usadas pelo plugin:
  *
- *   - `to_query_args()`  → `['tap_f' => [...]]`   (URL da página, `paginate_links`)
- *   - `to_rest_params()` → `['filters' => [...]]` (`WP_REST_Request::set_query_params`)
- *   - `cache_fragment()` → assoc ordenado         (chave estável de transient)
+ *   - `to_query_args()`  → `['tap_f' => ['col' => [v, ...]]]`  (URL da página)
+ *   - `to_rest_params()` → `['filters' => ['col' => [v, ...]]]` (REST)
+ *   - `cache_fragment()` → assoc ordenado, cada lista também ordenada — chave
+ *     estável de transient independente da ordem em que as caixas foram marcadas.
  */
 
 namespace TeatroMusicadoSP\Customizations\Presentations\Filters;
@@ -26,26 +29,28 @@ final class PresentationFilters
     /** Nome do parâmetro de filtros na rota REST. */
     const REST_PARAM = 'filters';
 
-    /** @var array<string,string|int> */
+    /** @var array<string,list<string|int>> */
     private $values;
 
     /**
-     * @param array<string,string|int> $values Já normalizados.
+     * @param array<string,list<string|int>> $values Já normalizados.
      */
     private function __construct( array $values ) {
         $this->values = $values;
     }
 
     /**
-     * Constrói a partir de um mapa cru `coluna => valor`, aplicando a whitelist
-     * do schema e a normalização de cada coluna.
+     * Constrói a partir de um mapa cru `coluna => valor(es)`, aplicando a
+     * whitelist do schema e a normalização de cada coluna. Aceita tanto um
+     * valor único por coluna (filtros legados `theater`/`year`, um checkbox só)
+     * quanto uma lista (várias caixas marcadas) — ambos viram lista internamente.
      *
      * @param array<string,mixed> $raw
      */
     public static function from_array( array $raw ): self {
         $values = [];
 
-        foreach ( $raw as $key => $value ) {
+        foreach ( $raw as $key => $raw_value ) {
             $key    = (string) $key;
             $column = PresentationsSchema::column( $key );
 
@@ -53,17 +58,30 @@ final class PresentationFilters
                 continue;
             }
 
-            $value = $column->normalize_filter_value( $value );
+            $list       = is_array( $raw_value ) ? $raw_value : [ $raw_value ];
+            $normalized = [];
 
-            if ( $column->is_numeric() ) {
-                if ( (int) $value > 0 ) {
-                    $values[ $key ] = (int) $value;
+            foreach ( $list as $item ) {
+                $item = $column->normalize_filter_value( $item );
+
+                if ( $column->is_numeric() ) {
+                    if ( (int) $item > 0 ) {
+                        $normalized[] = (int) $item;
+                    }
+                    continue;
                 }
-                continue;
+
+                $item = trim( (string) $item );
+                if ( '' !== $item ) {
+                    $normalized[] = $item;
+                }
             }
 
-            if ( '' !== trim( (string) $value ) ) {
-                $values[ $key ] = (string) $value;
+            $normalized = array_values( array_unique( $normalized, SORT_REGULAR ) );
+            sort( $normalized );
+
+            if ( $normalized ) {
+                $values[ $key ] = $normalized;
             }
         }
 
@@ -71,7 +89,8 @@ final class PresentationFilters
     }
 
     /**
-     * Lê os filtros de `$_GET` (query var `tap_f`).
+     * Lê os filtros de `$_GET` (query var `tap_f`). Cada coluna vem como lista
+     * (`tap_f[col][]=a&tap_f[col][]=b`, um `<input type="checkbox">` por valor).
      *
      * @param array<string,mixed> $get
      */
@@ -82,7 +101,7 @@ final class PresentationFilters
 
     /**
      * Lê os filtros de uma requisição REST, mesclando os parâmetros legados
-     * `theater`/`year` (que o parâmetro `filters` sobrescreve).
+     * `theater`/`year` (que o parâmetro `filters` sobrescreve por coluna).
      */
     public static function from_rest_request( \WP_REST_Request $request ): self {
         $legacy = [
@@ -97,7 +116,7 @@ final class PresentationFilters
     }
 
     /**
-     * @return array<string,string|int>
+     * @return array<string,list<string|int>>
      */
     public function values(): array {
         return $this->values;
@@ -108,43 +127,33 @@ final class PresentationFilters
     }
 
     /**
-     * @return string|int|null
+     * Valores selecionados de uma coluna (lista vazia se não filtrada).
+     *
+     * @return list<string|int>
      */
-    public function get( string $key ) {
-        return $this->values[ $key ] ?? null;
+    public function get( string $key ): array {
+        return $this->values[ $key ] ?? [];
     }
 
     /**
-     * @param string|int $value
-     */
-    public function with( string $key, $value ): self {
-        return self::from_array( array_merge( $this->values, [ $key => $value ] ) );
-    }
-
-    public function without( string $key ): self {
-        $values = $this->values;
-        unset( $values[ $key ] );
-        return new self( $values );
-    }
-
-    /**
-     * @return array<string,array<string,string|int>>
+     * @return array<string,array<string,list<string|int>>>
      */
     public function to_query_args(): array {
         return $this->is_empty() ? [] : [ self::QUERY_VAR => $this->values ];
     }
 
     /**
-     * @return array<string,array<string,string|int>>
+     * @return array<string,array<string,list<string|int>>>
      */
     public function to_rest_params(): array {
         return [ self::REST_PARAM => $this->values ];
     }
 
     /**
-     * Fragmento estável (ordenado) para compor a chave do transient de consulta.
+     * Fragmento estável (colunas e, dentro delas, valores, ambos ordenados)
+     * para compor a chave do transient de consulta.
      *
-     * @return array<string,string|int>
+     * @return array<string,list<string|int>>
      */
     public function cache_fragment(): array {
         $values = $this->values;

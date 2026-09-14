@@ -31,6 +31,7 @@ final class ResultsViewRenderer
     /**
      * @param array{
      *   is_grouped:bool,
+     *   submitted:bool,
      *   rows:array<int,array<string,mixed>>,
      *   total:int,
      *   total_pages:int,
@@ -53,6 +54,7 @@ final class ResultsViewRenderer
         $total_pages = (int) $ctx['total_pages'];
         $paged       = (int) $ctx['paged'];
         $has_request_orderby = ! empty( $ctx['has_request_orderby'] );
+        $submitted           = ! empty( $ctx['submitted'] );
         /** @var PresentationFilters $filters */
         $filters = $ctx['filters'];
 
@@ -61,6 +63,7 @@ final class ResultsViewRenderer
         <div
             class="teatro-apresentacoes alignfull"
             data-rest="<?php echo esc_url( $this->rest_url ); ?>"
+            data-submitted="<?php echo esc_attr( $submitted ? '1' : '' ); ?>"
             data-per-page="<?php echo esc_attr( (string) $ctx['per_page'] ); ?>"
             data-orderby="<?php echo esc_attr( (string) $ctx['orderby'] ); ?>"
             data-order="<?php echo esc_attr( strtoupper( (string) $ctx['order'] ) === 'DESC' ? 'DESC' : 'ASC' ); ?>"
@@ -72,7 +75,11 @@ final class ResultsViewRenderer
             <?php echo $ctx['form_html']; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
             <div class="teatro-apresentacoes__table-wrap<?php echo $is_grouped ? ' teatro-apresentacoes__table-wrap--grouped' : ''; ?>" aria-live="polite">
-                <?php if ( empty( $rows ) ) : ?>
+                <?php if ( ! $submitted ) : ?>
+                    <p class="teatro-apresentacoes__prompt">
+                        <?php esc_html_e( 'Use os filtros acima e clique em Buscar para listar as apresentações.', 'customizations-teatromusicadosp' ); ?>
+                    </p>
+                <?php elseif ( empty( $rows ) ) : ?>
                     <p class="teatro-apresentacoes__empty">
                         <?php esc_html_e( 'Nenhuma apresentação encontrada.', 'customizations-teatromusicadosp' ); ?>
                     </p>
@@ -81,7 +88,7 @@ final class ResultsViewRenderer
                 <?php endif; ?>
             </div>
 
-            <?php if ( $total_pages > 1 ) : ?>
+            <?php if ( $submitted && $total_pages > 1 ) : ?>
                 <nav class="teatro-apresentacoes__pagination" aria-label="<?php esc_attr_e( 'Paginação', 'customizations-teatromusicadosp' ); ?>">
                     <?php
                     echo wp_kses_post(
@@ -109,7 +116,7 @@ final class ResultsViewRenderer
                 </nav>
             <?php endif; ?>
 
-            <p class="teatro-apresentacoes__count" role="status">
+            <p class="teatro-apresentacoes__count" role="status"<?php echo $submitted ? '' : ' hidden'; ?>>
                 <?php
                 echo esc_html(
                     sprintf(
@@ -141,6 +148,10 @@ final class ResultsViewRenderer
         string $order = 'ASC'
     ): array {
         $args = $filters->to_query_args();
+
+        // A paginação só existe depois do 1º submit — preserva o marcador para
+        // quem navega sem JavaScript.
+        $args[ PresentationsRequest::QV_SUBMITTED ] = '1';
 
         if ( $has_request_search ) {
             $args[ PresentationsRequest::QV_SEARCH ] = $search;

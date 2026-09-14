@@ -3,7 +3,10 @@
  *
  * A tabela já vem renderizada do servidor; este script substitui a navegação
  * (busca, filtros por coluna, agrupamento e paginação) por chamadas à rota REST
- * pública, sem recarregar a página.
+ * pública, sem recarregar a página. Cada filtro é um `<details>` com uma
+ * `<input type="checkbox">` por valor — várias caixas marcadas na mesma coluna
+ * filtram em OR (`col IN (...)`, resolvido no backend); nenhum campo dispara
+ * busca sozinho, só o submit do formulário.
  *
  * O modo agrupado não reimplementa o algoritmo de agrupamento em JS: a rota
  * `.../presentations/grouped` roda PresentationGrouper + GroupedTableRenderer
@@ -38,10 +41,85 @@
 		});
 	}
 
-	// tap_f[<col>]  ->  <col>
-	function filterColumnName(selectName) {
-		var match = /^tap_f\[(.+)\]$/.exec(selectName || '');
+	// tap_f[<col>][]  ->  <col>  (um <input type="checkbox"> por valor)
+	function filterColumnName(checkboxName) {
+		var match = /^tap_f\[(.+)\]\[\]$/.exec(checkboxName || '');
 		return match ? match[1] : '';
+	}
+
+	// Comparação sem acento e sem caixa, para a busca interna dos filtros longos.
+	var DIACRITICS = /[̀-ͯ]/g;
+	function normalizeText(value) {
+		var str = String(value == null ? '' : value);
+		str = str.normalize ? str.normalize('NFD').replace(DIACRITICS, '') : str;
+		return str.toLowerCase();
+	}
+
+	/**
+	 * Cada filtro já é uma "caixa tipo select" nativa (`<details>` com uma
+	 * `<input type="checkbox">` por valor — abre/fecha e marca/desmarca sem
+	 * JS). Aqui só ligamos dois acabamentos que dependem de JS:
+	 *  - nos filtros `--searchable`, o campo de busca filtra (mostra/esconde)
+	 *    as linhas da lista — NÃO dispara busca na tabela;
+	 *  - o contador ao lado do rótulo reflete quantas caixas estão marcadas.
+	 * Nenhum dos dois altera o valor que vai no submit — só a apresentação.
+	 */
+	function enhanceFilterField(fieldEl) {
+		var search = fieldEl.querySelector('.teatro-apresentacoes__filter-search');
+		var rows = fieldEl.querySelectorAll('.teatro-apresentacoes__filter-option');
+		var countEl = fieldEl.querySelector('.teatro-apresentacoes__filter-count');
+		var boxes = fieldEl.querySelectorAll('input[type="checkbox"]');
+
+		if (search) {
+			search.addEventListener('input', function () {
+				var q = normalizeText(search.value);
+				Array.prototype.forEach.call(rows, function (row) {
+					row.hidden = q !== '' && normalizeText(row.textContent).indexOf(q) === -1;
+				});
+			});
+			// Enter no campo de busca não deve submeter o formulário inteiro.
+			search.addEventListener('keydown', function (event) {
+				if (event.key === 'Enter') {
+					event.preventDefault();
+				}
+			});
+		}
+
+		if (countEl) {
+			var updateCount = function () {
+				var n = fieldEl.querySelectorAll('input[type="checkbox"]:checked').length;
+				countEl.textContent = String(n);
+				countEl.hidden = n === 0;
+			};
+			Array.prototype.forEach.call(boxes, function (box) {
+				box.addEventListener('change', updateCount);
+			});
+		}
+
+		// Esc fecha o painel e devolve o foco ao rótulo (o <details> nativo não
+		// faz isso sozinho).
+		fieldEl.addEventListener('keydown', function (event) {
+			if (event.key === 'Escape' && fieldEl.open) {
+				fieldEl.open = false;
+				var summary = fieldEl.querySelector('summary');
+				if (summary) {
+					summary.focus();
+				}
+			}
+		});
+	}
+
+	// Clicar fora de um filtro aberto fecha o painel (o <details> nativo, sem
+	// isso, só fecha reclicando no próprio <summary>).
+	function closeFilterFieldsOutside(root) {
+		document.addEventListener('click', function (event) {
+			var open = root.querySelectorAll('details.teatro-apresentacoes__filter-field[open]');
+			Array.prototype.forEach.call(open, function (det) {
+				if (!det.contains(event.target)) {
+					det.open = false;
+				}
+			});
+		});
 	}
 
 	function enhance(root) {
@@ -78,76 +156,49 @@
 		var groupSelect = root.querySelector('#teatro-apresentacoes-group');
 		var orderbySelect = root.querySelector('#teatro-apresentacoes-orderby');
 		var orderSelect = root.querySelector('#teatro-apresentacoes-order');
-		var filterSelects = root.querySelectorAll('select[name^="tap_f["]');
 		var wrap = root.querySelector('.teatro-apresentacoes__table-wrap');
 		var countEl = root.querySelector('.teatro-apresentacoes__count');
 		if (!wrap) {
 			return;
 		}
 
-		// Com o script ativo, mudanças passam a ir via REST; sem ele, os <select>
-		// recarregam a página (onchange no HTML do servidor).
-		if (groupSelect) {
-			groupSelect.removeAttribute('onchange');
-		}
-
+		// Formulário de submit único: nenhum campo é listener de ação imediata.
+		// O estado só é lido (readFields) e a tabela só recarrega no submit.
 		var state = {
 			page: 1,
-			search: (searchInput && searchInput.value.trim()) ||
-				root.getAttribute('data-preset-search') || '',
-			group: (groupSelect && groupSelect.value) ||
-				root.getAttribute('data-group') || '',
-			orderby: (orderbySelect && orderbySelect.value) ||
-				root.getAttribute('data-orderby') || DEFAULT_ORDERBY,
-			order: ((orderSelect && orderSelect.value) ||
-				root.getAttribute('data-order') || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC',
+			submitted: root.getAttribute('data-submitted') === '1',
+			search: '',
+			group: '',
+			orderby: DEFAULT_ORDERBY,
+			order: 'ASC',
 			filters: {}
 		};
 
-		// Estado inicial dos filtros: lê o valor selecionado de cada <select>
-		// (que o servidor já renderizou com o `selected` correto).
-		Array.prototype.forEach.call(filterSelects, function (sel) {
-			var col = filterColumnName(sel.name);
-			if (!col) {
-				return;
-			}
-			if (sel.value) {
-				state.filters[col] = sel.value;
-			}
-			sel.removeAttribute('onchange');
-			sel.addEventListener('change', function () {
-				if (sel.value) {
-					state.filters[col] = sel.value;
-				} else {
-					delete state.filters[col];
+		// Lê todos os campos do formulário para o `state` (chamado no submit e uma
+		// vez no início, para refletir o que o servidor já renderizou como `selected`).
+		function readFields() {
+			state.search = searchInput ? searchInput.value.trim() : '';
+			state.group = groupSelect ? groupSelect.value : '';
+			state.orderby = orderbySelect ? orderbySelect.value : DEFAULT_ORDERBY;
+			state.order = (orderSelect ? orderSelect.value : 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+			state.filters = {};
+			var checked = root.querySelectorAll('input[type="checkbox"][name^="tap_f["]:checked');
+			Array.prototype.forEach.call(checked, function (box) {
+				var col = filterColumnName(box.name);
+				if (!col) {
+					return;
 				}
-				state.page = 1;
-				load();
-			});
-		});
-
-		// Com JS, os <select> de ordenação vão via REST (o servidor os renderiza
-		// com onchange="this.form.submit()" para o fallback sem JS).
-		if (orderbySelect) {
-			orderbySelect.removeAttribute('onchange');
-			orderbySelect.addEventListener('change', function () {
-				state.orderby = orderbySelect.value;
-				state.page = 1;
-				load();
+				if (!state.filters[col]) {
+					state.filters[col] = [];
+				}
+				state.filters[col].push(box.value);
 			});
 		}
-		if (orderSelect) {
-			orderSelect.removeAttribute('onchange');
-			orderSelect.addEventListener('change', function () {
-				state.order = orderSelect.value.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
-				state.page = 1;
-				load();
-			});
-		}
+		readFields();
 
 		// Ao trocar o agrupamento, as colunas ordenáveis mudam: repopula o
 		// <select> "Ordenado por:" a partir de data-sort-columns e descarta uma
-		// seleção que não exista no novo modo.
+		// seleção que não exista no novo modo. Só mexe nas <option> — não busca.
 		function syncOrderbyOptions() {
 			if (!orderbySelect) {
 				return;
@@ -172,6 +223,23 @@
 			});
 		}
 
+		// Mantém as <option> de "Ordenado por:" coerentes com o agrupamento
+		// escolhido (troca visual apenas, sem consultar a tabela).
+		if (groupSelect) {
+			groupSelect.addEventListener('change', function () {
+				state.group = groupSelect.value;
+				syncOrderbyOptions();
+			});
+		}
+
+		// Acabamentos de JS nos filtros (busca interna + contador); o
+		// funcionamento base (abrir/marcar/desmarcar) já é nativo do <details>.
+		Array.prototype.forEach.call(
+			root.querySelectorAll('.teatro-apresentacoes__filter-field'),
+			enhanceFilterField
+		);
+		closeFilterFieldsOutside(root);
+
 		function requestHeaders() {
 			var headers = { Accept: 'application/json' };
 			if (cfg.nonce) {
@@ -180,12 +248,15 @@
 			return headers;
 		}
 
+		// Vários valores por coluna são combinados em OR pelo backend
+		// (`col IN (...)`) — cada um vira sua própria entrada `filters[col][]`.
 		function applyFilterParams(url) {
 			Object.keys(state.filters).forEach(function (col) {
-				var value = state.filters[col];
-				if (value !== null && value !== undefined && value !== '') {
-					url.searchParams.set('filters[' + col + ']', value);
-				}
+				(state.filters[col] || []).forEach(function (value) {
+					if (value !== null && value !== undefined && value !== '') {
+						url.searchParams.append('filters[' + col + '][]', value);
+					}
+				});
 			});
 		}
 
@@ -342,6 +413,13 @@
 				return;
 			}
 			var url = new URL(window.location.href);
+			// tap_go é o marcador de "já houve submit" que o servidor lê para
+			// decidir se renderiza a tabela.
+			if (state.submitted) {
+				url.searchParams.set('tap_go', '1');
+			} else {
+				url.searchParams.delete('tap_go');
+			}
 			if (state.search) {
 				url.searchParams.set('tap_s', state.search);
 			} else {
@@ -377,9 +455,11 @@
 				url.searchParams.delete(key);
 			});
 			Object.keys(state.filters).forEach(function (col) {
-				if (state.filters[col]) {
-					url.searchParams.set('tap_f[' + col + ']', state.filters[col]);
-				}
+				(state.filters[col] || []).forEach(function (value) {
+					if (value) {
+						url.searchParams.append('tap_f[' + col + '][]', value);
+					}
+				});
 			});
 			window.history.replaceState({}, '', url.toString());
 		}
@@ -413,6 +493,7 @@
 						'<p class="teatro-apresentacoes__empty">' + escapeHtml(i18n.empty || '') + '</p>';
 					renderPagination(1);
 					if (countEl && i18n.results) {
+						countEl.hidden = false;
 						countEl.textContent = i18n.results.replace('%s', (payload.total || 0).toLocaleString());
 					}
 					syncHistory();
@@ -450,6 +531,7 @@
 					renderRows(payload.rows || []);
 					renderPagination(payload.totalPages);
 					if (countEl && i18n.results) {
+						countEl.hidden = false;
 						countEl.textContent = i18n.results.replace('%s', payload.total.toLocaleString());
 					}
 					syncHistory();
@@ -463,21 +545,13 @@
 				});
 		}
 
+		// Único ponto de disparo de busca: o submit do formulário.
 		if (form) {
 			form.addEventListener('submit', function (event) {
 				event.preventDefault();
-				state.search = searchInput ? searchInput.value.trim() : '';
-				state.group = groupSelect ? groupSelect.value : '';
+				readFields();
 				syncOrderbyOptions();
-				state.page = 1;
-				load();
-			});
-		}
-
-		if (groupSelect) {
-			groupSelect.addEventListener('change', function () {
-				state.group = groupSelect.value;
-				syncOrderbyOptions();
+				state.submitted = true;
 				state.page = 1;
 				load();
 			});

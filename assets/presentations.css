@@ -38,8 +38,7 @@
 }
 
 .teatro-apresentacoes__group-field select,
-.teatro-apresentacoes__sort-field select,
-.teatro-apresentacoes__filter-field select {
+.teatro-apresentacoes__sort-field select {
 	padding: 0.45rem 0.6rem;
 	border: 1px solid var(--paletteColor6);
 	border-radius: 4px;
@@ -47,7 +46,8 @@
 	cursor: pointer;
 }
 
-/* Filtros por coluna (um <select> por dimensão) -------------------------- */
+/* Filtros por coluna — cada um é um <details> ("caixa tipo select") com uma
+   <input type="checkbox"> por valor distinto; marcar várias filtra em OR. --- */
 
 .teatro-apresentacoes__filters {
 	display: flex;
@@ -56,13 +56,112 @@
 }
 
 .teatro-apresentacoes__filter-field {
-	display: flex;
-	flex-direction: column;
-	gap: 0.25rem;
+	position: relative;
+	flex: 0 1 auto;
 }
 
-.teatro-apresentacoes__filter-field select {
-	max-width: 100%;
+.teatro-apresentacoes__filter-field summary {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.45rem 0.6rem;
+	border: 1px solid var(--paletteColor6);
+	border-radius: 4px;
+	background: #fff;
+	cursor: pointer;
+	font-weight: 600;
+	list-style: none;
+	user-select: none;
+}
+
+.teatro-apresentacoes__filter-field summary::-webkit-details-marker {
+	display: none;
+}
+
+.teatro-apresentacoes__filter-field summary::after {
+	content: '▾';
+	margin-inline-start: auto;
+	font-size: 0.75em;
+	color: #50575e;
+}
+
+.teatro-apresentacoes__filter-field[open] > summary::after {
+	content: '▴';
+}
+
+.teatro-apresentacoes__filter-field[open] > summary {
+	border-color: var(--paletteColor1);
+}
+
+.teatro-apresentacoes__filter-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.4em;
+	padding: 0 0.3em;
+	border-radius: 999px;
+	background: var(--paletteColor1);
+	color: #fff;
+	font-size: 0.75em;
+	font-weight: 700;
+}
+
+.teatro-apresentacoes__filter-panel {
+	position: absolute;
+	z-index: 20;
+	top: calc(100% + 2px);
+	inset-inline-start: 0;
+	min-width: 14rem;
+	max-width: 22rem;
+	padding: 0.5rem;
+	background: #fff;
+	border: 1px solid var(--paletteColor6);
+	border-radius: 4px;
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.teatro-apresentacoes__filter-field--searchable .teatro-apresentacoes__filter-panel {
+	min-width: 18rem;
+}
+
+.teatro-apresentacoes__filter-search {
+	width: 100%;
+	margin-bottom: 0.4rem;
+	padding: 0.4rem 0.6rem;
+	border: 1px solid var(--paletteColor6);
+	border-radius: 4px;
+}
+
+.teatro-apresentacoes__filter-options {
+	max-height: 16rem;
+	overflow-y: auto;
+}
+
+.teatro-apresentacoes__filter-option {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.3rem 0.4rem;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.teatro-apresentacoes__filter-option:hover {
+	background: var(--tap-stripe);
+}
+
+.teatro-apresentacoes__filter-option input[type="checkbox"] {
+	flex-shrink: 0;
+}
+
+/* Estado inicial, antes do primeiro "Buscar" --------------------------- */
+
+.teatro-apresentacoes__prompt {
+	margin: 1rem 0;
+	padding: 1rem;
+	background: var(--paletteColor8, #f2f2f2);
+	border-radius: 4px;
+	color: #50575e;
 }
 
 .teatro-apresentacoes__search input[type="search"] {
@@ -73,13 +172,18 @@
 	border-radius: 4px;
 }
 
+.teatro-apresentacoes__submit-field {
+	margin-top: 0.4rem;
+}
+
 .teatro-apresentacoes__search button {
-	padding: 0.45rem 1rem;
+	padding: 0.5rem 1.5rem;
 	border: 0;
 	border-radius: 4px;
 	background: var(--paletteColor1);
 	color: #fff;
 	cursor: pointer;
+	font-weight: 600;
 }
 
 .teatro-apresentacoes__search button:hover {
@@ -225,9 +329,13 @@
 		gap: 0.6rem;
 	}
 
-	.teatro-apresentacoes__filter-field,
-	.teatro-apresentacoes__filter-field select {
+	.teatro-apresentacoes__filter-field {
 		width: 100%;
+	}
+
+	.teatro-apresentacoes__filter-panel {
+		inset-inline-end: 0;
+		max-width: none;
 	}
 
 	.teatro-apresentacoes__table thead {

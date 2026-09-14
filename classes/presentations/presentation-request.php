@@ -18,11 +18,12 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 final class PresentationsRequest
 {
-    const QV_SEARCH  = 'tap_s';
-    const QV_PAGED   = 'tap_paged';
-    const QV_GROUP   = 'tap_group';
-    const QV_ORDERBY = 'tap_orderby';
-    const QV_ORDER   = 'tap_order';
+    const QV_SEARCH    = 'tap_s';
+    const QV_PAGED     = 'tap_paged';
+    const QV_GROUP     = 'tap_group';
+    const QV_ORDERBY   = 'tap_orderby';
+    const QV_ORDER     = 'tap_order';
+    const QV_SUBMITTED = 'tap_go';
 
     /** @var array<string,mixed> */
     private $get;
@@ -41,6 +42,16 @@ final class PresentationsRequest
 
     public function has_request_search(): bool {
         return isset( $this->get[ self::QV_SEARCH ] );
+    }
+
+    /**
+     * O visitante já submeteu o formulário ao menos uma vez? Enquanto for `false`,
+     * o shortcode não consulta o banco — a tabela só carrega a partir do 1º submit.
+     * O `<form>` sempre inclui um `<input type="hidden" name="tap_go" value="1">`,
+     * então qualquer submit (botão ou programático) traz o marcador.
+     */
+    public function has_submitted(): bool {
+        return isset( $this->get[ self::QV_SUBMITTED ] );
     }
 
     /**

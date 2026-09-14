@@ -108,13 +108,14 @@ class PresentationsShortcode implements Module
                 'columnLabels' => PresentationsSchema::labels(),
                 'filterKeys'   => array_keys( PresentationsSchema::facetable_columns() ),
                 'i18n'         => [
-                    'loading' => __( 'Carregando…', 'customizations-teatromusicadosp' ),
-                    'empty'   => __( 'Nenhuma apresentação encontrada.', 'customizations-teatromusicadosp' ),
-                    'error'   => __( 'Não foi possível carregar as apresentações.', 'customizations-teatromusicadosp' ),
-                    'prev'    => __( 'Anterior', 'customizations-teatromusicadosp' ),
-                    'next'    => __( 'Próxima', 'customizations-teatromusicadosp' ),
+                    'loading'         => __( 'Carregando…', 'customizations-teatromusicadosp' ),
+                    'empty'           => __( 'Nenhuma apresentação encontrada.', 'customizations-teatromusicadosp' ),
+                    'error'           => __( 'Não foi possível carregar as apresentações.', 'customizations-teatromusicadosp' ),
+                    'prompt'          => __( 'Use os filtros acima e clique em Buscar para listar as apresentações.', 'customizations-teatromusicadosp' ),
+                    'prev'            => __( 'Anterior', 'customizations-teatromusicadosp' ),
+                    'next'            => __( 'Próxima', 'customizations-teatromusicadosp' ),
                     /* translators: 1: total de resultados. */
-                    'results' => __( '%s apresentação(ões)', 'customizations-teatromusicadosp' ),
+                    'results'         => __( '%s apresentação(ões)', 'customizations-teatromusicadosp' ),
                 ],
             ]
         );
@@ -149,10 +150,18 @@ class PresentationsShortcode implements Module
         $filters    = $request->filters();
         $group      = $request->group();
         $is_grouped = '' !== $group;
+        $submitted  = $request->has_submitted();
 
         $this->enqueue_assets();
 
-        if ( $is_grouped ) {
+        $rows        = [];
+        $total       = 0;
+        $total_pages = 0;
+        $table_html  = '';
+
+        // Sem primeiro carregamento: a tabela só consulta o banco depois do 1º
+        // submit do formulário (marcador `tap_go`).
+        if ( $submitted && $is_grouped ) {
             $mode        = GroupingModes::get( $group );
             $rows        = PresentationsRepository::get_instance()->query_all_presentations(
                 [
@@ -172,7 +181,7 @@ class PresentationsShortcode implements Module
                 ),
                 $mode
             );
-        } else {
+        } elseif ( $submitted ) {
             $page = $this->fetch_page( $request, $filters );
 
             if ( $page['error'] ) {
@@ -205,6 +214,7 @@ class PresentationsShortcode implements Module
         return ( new ResultsViewRenderer( $this->rest_endpoint_url(), $page_url ) )->render(
             [
                 'is_grouped'         => $is_grouped,
+                'submitted'          => $submitted,
                 'rows'               => $rows,
                 'total'              => $total,
                 'total_pages'        => $total_pages,

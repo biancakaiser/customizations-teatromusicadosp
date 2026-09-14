@@ -35,7 +35,8 @@ class PresentationsRepository implements Module
 
     /** Opção que guarda a versão do schema/seed já aplicada. */
     const SCHEMA_OPTION  = 'teatromusicadosp_presentations_schema';
-    const SCHEMA_VERSION = '1.0.0';
+    // 1.1.0: índices em playName / companyName (filtro por igualdade + autocomplete).
+    const SCHEMA_VERSION = '1.1.0';
 
     /**
      * As colunas da "tabela nova" agora vivem em
@@ -320,19 +321,13 @@ class PresentationsRepository implements Module
             ],
             'filters' => [
                 'default'           => [],
+                // Cada coluna aceita um valor único ou uma lista (várias caixas
+                // marcadas, combinadas em OR) — a whitelist e a normalização
+                // "de verdade" ficam em `PresentationFilters::from_array()`,
+                // chamado logo em seguida por `from_rest_request()`. Aqui só
+                // garantimos a forma (array) do parâmetro.
                 'sanitize_callback' => static function ( $value ) {
-                    if ( ! is_array( $value ) ) {
-                        return [];
-                    }
-                    $out = [];
-                    foreach ( $value as $key => $raw ) {
-                        $column = PresentationsSchema::column( (string) $key );
-                        if ( null === $column || ! $column->facetable ) {
-                            continue;
-                        }
-                        $out[ (string) $key ] = $column->normalize_filter_value( $raw );
-                    }
-                    return $out;
+                    return is_array( $value ) ? $value : [];
                 },
             ],
         ];

@@ -113,6 +113,20 @@ final class PresentationsSchema
     }
 
     /**
+     * Colunas facetáveis na ordem de exibição do formulário de filtros: primeiro
+     * as com busca interna (`searchable`), depois as demais.
+     *
+     * @return array<string,PresentationColumn>
+     */
+    public static function filter_columns_ordered(): array {
+        $facetable  = self::facetable_columns();
+        $searchable = array_filter( $facetable, static fn( PresentationColumn $c ): bool => $c->searchable );
+        $plain      = array_filter( $facetable, static fn( PresentationColumn $c ): bool => ! $c->searchable );
+
+        return $searchable + $plain;
+    }
+
+    /**
      * @return list<string>
      */
     public static function indexed_keys(): array {
@@ -146,18 +160,18 @@ final class PresentationsSchema
         $i = PresentationColumn::TYPE_INT;
         $d = PresentationColumn::TYPE_DATE;
 
-        // key, label, type, indexed, filterable, facetable, flat_label, flat_order
+        // key, label, type, indexed, filterable, facetable, flat_label, flat_order, searchable
         $defs = [
             [ 'presentationDate',   'Data da apresentação',        $d, false, false, false, 'Data',                        1 ],
             [ 'sessionsNumber',     'Nº de sessões',               $i, false, false, false, 'Nº de Sessões',               10 ],
             [ 'settingYear',        'Ano da temporada',            $i, true,  true,  true,  null,                          0 ],
             [ 'settingLanguage',    'Idioma da temporada',         $s, false, true,  true,  null,                          0 ],
             [ 'settingKind',        'Tipo de temporada',           $s, false, true,  true,  'Tipo de Espetáculo',          9 ],
-            [ 'playName',           'Peça',                        $s, false, false, false, 'Título da Peça',              4 ],
+            [ 'playName',           'Peça',                        $s, true,  true,  true,  'Título da Peça',              4, true ],
             [ 'genre',              'Gênero',                      $s, false, true,  true,  'Gênero',                      5 ],
             [ 'playLanguage',       'Idioma da peça',              $s, false, true,  true,  'Idioma',                      7 ],
             [ 'playNationality',    'Nacionalidade da peça',       $s, false, true,  true,  'Nacionalidade',               6 ],
-            [ 'companyName',        'Companhia',                   $s, false, false, false, 'Nome da Companhia',           2 ],
+            [ 'companyName',        'Companhia',                   $s, true,  true,  true,  'Nome da Companhia',           2, true ],
             [ 'companyNationality', 'Nacionalidade da companhia',  $s, false, true,  true,  'Nacionalidade da Companhia',  3 ],
             [ 'theaterName',        'Teatro',                      $s, true,  true,  true,  'Teatro',                      8 ],
         ];
@@ -165,7 +179,7 @@ final class PresentationsSchema
         $columns = [];
         foreach ( $defs as $def ) {
             $columns[ $def[0] ] = new PresentationColumn(
-                $def[0], $def[1], $def[2], $def[3], $def[4], $def[5], $def[6], $def[7]
+                $def[0], $def[1], $def[2], $def[3], $def[4], $def[5], $def[6], $def[7], $def[8] ?? false
             );
         }
 
