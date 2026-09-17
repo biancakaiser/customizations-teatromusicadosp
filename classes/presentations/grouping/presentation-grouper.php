@@ -19,10 +19,21 @@
  *       ] ],
  *   ] ]
  *
- * A ordenação default é natural/alfabética em todos os níveis. Passando um
- * `$sort` (`['orderby' => <coluna>, 'order' => 'ASC'|'DESC']`), o nível a que a
- * coluna pertence (faixa de 1º nível, bloco de identidade de 2º nível ou linha
- * folha) passa a ser ordenado por ela; os demais níveis mantêm o default.
+ * A ordenação default (sem `$sort`) é natural/alfabética em todos os níveis.
+ * Passando um `$sort` (`['orderby' => <coluna>, 'order' => 'ASC'|'DESC']`):
+ *   - se a coluna pertence à faixa de 1º nível ou ao bloco de identidade de
+ *     2º nível, esse nível é ordenado por ela (os demais mantêm o default);
+ *   - se a coluna é de linha-folha (`LEAF_FIELDS`), as faixas de 1º e 2º nível
+ *     NÃO são reordenadas por um comparator próprio — elas mantêm a ordem de
+ *     inserção da árvore, que é construída a partir de `$rows` na ordem em
+ *     que chegam. Isso só produz a ordenação correta dos grupos porque os dois
+ *     chamadores (`PresentationsShortcode::render()` e
+ *     `PresentationsRepository::rest_get_presentations_grouped()`) sempre
+ *     buscam `$rows` via `query_all_presentations()` com um `ORDER BY` SQL no
+ *     mesmo `orderby`/`order` aqui recebido — logo a 1ª linha de cada grupo
+ *     encontrada na iteração já é o valor mínimo (ASC) ou máximo (DESC) do
+ *     grupo para essa coluna. Se `build()` passar a ser chamado com `$rows`
+ *     fora dessa ordem, esse comportamento quebra silenciosamente.
  */
 
 namespace TeatroMusicadoSP\Customizations\Presentations\Grouping;
@@ -114,17 +125,19 @@ final class PresentationGrouper
         // Nível 1 (faixas do grupo).
         if ( 'l1' === $level ) {
             uasort( $tree, $this->l1_comparator( $orderby, $mode, $dir ) );
-        } else {
+        } elseif ( '' === $level ) {
             uksort( $tree, static fn( $a, $b ): int => strnatcasecmp( (string) $a, (string) $b ) );
         }
+        // 'leaf': mantém a ordem de inserção, já ordenada pelo ORDER BY da consulta (ver docblock da classe).
 
         foreach ( $tree as &$l1 ) {
             // Nível 2 (blocos de identidade).
             if ( 'l2' === $level ) {
                 uasort( $l1['l2'], $this->l2_comparator( $orderby, $mode, $dir ) );
-            } else {
+            } elseif ( '' === $level ) {
                 uksort( $l1['l2'], static fn( $a, $b ): int => strnatcasecmp( (string) $a, (string) $b ) );
             }
+            // 'leaf': idem, mantém a ordem de inserção.
 
             foreach ( $l1['l2'] as &$l2 ) {
                 // Linhas folha.
