@@ -69,6 +69,8 @@ require_once TMSP_CUSTOMIZATIONS_PATH
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/presentations/rendering/grouped-table-renderer.php';
 require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/rendering/results-content-renderer.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/presentations/rendering/filter-form-renderer.php';
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/presentations/rendering/results-view-renderer.php';

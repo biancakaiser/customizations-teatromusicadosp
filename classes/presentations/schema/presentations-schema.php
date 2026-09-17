@@ -6,8 +6,7 @@
  * (12 colunas, autoridade do banco) e em `PresentationsShortcode::COLUMNS_FLAT`
  * (10 colunas, subconjunto de exibição). Este registry unifica as duas visões:
  *
- *   - `labels()`      reproduz exatamente o antigo `Repository::COLUMNS`
- *                     (mantém o header REST `X-TMSP-Columns` idêntico);
+ *   - `labels()`      reproduz exatamente o antigo `Repository::COLUMNS`;
  *   - `flat_columns()` reproduz exatamente o antigo `Shortcode::COLUMNS_FLAT`;
  *   - `sql_column_definitions()` gera o mesmo texto do `CREATE TABLE` de hoje.
  *
@@ -59,7 +58,7 @@ final class PresentationsSchema
      * @return array<string,string>
      */
     public static function labels(): array {
-        return array_map( static fn( PresentationColumn $c ): string => $c->label, self::columns() );
+        return array_map( static fn( PresentationColumn $c ): string => $c->full_label, self::columns() );
     }
 
     /**
@@ -77,22 +76,40 @@ final class PresentationsSchema
 
     /**
      * Mapa `coluna => rótulo` da tabela plana do shortcode, na ordem de exibição
-     * (idêntico ao antigo `Shortcode::COLUMNS_FLAT`).
+     * (idêntico ao antigo `Shortcode::COLUMNS_FLAT`). Usa o rótulo completo — os
+     * consumidores deste método são `<select>`s e outros lugares que precisam de
+     * contexto (ordenação, `data-label` das células em telas estreitas). Para o
+     * cabeçalho agrupado (curto) da tabela plana, ver `flat_column_groups()`.
      *
      * @return array<string,string>
      */
     public static function flat_columns(): array {
-        $flat = array_filter(
-            self::columns(),
-            static fn( PresentationColumn $c ): bool => null !== $c->flat_label
+        return array_map(
+            static fn( PresentationColumn $c ): string => $c->full_label,
+            self::columns()
         );
+    }
 
-        uasort(
-            $flat,
-            static fn( PresentationColumn $a, PresentationColumn $b ): int => $a->flat_order <=> $b->flat_order
-        );
+    /**
+     * Cabeçalho de 2 linhas da tabela plana, agrupado por `$group` na ordem de
+     * `columns()` (colunas do mesmo grupo já são contíguas — `$defs` é aninhado
+     * por grupo, ver `build()`). Cada grupo com mais de uma coluna vira um
+     * `<th colspan>` na 1ª linha e um `short_label` por coluna na 2ª; um grupo
+     * com uma única coluna vira um `<th rowspan="2">` sozinho, sem linha de baixo.
+     *
+     * @return array<string,array<string,array{short_label:string,full_label:string}>>
+     */
+    public static function flat_column_groups(): array {
+        $groups = [];
 
-        return array_map( static fn( PresentationColumn $c ): string => (string) $c->flat_label, $flat );
+        foreach ( self::columns() as $key => $c ) {
+            $groups[ $c->group ][ $key ] = [
+                'short_label' => $c->short_label,
+                'full_label'  => $c->full_label,
+            ];
+        }
+
+        return $groups;
     }
 
     /**
@@ -110,6 +127,15 @@ final class PresentationsSchema
     public static function is_facetable( string $key ): bool {
         $column = self::column( $key );
         return null !== $column && $column->facetable;
+    }
+
+    /**
+     * A coluna deve exibir só a sigla do valor nas tabelas de resultado
+     * (ver `PresentationColumn::$acronym` / `PresentationValue::acronym()`).
+     */
+    public static function is_acronym( string $key ): bool {
+        $column = self::column( $key );
+        return null !== $column && $column->acronym;
     }
 
     /**
@@ -160,27 +186,39 @@ final class PresentationsSchema
         $i = PresentationColumn::TYPE_INT;
         $d = PresentationColumn::TYPE_DATE;
 
-        // key, label, type, indexed, filterable, facetable, flat_label, flat_order, searchable
+        // Aninhado por grupo: a chave externa é o `$group` exibido no cabeçalho da
+        // tabela plana (colspan comum a todas as colunas dentro dela) e a ordem de
+        // inserção — dos grupos entre si e das colunas dentro de cada grupo — é a
+        // própria ordem de exibição. Não existe campo de ordenação numérica: mover
+        // uma linha ou um bloco inteiro aqui já move a coluna/grupo na tabela.
+        //
+        // Cada coluna: key => [ full_label, short_label, type, indexed, filterable, facetable, searchable, acronym ]
         $defs = [
-            [ 'presentationDate',   'Data da apresentação',        $d, false, false, false, 'Data',                        1 ],
-            [ 'sessionsNumber',     'Nº de sessões',               $i, false, false, false, 'Nº de Sessões',               10 ],
-            [ 'settingYear',        'Ano da temporada',            $i, true,  true,  true,  null,                          0 ],
-            [ 'settingLanguage',    'Idioma da temporada',         $s, false, true,  true,  null,                          0 ],
-            [ 'settingKind',        'Tipo de temporada',           $s, false, true,  true,  'Tipo de Espetáculo',          9 ],
-            [ 'playName',           'Peça',                        $s, true,  true,  true,  'Título da Peça',              4, true ],
-            [ 'genre',              'Gênero',                      $s, false, true,  true,  'Gênero',                      5 ],
-            [ 'playLanguage',       'Idioma da peça',              $s, false, true,  true,  'Idioma',                      7 ],
-            [ 'playNationality',    'Nacionalidade da peça',       $s, false, true,  true,  'Nacionalidade',               6 ],
-            [ 'companyName',        'Companhia',                   $s, true,  true,  true,  'Nome da Companhia',           2, true ],
-            [ 'companyNationality', 'Nacionalidade da companhia',  $s, false, true,  true,  'Nacionalidade da Companhia',  3 ],
-            [ 'theaterName',        'Teatro',                      $s, true,  true,  true,  'Teatro',                      8 ],
+            'Peça' => [
+                'playName'        => [ 'Título da Peça', 'Peça', $s, true, true, true, true ],
+                'playGenre'       => [ 'Gênero da Peça', 'Gênero', $s, false, true, true ],
+                'playNationality' => [ 'Nacionalidade da Peça', 'Nacionalidade', $s, false, true, true, false, true ],
+            ],
+            'Companhia' => [
+                'companyName'        => [ 'Nome da Companhia', 'Companhia', $s, true, true, true, true ],
+                'companyNationality' => [ 'Nacionalidade da Companhia', 'Nacionalidade', $s, false, true, true, false, true ],
+            ],
+            'Espetáculo' => [
+                'presentationTheater'   => [ 'Teatro', 'Teatro', $s, true, true, true ],
+                'presentationKind'      => [ 'Tipo de Espetáculo', 'Tipo', $s, false, true, true ],
+                'presentationLanguage'  => [ 'Idioma do Espetáculo', 'Idioma', $s, false, true, true, false, true ],
+                'presentationDate'      => [ 'Data da apresentação', 'Data', $d, false, false, false ],
+                'presentationSessionsN' => [ 'Nº de Sessões', 'Nº de Sessões', $i, false, false, false ],
+            ],
         ];
 
         $columns = [];
-        foreach ( $defs as $def ) {
-            $columns[ $def[0] ] = new PresentationColumn(
-                $def[0], $def[1], $def[2], $def[3], $def[4], $def[5], $def[6], $def[7], $def[8] ?? false
-            );
+        foreach ( $defs as $group => $group_defs ) {
+            foreach ( $group_defs as $key => $def ) {
+                $columns[ $key ] = new PresentationColumn(
+                    $key, $def[0], $def[1], $group, $def[2], $def[3] ?? false, $def[4] ?? false, $def[5] ?? false, $def[6] ?? false, $def[7] ?? false
+                );
+            }
         }
 
         return $columns;

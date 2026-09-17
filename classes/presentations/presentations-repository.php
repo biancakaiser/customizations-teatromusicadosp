@@ -19,7 +19,7 @@ use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilterClau
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingMode;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingModes;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\PresentationGrouper;
-use TeatroMusicadoSP\Customizations\Presentations\Rendering\GroupedTableRenderer;
+use TeatroMusicadoSP\Customizations\Presentations\Rendering\ResultsContentRenderer;
 
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
@@ -36,7 +36,14 @@ class PresentationsRepository implements Module
     /** Opção que guarda a versão do schema/seed já aplicada. */
     const SCHEMA_OPTION  = 'teatromusicadosp_presentations_schema';
     // 1.1.0: índices em playName / companyName (filtro por igualdade + autocomplete).
-    const SCHEMA_VERSION = '1.1.0';
+    // 1.2.0: renomeia settingYear/settingLanguage/settingKind/sessionsNumber/
+    //        theaterName/genre (ver PresentationsSchema::build()).
+    // 1.3.0: remove playLanguage (idioma só existe em Espetáculo) e
+    //        presentationYear (duplicava o ano já contido em presentationDate;
+    //        "Ano" continua existindo só como derivado no agrupamento — ver
+    //        PresentationGrouper::LEAF_FIELDS). O filtro por ano vira filtro por
+    //        intervalo de datas (PresentationFilters::DATE_FROM/DATE_TO).
+    const SCHEMA_VERSION = '1.3.0';
 
     /**
      * As colunas da "tabela nova" agora vivem em
@@ -118,6 +125,13 @@ class PresentationsRepository implements Module
 
         $table           = self::table_name();
         $charset_collate = $wpdb->get_charset_collate();
+
+        // dbDelta só adiciona colunas/índices novos — nunca renomeia nem remove os
+        // antigos. Como esta tabela é inteiramente reproduzível a partir do CSV
+        // (ver seed_from_csv()), o caminho mais simples e seguro numa mudança de
+        // schema (coluna renomeada/removida) é recriar a tabela do zero.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
 
         $column_defs = PresentationsSchema::sql_column_definitions();
 
@@ -315,9 +329,16 @@ class PresentationsRepository implements Module
                 'default'           => '',
                 'sanitize_callback' => 'sanitize_text_field',
             ],
-            'year' => [
-                'default'           => 0,
-                'sanitize_callback' => 'absint',
+            // Intervalo de datas ('YYYY-MM-DD') sobre PresentationFilters::DATE_COLUMN
+            // (presentationDate) — a validação "de verdade" (formato + calendário)
+            // fica em PresentationFilters::from_array(); aqui só sanitiza texto.
+            'date_from' => [
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
+            ],
+            'date_to' => [
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
             ],
             'filters' => [
                 'default'           => [],
@@ -335,8 +356,9 @@ class PresentationsRepository implements Module
 
     /**
      * Callback da rota agrupada: monta a árvore (`PresentationGrouper`) e devolve
-     * o HTML da tabela já pronto (`GroupedTableRenderer`), evitando que o cliente
-     * precise reimplementar o algoritmo de agrupamento.
+     * o HTML da tabela já pronto (`ResultsContentRenderer::grouped()`), evitando
+     * que o cliente precise reimplementar o algoritmo de agrupamento ou a
+     * decisão de "sem resultados".
      */
     public function rest_get_presentations_grouped( \WP_REST_Request $request ): \WP_REST_Response {
         $mode = GroupingModes::get( (string) $request['group'] );
@@ -355,14 +377,12 @@ class PresentationsRepository implements Module
                 'orderby' => $orderby,
                 'order'   => $order,
                 'search'  => trim( (string) $request['search'] ),
-                'filters' => PresentationFilters::from_rest_request( $request )->values(),
+                'filters' => PresentationFilters::from_rest_request( $request ),
             ]
         );
 
-        $html = ( new GroupedTableRenderer() )->render(
-            ( new PresentationGrouper() )->build( $rows, $mode, [ 'orderby' => $orderby, 'order' => $order ] ),
-            $mode
-        );
+        $tree = ( new PresentationGrouper() )->build( $rows, $mode, [ 'orderby' => $orderby, 'order' => $order ] );
+        $html = ResultsContentRenderer::grouped( $rows, $tree, $mode );
 
         $response = new \WP_REST_Response(
             [
@@ -380,7 +400,8 @@ class PresentationsRepository implements Module
     }
 
     /**
-     * Callback da rota: consulta o wpdb e devolve as linhas paginadas.
+     * Callback da rota: consulta o wpdb e devolve a tabela plana já pronta
+     * (`ResultsContentRenderer::flat()`) — o cliente só troca `innerHTML`.
      */
     public function rest_get_presentations( \WP_REST_Request $request ): \WP_REST_Response {
         $per_page = min( 200, max( 1, (int) $request['per_page'] ) );
@@ -391,15 +412,20 @@ class PresentationsRepository implements Module
             'orderby'  => (string) $request['orderby'],
             'order'    => strtoupper( (string) $request['order'] ) === 'DESC' ? 'DESC' : 'ASC',
             'search'   => trim( (string) $request['search'] ),
-            'filters'  => PresentationFilters::from_rest_request( $request )->values(),
+            'filters'  => PresentationFilters::from_rest_request( $request ),
         ];
 
-        $result = $this->query_presentations( $args );
+        $result      = $this->query_presentations( $args );
+        $total_pages = $per_page > 0 ? (int) ceil( $result['total'] / $per_page ) : 1;
 
-        $response = new \WP_REST_Response( $result['data'], 200 );
-        $response->header( 'X-WP-Total', (string) $result['total'] );
-        $response->header( 'X-WP-TotalPages', (string) ( $per_page > 0 ? (int) ceil( $result['total'] / $per_page ) : 1 ) );
-        $response->header( 'X-TMSP-Columns', wp_json_encode( PresentationsSchema::labels() ) );
+        $response = new \WP_REST_Response(
+            [
+                'html'        => ResultsContentRenderer::flat( $result['data'] ),
+                'total'       => $result['total'],
+                'total_pages' => $total_pages,
+            ],
+            200
+        );
 
         // Catálogo estático: pode ser cacheado por proxies/CDN para visitantes
         // anônimos. Usuários logados recebem a resposta sem cache.
@@ -414,7 +440,7 @@ class PresentationsRepository implements Module
      * Consulta paginada da tabela, com cache curto em transient (o seed é
      * estático; a chave inclui a versão do schema, então um re-seed invalida).
      *
-     * @param array $args page, per_page, orderby, order, search, theater, year
+     * @param array $args page, per_page, orderby, order, search, filters (um `PresentationFilters` já pronto)
      * @return array{data:array<int,array<string,mixed>>,total:int}
      */
     public function query_presentations( array $args ): array {
@@ -428,9 +454,7 @@ class PresentationsRepository implements Module
                 'orderby'  => 'presentationDate',
                 'order'    => 'ASC',
                 'search'   => '',
-                'theater'  => '',
-                'year'     => 0,
-                'filters'  => [],
+                'filters'  => null,
             ]
         );
 
@@ -441,16 +465,9 @@ class PresentationsRepository implements Module
         $offset   = ( $page - 1 ) * $per_page;
         $search   = trim( (string) $args['search'] );
 
-        // Filtros legados (`theater`/`year`) formam a base; `filters` explícito vence.
-        $filters = PresentationFilters::from_array(
-            array_merge(
-                [
-                    'theaterName' => (string) $args['theater'],
-                    'settingYear' => (int) $args['year'],
-                ],
-                (array) $args['filters']
-            )
-        );
+        $filters = $args['filters'] instanceof PresentationFilters
+            ? $args['filters']
+            : PresentationFilters::from_array( [] );
 
         $cache_key = 'tmsp_pres_' . md5(
             self::SCHEMA_VERSION . '|' . wp_json_encode(
@@ -499,7 +516,7 @@ class PresentationsRepository implements Module
      * 10 mil linhas (mesmo limite que a antiga varredura página a página do
      * shortcode aplicava: 200 × 50).
      *
-     * @param array $args orderby, order, search, filters
+     * @param array $args orderby, order, search, filters (um `PresentationFilters` já pronto)
      * @return array<int,array<string,mixed>>
      */
     public function query_all_presentations( array $args ): array {
@@ -511,14 +528,16 @@ class PresentationsRepository implements Module
                 'orderby' => 'presentationDate',
                 'order'   => 'ASC',
                 'search'  => '',
-                'filters' => [],
+                'filters' => null,
             ]
         );
 
         $orderby  = PresentationsSchema::is_orderable( (string) $args['orderby'] ) ? (string) $args['orderby'] : 'presentationDate';
         $order    = 'DESC' === strtoupper( (string) $args['order'] ) ? 'DESC' : 'ASC';
         $search   = trim( (string) $args['search'] );
-        $filters  = PresentationFilters::from_array( (array) $args['filters'] );
+        $filters  = $args['filters'] instanceof PresentationFilters
+            ? $args['filters']
+            : PresentationFilters::from_array( [] );
         $max_rows = 10000;
 
         $cache_key = 'tmsp_pres_all_' . md5(
@@ -560,9 +579,8 @@ class PresentationsRepository implements Module
      * @return array<string,mixed>
      */
     private static function map_row( array $row ): array {
-        $row['id']             = (int) $row['id'];
-        $row['sessionsNumber'] = ( null === $row['sessionsNumber'] ) ? null : (int) $row['sessionsNumber'];
-        $row['settingYear']    = ( null === $row['settingYear'] ) ? null : (int) $row['settingYear'];
+        $row['id']                    = (int) $row['id'];
+        $row['presentationSessionsN'] = ( null === $row['presentationSessionsN'] ) ? null : (int) $row['presentationSessionsN'];
         return $row;
     }
 

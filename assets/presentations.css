@@ -24,17 +24,31 @@
 	margin-bottom: 1rem;
 }
 
-.teatro-apresentacoes__search-field,
+.teatro-apresentacoes__search-field {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	grid-area: busca;
+}
+
 .teatro-apresentacoes__group-field,
 .teatro-apresentacoes__sort-field {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: center;
+	align-items: end;
 	gap: 0.5rem;
+}
+
+.teatro-apresentacoes__sort-field {
+	width: fit-content;
 }
 
 .teatro-apresentacoes__search-label {
 	font-weight: 600;
+}
+
+.teatro-apresentacoes__section-row .teatro-apresentacoes__search-label {
+	margin: 0;
 }
 
 .teatro-apresentacoes__group-field select,
@@ -44,6 +58,67 @@
 	border-radius: 4px;
 	background: #fff;
 	cursor: pointer;
+	width: fit-content;
+    font-size: 14px;
+    height: auto;
+    padding: 2px 12px;
+    font-weight: 500;
+}
+
+/* Seções com borda e título ("Controles de Visualização" / "Filtros
+   Avançados") agrupando os campos já existentes — puramente visual. */
+
+.teatro-apresentacoes__section {
+	border: 1px solid var(--paletteColor6);
+	border-radius: 6px;
+	padding: 1rem 1.2rem;
+}
+
+.teatro-apresentacoes__section--filters {
+	background: #fff;
+}
+
+.teatro-apresentacoes__section--controls {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	grid-template-areas:
+		"busca   datas"
+		"agrupado agrupado";
+	gap: 1rem 0.8rem;
+}
+
+.teatro-apresentacoes__section-title {
+	margin: 0 0 0.75rem;
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.teatro-apresentacoes__section-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem 1.5rem;
+	grid-area: agrupado;
+}
+
+.teatro-apresentacoes__date-range-field {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem 1rem;
+	grid-area: datas;
+}
+
+.teatro-apresentacoes__date-range-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.teatro-apresentacoes__date-range-item input[type='date'] {
+	padding: 0.45rem 0.6rem;
+	border: 1px solid var(--paletteColor6);
+	border-radius: 4px;
+	background: #fff;
 }
 
 /* Filtros por coluna — cada um é um <details> ("caixa tipo select") com uma
@@ -150,6 +225,10 @@
 	background: var(--tap-stripe);
 }
 
+.teatro-apresentacoes__filter-option[hidden] {
+	display: none;
+}
+
 .teatro-apresentacoes__filter-option input[type="checkbox"] {
 	flex-shrink: 0;
 }
@@ -170,24 +249,47 @@
 	padding: 0.45rem 0.6rem;
 	border: 1px solid var(--paletteColor6);
 	border-radius: 4px;
+	background: #fff;
+}
+
+.teatro-apresentacoes__search-field input[type="search"] {
+	width: 100%;
+	flex: none;
 }
 
 .teatro-apresentacoes__submit-field {
+	display: flex;
+	gap: 0.6rem;
 	margin-top: 0.4rem;
 }
 
-.teatro-apresentacoes__search button {
+.teatro-apresentacoes__button-search,
+.teatro-apresentacoes__button-clear {
 	padding: 0.5rem 1.5rem;
 	border: 0;
 	border-radius: 4px;
-	background: var(--paletteColor1);
-	color: #fff;
 	cursor: pointer;
 	font-weight: 600;
 }
 
-.teatro-apresentacoes__search button:hover {
+.teatro-apresentacoes__button-search {
+	background: var(--paletteColor1);
+	color: #fff;
+}
+
+.teatro-apresentacoes__button-search:hover {
 	filter: brightness(0.93);
+}
+
+.teatro-apresentacoes__button-clear {
+	background: transparent;
+	color: var(--paletteColor1);
+	border: 1px solid var(--paletteColor6);
+}
+
+.teatro-apresentacoes__button-clear:hover {
+	filter: none;
+	background: var(--paletteColor7, #f3f3f3);
 }
 
 /* Tabela ----------------------------------------------------------------- */
@@ -227,6 +329,14 @@
 	white-space: nowrap;
 }
 
+/* Colunas de sigla (Nacionalidade/Idioma): encolhe para a largura do
+   conteúdo em vez de dividir igualmente o espaço sobrando da tabela. */
+.teatro-apresentacoes__table th.teatro-apresentacoes__col--acronym,
+.teatro-apresentacoes__table td.teatro-apresentacoes__col--acronym {
+	width: 1%;
+	white-space: nowrap;
+}
+
 .teatro-apresentacoes__table thead th {
 	position: sticky;
 	top: 0;
@@ -259,13 +369,6 @@
 	font-weight: 700;
 	text-align: left;
 	white-space: normal;
-}
-
-/* Sem zebra nem hover nas linhas agrupadas (as células mescladas com rowspan
-   ficariam com faixas quebradas). */
-.teatro-apresentacoes__table--group tbody tr:nth-child(even),
-.teatro-apresentacoes__table--group tbody tr:hover {
-	background: transparent;
 }
 
 /* Bloco de identidade do 2º nível e "Total" (mesclados com rowspan). */
@@ -324,6 +427,10 @@
 /* Layout empilhado em telas pequenas -------------------------------------- */
 
 @media (max-width: 640px) {
+	.teatro-apresentacoes__section {
+		padding: 0.75rem;
+	}
+
 	.teatro-apresentacoes__filters {
 		flex-direction: column;
 		gap: 0.6rem;
@@ -364,6 +471,13 @@
 		white-space: normal;
 		padding-left: 42%;
 		position: relative;
+	}
+
+	/* Empilhado em cartão: a coluna de sigla volta a ocupar a linha inteira
+	   (a regra de encolher à largura do conteúdo só faz sentido em tabela). */
+	.teatro-apresentacoes__table td.teatro-apresentacoes__col--acronym {
+		width: 100%;
+		white-space: normal;
 	}
 
 	.teatro-apresentacoes__table td::before {

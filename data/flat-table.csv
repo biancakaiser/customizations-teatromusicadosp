@@ -1,223 +1,223 @@
-presentationDate,sessionsNumber,settingYear,settingLanguage,settingKind,playName,genre,playLanguage,playNationality,companyName,companyNationality,theaterName
-"1931-09-05 00:00:00",2,1319,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,Português,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
-"1931-09-06 00:00:00",3,1319,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,Português,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
-"1931-09-07 00:00:00",2,1319,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,Português,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
-"1931-09-08 00:00:00",2,1319,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,Português,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
-"1931-09-09 00:00:00",2,1319,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,Português,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
-"1931-09-10 00:00:00",2,1319,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,Português,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
-"1931-09-11 00:00:00",2,1319,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,Português,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
-"1931-09-12 00:00:00",2,1319,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,Português,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
-"1931-09-13 00:00:00",2,1319,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,Português,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
-"1931-09-14 00:00:00",2,1319,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,Português,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
-"1914-01-01 00:00:00",1,1914,Espanhol,COMPLETE,"D. Juan Tenorio","Teatro declamado",Espanhol,Espanhola,"Mercedes Tressols",Espanhola,Politeama
-"1914-01-01 00:00:00",1,1914,Português,COMPLETE,"Mártir do calvário, O","Teatro declamado",Português,Portuguesa,"Eduardo Pereira","Brasileira ",Apolo
-"1914-01-01 00:00:00",1,1914,Italiano,COMPLETE,"Diabo a quatro",Opereta,Italiano,AlemÃ£,Scognamiglio-Caramba,Italiana,Palace
-"1914-01-02 00:00:00",1,1914,Português,COMPLETE,"Mártir do calvário, O","Teatro declamado",Português,Portuguesa,"Eduardo Pereira","Brasileira ",Apolo
-"1914-01-02 00:00:00",1,1914,Espanhol,COMPLETE,"El novio de DoÃ±a Inés","Teatro declamado",Espanhol,NULL,"Mercedes Tressols",Espanhola,Politeama
-"1914-01-02 00:00:00",1,1914,Espanhol,COMPLETE,"Los cadetes de la reina",Opereta,Espanhol,Espanhola,"Mercedes Tressols",Espanhola,Politeama
-"1914-01-02 00:00:00",1,1914,Italiano,COMPLETE,Estancierita,Opereta,Italiano,Italiana,Scognamiglio-Caramba,Italiana,Palace
-"1914-01-03 00:00:00",1,1914,Espanhol,COMPLETE,"Banda de trombetas, A",Zarzuela,Espanhol,Espanhola,"Mercedes Tressols",Espanhola,Politeama
-"1914-01-03 00:00:00",1,1914,Espanhol,COMPLETE,Bohemios,Zarzuela,Espanhol,Espanhola,"Mercedes Tressols",Espanhola,Politeama
-"1914-01-03 00:00:00",1,1914,Espanhol,COMPLETE,"El novio de DoÃ±a Inés","Teatro declamado",Espanhol,NULL,"Mercedes Tressols",Espanhola,Politeama
-"1915-01-01 00:00:00",1,1915,Português,STAGE_SCREEN,"Chateau Margaux",Zarzuela,Português,Espanhola,"JoÃ£o Rodrigues","Brasileira ","SÃ£o Paulo"
-"1915-01-01 00:00:00",2,1915,Português,SESSIONS,"Tambor-mÃ³r, O",Opereta,Português,NULL,"Teatro S. José do Rio","Brasileira ",Apolo
-"1915-01-02 00:00:00",1,1915,Português,STAGE_SCREEN,"Duas gatas, As","Teatro declamado",Português,Portuguesa,"JoÃ£o Rodrigues","Brasileira ","SÃ£o Paulo"
-"1915-01-02 00:00:00",2,1915,Português,SESSIONS,"Choro na zona",Revista,Português,"Brasileira ","Teatro S. José do Rio","Brasileira ",Apolo
-"1915-01-03 00:00:00",1,1915,Português,SESSIONS,"Menina Bertha, A",Burleta,Português,"Brasileira ","Teatro S. José do Rio","Brasileira ",Apolo
-"1915-01-03 00:00:00",2,1915,Português,SESSIONS,Chuá,Revista,Português,"Brasileira ","Teatro S. José do Rio","Brasileira ",Apolo
-"1915-01-03 00:00:00",1,1915,Português,STAGE_SCREEN,"Na ponta da faca",Revista,Português,"Brasileira ","JoÃ£o Rodrigues","Brasileira ","SÃ£o Paulo"
-"1915-01-03 00:00:00",1,1915,Português,STAGE_SCREEN,"Capital Federal, A",Burleta,Português,"Brasileira ","JoÃ£o Rodrigues","Brasileira ","SÃ£o Paulo"
-"1915-01-04 00:00:00",2,1915,Português,SESSIONS,"Em pé de guerra","Vaudeville musicado",Português,NULL,"Teatro S. José do Rio","Brasileira ",Apolo
-"1915-01-04 00:00:00",1,1915,Português,STAGE_SCREEN,"Festa em Guabiroba, Uma",Burleta,Português,"Brasileira ","JoÃ£o Rodrigues","Brasileira ","SÃ£o Paulo"
-"1916-01-01 00:00:00",1,1916,Português,COMPLETE,"O 31",Revista,Português,Portuguesa,Galhardo-Palmyra,Portuguesa,Apolo
-"1916-01-02 00:00:00",2,1916,Português,COMPLETE,"O 31",Revista,Português,Portuguesa,Galhardo-Palmyra,Portuguesa,Apolo
-"1916-01-03 00:00:00",1,1916,Português,COMPLETE,"Esposo feliz",Opereta,Português,Austríca,Galhardo-Palmyra,Portuguesa,Apolo
-"1916-01-04 00:00:00",1,1916,Português,COMPLETE,"O 31",Revista,Português,Portuguesa,Galhardo-Palmyra,Portuguesa,Apolo
-"1916-01-05 00:00:00",1,1916,Português,COMPLETE,"Homem das mangas, O",Opereta,Português,AlemÃ£,Galhardo-Palmyra,Portuguesa,Apolo
-"1916-01-06 00:00:00",1,1916,Português,COMPLETE,"Maridos alegres",Opereta,Português,Austríca,Galhardo-Palmyra,Portuguesa,Apolo
-"1916-01-06 00:00:00",1,1916,Português,COMPLETE,"Sonho de Valsa",Opereta,Português,Austríca,Galhardo-Palmyra,Portuguesa,Apolo
-"1916-01-07 00:00:00",1,1916,Português,COMPLETE,Susi,Opereta,Italiano,HÃºngara,Galhardo-Palmyra,Portuguesa,Apolo
-"1916-01-08 00:00:00",1,1916,Português,COMPLETE,"Esposo feliz",Opereta,Português,Austríca,Galhardo-Palmyra,Portuguesa,Apolo
-"1916-01-09 00:00:00",1,1916,Português,COMPLETE,"Princesa dos dollars, A",Opereta,Espanhol,Austríca,Galhardo-Palmyra,Portuguesa,Apolo
-"1917-01-01 00:00:00",3,1917,Português,SESSIONS,"O 31",Revista,Português,Portuguesa,"Carlos Leal",Portuguesa,Palace
-"1917-01-01 00:00:00",1,1917,Italiano,COMPLETE,"Due celebri imbroglioni","Teatro declamado",Italiano,Italiana,"CittÃ  di Napoli",Ãtalo-sul-americana,"SÃ£o José"
-"1917-01-01 00:00:00",2,1917,Português,SESSIONS,"Flores de sombra","Teatro declamado",Português,"Brasileira ","Leopoldo FrÃ³es","Brasileira ","Boa Vista"
-"1917-01-01 00:00:00",1,1917,Italiano,COMPLETE,"Casta Suzanna, A",Opereta,Espanhol,AlemÃ£,Vitale,Italiana,"Cassino Antártica"
-"1917-01-01 00:00:00",1,1917,Italiano,COMPLETE,"Sangue de artista",Opereta,Espanhol,Austríca,Vitale,Italiana,"Cassino Antártica"
-"1917-01-02 00:00:00",1,1917,Italiano,COMPLETE,"Addio giovinezza",Opereta,Italiano,Italiana,Vitale,Italiana,"Cassino Antártica"
-"1917-01-02 00:00:00",2,1917,Português,SESSIONS,"Flores de sombra","Teatro declamado",Português,"Brasileira ","Leopoldo FrÃ³es","Brasileira ","Boa Vista"
-"1917-01-02 00:00:00",1,1917,Italiano,COMPLETE,"Santa Lucia","Teatro declamado",Italiano,NULL,"CittÃ  di Napoli",Ãtalo-sul-americana,"SÃ£o José"
-"1917-01-02 00:00:00",2,1917,Português,SESSIONS,"O 31",Revista,Português,Portuguesa,"Carlos Leal",Portuguesa,Palace
-"1917-01-03 00:00:00",1,1917,Português,COMPLETE,"Boa rapariga, A","Teatro declamado",Português,Italiana,"Alexandre Azevedo","Brasileira ","SÃ£o José"
-"1918-01-01 00:00:00",1,1918,Português,SESSIONS,"Festa em Guabiroba, Uma",Burleta,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1918-01-01 00:00:00",1,1918,Português,STAGE_SCREEN,"Filha do mar, A","Teatro declamado",Português,Francesa,"Alzira LeÃ£o","Brasileira ",Colombo
-"1918-01-01 00:00:00",1,1918,Português,STAGE_SCREEN,"BarÃ£o de Cutia","Teatro declamado",Português,"Brasileira ",Carrara,"Brasileira ",Mafalda
-"1918-01-01 00:00:00",1,1918,Português,SESSIONS,"Contrabando, O",Burleta,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1918-01-01 00:00:00",1,1918,Português,COMPLETE,"Pauzinho, O",Revista,Português,"Brasileira ","Edu Carvalho","Brasileira ",Palace
-"1918-01-01 00:00:00",1,1918,Português,SESSIONS,"Sem tirar nem pÃ´r",Revista,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1918-01-01 00:00:00",1,1918,Italiano,COMPLETE,BohÃ¨me,Ãpera,Italiano,Italiana,"La Giovanissima",Italiana,"SÃ£o José"
-"1918-01-01 00:00:00",1,1918,Português,COMPLETE,"NhÃ´ Quim na Capital",Burleta,Português,NULL,"Edu Carvalho","Brasileira ",Palace
-"1918-01-01 00:00:00",1,1918,Italiano,COMPLETE,"Casta Suzanna, A",Opereta,Espanhol,AlemÃ£,"La Giovanissima",Italiana,"SÃ£o José"
-"1918-01-02 00:00:00",1,1918,Português,STAGE_SCREEN,"Filha do mar, A","Teatro declamado",Português,Francesa,"Alzira LeÃ£o","Brasileira ",Colombo
-"1919-01-01 00:00:00",2,1919,Português,SESSIONS,Blanchette,"Teatro declamado",Português,Francesa,"Adelina Abranches-Chaby Pinheiro",Portuguesa,"SÃ£o José"
-"1919-01-01 00:00:00",3,1919,Português,SESSIONS,"S. Paulo em fraldas",Revista,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1919-01-01 00:00:00",1,1919,Português,STAGE_SCREEN,"Alma caipira",Sertaneja,Português,"Brasileira ","JoÃ£o Rodrigues","Brasileira ",Brasil
-"1919-01-02 00:00:00",1,1919,Português,COMPLETE,"Garota, A","Teatro declamado",Português,Francesa,"Adelina Abranches-Chaby Pinheiro",Portuguesa,"SÃ£o José"
-"1919-01-02 00:00:00",1,1919,Português,SESSIONS,"Festa na Freguesia do Ã, Uma",Burleta,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1919-01-02 00:00:00",1,1919,Português,SESSIONS,"Cenas da roÃ§a (A sertaneja)",Sertaneja,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1919-01-02 00:00:00",1,1919,Português,STAGE_SCREEN,"Mulher soldado, A (Os vinte e oito dias de Clarinha)",Opereta,Português,Francesa,"JoÃ£o Rodrigues","Brasileira ",Brasil
-"1919-01-03 00:00:00",2,1919,Português,SESSIONS,"Nhá MoÃ§a",Burleta,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1919-01-03 00:00:00",1,1919,Português,COMPLETE,"Garota, A","Teatro declamado",Português,Francesa,"Adelina Abranches-Chaby Pinheiro",Portuguesa,"SÃ£o José"
-"1919-01-03 00:00:00",1,1919,Português,STAGE_SCREEN,"Na ponta da faca",Revista,Português,"Brasileira ","JoÃ£o Rodrigues","Brasileira ",Brasil
-"1920-01-01 00:00:00",1,1920,Português,SESSIONS,"HistÃ³ria do ano",Revista,Português,Argentina,Arruda,"Brasileira ","Boa Vista"
-"1920-01-01 00:00:00",1,1920,Português,COMPLETE,"ViÃºva alegre, A",Opereta,Italiano,Austríca,"Armando de Vasconcellos",Portuguesa,"SÃ£o José"
-"1920-01-01 00:00:00",2,1920,Português,SESSIONS,"Cenas da roÃ§a (A sertaneja)",Sertaneja,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1920-01-02 00:00:00",1,1920,Português,SESSIONS,"HistÃ³ria do ano",Revista,Português,Argentina,Arruda,"Brasileira ","Boa Vista"
-"1920-01-02 00:00:00",1,1920,Português,SESSIONS,"Cenas da roÃ§a (A sertaneja)",Sertaneja,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1920-01-02 00:00:00",1,1920,Português,COMPLETE,"Rainha do cinema",Opereta,Português,AlemÃ£,"Armando de Vasconcellos",Portuguesa,"SÃ£o José"
-"1920-01-03 00:00:00",1,1920,Português,COMPLETE,"Amor de prÃ­ncipe",Opereta,Português,Italiana,"Armando de Vasconcellos",Portuguesa,"SÃ£o José"
-"1920-01-03 00:00:00",1,1920,Português,SESSIONS,"Cenas da roÃ§a (A sertaneja)",Sertaneja,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1920-01-03 00:00:00",1,1920,Português,SESSIONS,"HistÃ³ria do ano",Revista,Português,Argentina,Arruda,"Brasileira ","Boa Vista"
-"1920-01-04 00:00:00",1,1920,Português,SESSIONS,"HistÃ³ria do ano",Revista,Português,Argentina,Arruda,"Brasileira ","Boa Vista"
-"1921-01-01 00:00:00",1,1921,Português,COMPLETE,"CalÃ§as da autoridade, As","Teatro declamado",Português,NULL,"Chaby Pinheiro",NULL,"Cassino Antártica"
-"1921-01-01 00:00:00",1,1921,Português,SESSIONS,"Flor tapuia",Sertaneja,Português,"Brasileira ",Arruda,"Brasileira ",Palace
-"1921-01-01 00:00:00",1,1921,Português,SESSIONS,"Nhá MoÃ§a",Burleta,Português,"Brasileira ",Arruda,"Brasileira ",Palace
-"1921-01-01 00:00:00",1,1921,Português,SESSIONS,"Cenas da roÃ§a (A sertaneja)",Sertaneja,Português,"Brasileira ",Arruda,"Brasileira ",Palace
-"1921-01-01 00:00:00",1,1921,Português,COMPLETE,"Café do Felisberto, O","Teatro declamado",Português,Francesa,"Leopoldo FrÃ³es","Brasileira ","Boa Vista"
-"1921-01-01 00:00:00",1,1921,Português,COMPLETE,"Simpático Jeremias, O","Teatro declamado",Português,"Brasileira ","Leopoldo FrÃ³es","Brasileira ","Boa Vista"
-"1921-01-01 00:00:00",1,1921,Português,COMPLETE,"Maluquinha de Arroios, A","Teatro declamado",Português,Portuguesa,"Chaby Pinheiro",NULL,"Cassino Antártica"
-"1921-01-02 00:00:00",1,1921,Português,COMPLETE,"SimÃ£o, SimÃµes e Comp.",Opereta,Português,NULL,"Leopoldo FrÃ³es","Brasileira ","Boa Vista"
-"1921-01-02 00:00:00",1,1921,Português,COMPLETE,"Genro de muitas sogras, O","Teatro declamado",Português,"Brasileira ","Leopoldo FrÃ³es","Brasileira ","Boa Vista"
-"1921-01-02 00:00:00",1,1921,Português,COMPLETE,"Amigo de Peniche, O","Teatro declamado",Português,Portuguesa,"Chaby Pinheiro",NULL,"Cassino Antártica"
-"1922-01-01 00:00:00",3,1922,Português,SESSIONS,"FamÃ­lia Carrapatoso, A",Burleta,Português,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
-"1922-01-01 00:00:00",2,1922,Português,COMPLETE,"Garota, A","Teatro declamado",Português,Francesa,"Aura Abranches",Portuguesa,Santana
-"1922-01-02 00:00:00",1,1922,Português,COMPLETE,"Homem da cadeirinha, O","Teatro declamado",Português,NULL,"Aura Abranches",Portuguesa,Santana
-"1922-01-03 00:00:00",1,1922,Português,COMPLETE,"Homem da cadeirinha, O","Teatro declamado",Português,NULL,"Aura Abranches",Portuguesa,Santana
-"1922-01-04 00:00:00",1,1922,Português,COMPLETE,"Grande amor, O","Teatro declamado",Português,Italiana,"Aura Abranches",Portuguesa,Santana
-"1922-01-05 00:00:00",1,1922,Português,COMPLETE,"Grande amor, O","Teatro declamado",Português,Italiana,"Aura Abranches",Portuguesa,Santana
-"1922-01-05 00:00:00",2,1922,Português,SESSIONS,"Sogra? Nem de barro",Revista,Português,"Brasileira ","Celeste Reis","Brasileira ",Palace
-"1922-01-05 00:00:00",1,1922,Italiano,COMPLETE,"Duquesa do Bal-Tabarin, A",Opereta,Italiano,Italiana,"De Angelis",Ãtalo-sul-americana,"Boa Vista"
-"1922-01-06 00:00:00",1,1922,Italiano,COMPLETE,"Ã arrivato l'accordatore","Teatro declamado",Italiano,NULL,"La Romanissima",Ãtalo-sul-americana,"Cassino Antártica"
-"1922-01-06 00:00:00",2,1922,Português,SESSIONS,"Ãltima noite, A",Opereta,Português,"Brasileira ","Celeste Reis","Brasileira ",Palace
-"1923-01-01 00:00:00",1,1923,Português,SESSIONS,"ManhÃ£s de sol","Teatro declamado",Português,"Brasileira ","Abigail Maia","Brasileira ",Apolo
-"1923-01-01 00:00:00",1,1923,Português,SESSIONS,"Ministro do supremo, O","Teatro declamado",Português,"Brasileira ","Abigail Maia","Brasileira ",Apolo
-"1923-01-01 00:00:00",1,1923,Português,STAGE_SCREEN,"Aguenta, Felippe!",Revista,Português,"Brasileira ",Arruda,"Brasileira ","Brás Politeama"
-"1923-01-01 00:00:00",1,1923,Italiano,COMPLETE,"Ãltima valsa, A",Opereta,Espanhol,Austríca,"De Angelis",Ãtalo-sul-americana,"Boa Vista"
-"1923-01-01 00:00:00",1,1923,Português,STAGE_SCREEN,"Nhá MoÃ§a",Burleta,Português,"Brasileira ","Nair Alves","Brasileira ","Olympia "
-"1923-01-01 00:00:00",1,1923,Português,STAGE_SCREEN,"O 31 paulista (II)",Revista,Português,"Brasileira ","Nair Alves","Brasileira ","Olympia "
-"1923-01-01 00:00:00",1,1923,Português,COMPLETE,"Bichinha gata","Teatro declamado",Português,Francesa,Satanella-Amarante,Portuguesa,Santana
-"1923-01-02 00:00:00",1,1923,Português,COMPLETE,"Bichinha gata","Teatro declamado",Português,Francesa,Satanella-Amarante,Portuguesa,Santana
-"1923-01-02 00:00:00",1,1923,Português,STAGE_SCREEN,"Lagarta rosada, A",Sertaneja,Português,"Brasileira ",Arruda,"Brasileira ","Brás Politeama"
-"1923-01-02 00:00:00",1,1923,Português,STAGE_SCREEN,"Nhá MoÃ§a",Burleta,Português,"Brasileira ","Nair Alves","Brasileira ","Olympia "
-"1924-01-01 00:00:00",2,1924,Português,COMPLETE,"Levianas, As","Teatro declamado",Português,"Brasileira ","Abigail Maia","Brasileira ",Santana
-"1924-01-01 00:00:00",1,1924,Italiano,COMPLETE,"Camponês alegre, O",Opereta,Italiano,Austríca,"Clara Weiss",Ãtalo-sul-americana,"Cassino Antártica"
-"1924-01-01 00:00:00",1,1924,Português,STAGE_SCREEN,"Aguenta, Felippe!",Revista,Português,"Brasileira ",Arruda,"Brasileira ","Brás Politeama"
-"1924-01-01 00:00:00",1,1924,Português,COMPLETE,"Senhorinha Talharim","Teatro declamado",Português,Francesa,"Leopoldo FrÃ³es","Brasileira ",Apolo
-"1924-01-01 00:00:00",2,1924,Português,SESSIONS,"Eva no ministério","Teatro declamado",Português,"Brasileira ","Brasileira de comédias do Trianon do Rio","Brasileira ","Boa Vista"
-"1924-01-02 00:00:00",1,1924,Português,COMPLETE,"Secretário de Sua Excelêcia, O","Teatro declamado",Português,"Brasileira ","Abigail Maia","Brasileira ",Santana
-"1924-01-02 00:00:00",1,1924,Português,STAGE_SCREEN,"O que o rei nÃ£o viu",Revista,Português,"Brasileira ",Arruda,"Brasileira ","Brás Politeama"
-"1924-01-02 00:00:00",2,1924,Português,SESSIONS,"Pés pelas mÃ£os","Teatro declamado",Português,"Brasileira ","Brasileira de comédias do Trianon do Rio","Brasileira ","Boa Vista"
-"1924-01-02 00:00:00",1,1924,Italiano,COMPLETE,"Noite de danÃ§a, Uma",Opereta,Italiano,Austríca,"Clara Weiss",Ãtalo-sul-americana,"Cassino Antártica"
-"1924-01-02 00:00:00",1,1924,Português,COMPLETE,"Senhorinha Talharim","Teatro declamado",Português,Francesa,"Leopoldo FrÃ³es","Brasileira ",Apolo
-"1925-01-01 00:00:00",1,1925,AlemÃ£o,COMPLETE,Dolly,Opereta,AlemÃ£o,NULL,"Georg Urban (opereta)",AlemÃ£,Santana
-"1925-01-01 00:00:00",3,1925,Português,SESSIONS,"Tiro ao alvo",Revista,Português,NULL,"Teatro Eden de Lisboa",Portuguesa,"Cassino Antártica"
-"1925-01-01 00:00:00",2,1925,Português,COMPLETE,"Sangue azul","Teatro declamado",Português,Francesa,"Leopoldo FrÃ³es","Brasileira ",Apolo
-"1925-01-01 00:00:00",1,1925,AlemÃ£o,COMPLETE,"Primo lá de fora, O",Opereta,AlemÃ£o,NULL,"Georg Urban (opereta)",AlemÃ£,Santana
-"1925-01-01 00:00:00",3,1925,Português,SESSIONS,"Sua Exc. A Cozinheira","Teatro declamado",Português,NULL,"Brasileira de comédias do Trianon do Rio","Brasileira ",Royal
-"1925-01-02 00:00:00",1,1925,Português,COMPLETE,"Ilustre desconhecido, O","Teatro declamado",Português,Portuguesa,"Leopoldo FrÃ³es","Brasileira ",Apolo
-"1925-01-02 00:00:00",2,1925,Português,SESSIONS,"Tiro ao alvo",Revista,Português,NULL,"Teatro Eden de Lisboa",Portuguesa,"Cassino Antártica"
-"1925-01-02 00:00:00",1,1925,AlemÃ£o,COMPLETE,"Casa das tres meninas, A",Opereta,AlemÃ£o,Austríca,"Georg Urban (opereta)",AlemÃ£,Santana
-"1925-01-02 00:00:00",2,1925,Português,SESSIONS,"Lua de mel (comédia)","Teatro declamado",Português,Francesa,"Brasileira de comédias do Trianon do Rio","Brasileira ",Royal
-"1925-01-03 00:00:00",2,1925,Português,SESSIONS,"Lua de mel (comédia)","Teatro declamado",Português,Francesa,"Brasileira de comédias do Trianon do Rio","Brasileira ",Royal
-"1926-01-01 00:00:00",3,1926,Português,SESSIONS,"Comidas, meu santo",Revista,Português,"Brasileira ","Abilio de Menezes","Brasileira ",Pathé
-"1926-01-01 00:00:00",1,1926,Português,STAGE_SCREEN,"Comidas, meu santo",Revista,Português,"Brasileira ","Antonio de Souza","Brasileira ","Brás Politeama"
-"1926-01-01 00:00:00",3,1926,Português,SESSIONS,"Aventuras de um diplomata","Teatro declamado",Português,Francesa,"Jayme Costa","Brasileira ",Apolo
-"1926-01-01 00:00:00",1,1926,Italiano,COMPLETE,"Acqua cheta",Opereta,Italiano,Italiana,"Lea Candini",Ãtalo-sul-americana,Santana
-"1926-01-01 00:00:00",1,1926,Italiano,COMPLETE,Frasquita,Opereta,Italiano,Austríca,"Lea Candini",Ãtalo-sul-americana,Santana
-"1926-01-01 00:00:00",2,1926,Português,COMPLETE,"Sonhos de Theodoro","Teatro declamado",Português,NULL,"Leopoldo FrÃ³es","Brasileira ","Cassino Antártica"
-"1926-01-02 00:00:00",1,1926,Italiano,COMPLETE,Boccaccio,Opereta,Italiano,Austríca,"Lea Candini",Ãtalo-sul-americana,Santana
-"1926-01-02 00:00:00",1,1926,Português,COMPLETE,"Sonhos de Theodoro","Teatro declamado",Português,NULL,"Leopoldo FrÃ³es","Brasileira ","Cassino Antártica"
-"1926-01-02 00:00:00",2,1926,Português,SESSIONS,"Meu bem, nÃ£o chora!",Revista,Português,"Brasileira ","Abilio de Menezes","Brasileira ",Pathé
-"1926-01-02 00:00:00",1,1926,Português,STAGE_SCREEN,"Comidas, meu santo",Revista,Português,"Brasileira ","Antonio de Souza","Brasileira ","Brás Politeama"
-"1927-01-01 00:00:00",2,1927,Português,SESSIONS,Fox-trot,Revista,Português,Portuguesa,"Teatro Maria Victoria de Lisboa",Portuguesa,"Cassino Antártica"
-"1927-01-01 00:00:00",2,1927,Português,SESSIONS,"Meu bebê, O","Teatro declamado",Português,Estadunidense,"ProcÃ³pio Ferreira","Brasileira ",Apolo
-"1927-01-01 00:00:00",2,1927,Português,SESSIONS,"Cala a boca, Etelvina!","Teatro declamado",Português,"Brasileira ","Jayme Costa","Brasileira ","Boa Vista"
-"1927-01-02 00:00:00",3,1927,Português,SESSIONS,"Seu Liborio continua...","Teatro declamado",Português,NULL,"Jayme Costa","Brasileira ","Boa Vista"
-"1927-01-02 00:00:00",3,1927,Português,SESSIONS,"O 31",Revista,Português,Portuguesa,"Teatro Maria Victoria de Lisboa",Portuguesa,"Cassino Antártica"
-"1927-01-02 00:00:00",3,1927,Português,SESSIONS,"Meu bebê, O","Teatro declamado",Português,Estadunidense,"ProcÃ³pio Ferreira","Brasileira ",Apolo
-"1927-01-03 00:00:00",2,1927,Português,SESSIONS,"Seu Liborio continua...","Teatro declamado",Português,NULL,"Jayme Costa","Brasileira ","Boa Vista"
-"1927-01-03 00:00:00",2,1927,Português,SESSIONS,"O 31",Revista,Português,Portuguesa,"Teatro Maria Victoria de Lisboa",Portuguesa,"Cassino Antártica"
-"1927-01-03 00:00:00",2,1927,Português,SESSIONS,"Meu bebê, O","Teatro declamado",Português,Estadunidense,"ProcÃ³pio Ferreira","Brasileira ",Apolo
-"1927-01-04 00:00:00",2,1927,Português,SESSIONS,"Meu amor","Teatro declamado",Português,"Brasileira ","Jayme Costa","Brasileira ","Boa Vista"
-"1928-01-01 00:00:00",1,1928,Italiano,COMPLETE,"Acqua cheta",Opereta,Italiano,Italiana,"Clara Weiss",Ãtalo-sul-americana,"Cassino Antártica"
-"1928-01-01 00:00:00",1,1928,Italiano,COMPLETE,Frasquita,Opereta,Italiano,Austríca,"Clara Weiss",Ãtalo-sul-americana,"Cassino Antártica"
-"1928-01-01 00:00:00",3,1928,Português,SESSIONS,"Pétalas ao vento",Revista,Português,"Brasileira ",Ra-ta-plan,"Brasileira ",Apolo
-"1928-01-02 00:00:00",1,1928,Italiano,COMPLETE,Boccaccio,Opereta,Italiano,Austríca,"Clara Weiss",Ãtalo-sul-americana,"Cassino Antártica"
-"1928-01-02 00:00:00",2,1928,Português,SESSIONS,"Pétalas ao vento",Revista,Português,"Brasileira ",Ra-ta-plan,"Brasileira ",Apolo
-"1928-01-03 00:00:00",2,1928,Português,SESSIONS,"Pétalas ao vento",Revista,Português,"Brasileira ",Ra-ta-plan,"Brasileira ",Apolo
-"1928-01-03 00:00:00",1,1928,Italiano,COMPLETE,"Acqua cheta",Opereta,Italiano,Italiana,"Clara Weiss",Ãtalo-sul-americana,"Olympia "
-"1928-01-04 00:00:00",2,1928,Português,SESSIONS,"Sol de Portugal",Revista,Português,Portuguesa,"Antonio de Macedo",Portuguesa,"Cassino Antártica"
-"1928-01-04 00:00:00",1,1928,Italiano,COMPLETE,"Acqua cheta",Opereta,Italiano,Italiana,"Clara Weiss",Ãtalo-sul-americana,"Olympia "
-"1928-01-04 00:00:00",2,1928,Português,SESSIONS,"Pétalas ao vento",Revista,Português,"Brasileira ",Ra-ta-plan,"Brasileira ",Apolo
-"1929-01-01 00:00:00",3,1929,Português,SESSIONS,"Professor castidade","Teatro declamado",Português,NULL,"Jayme Costa","Brasileira ","Boa Vista"
-"1929-01-01 00:00:00",1,1929,Italiano,COMPLETE,"Cavalleria rusticana (Ã³pera)",Ãpera,Italiano,Italiana,"Grande Companhia LÃ­rica Italiana do Centro Musical",Italiana,Municipal
-"1929-01-01 00:00:00",1,1929,Italiano,COMPLETE,PalhaÃ§os,Ãpera,Italiano,Italiana,"Grande Companhia LÃ­rica Italiana do Centro Musical",Italiana,Municipal
-"1929-01-01 00:00:00",3,1929,Português,SESSIONS,"Com fogo nÃ£o se brinca","Teatro declamado",Português,NULL,"ProcÃ³pio Ferreira","Brasileira ",Apolo
-"1929-01-01 00:00:00",1,1929,Italiano,COMPLETE,Boccaccio,Opereta,Italiano,Austríca,SiddivÃ³,Ãtalo-sul-americana,"Cassino Antártica"
-"1929-01-01 00:00:00",2,1929,Português,STAGE_SCREEN,"Ano novo",Revista,Português,NULL,Tro-lo-lÃ³,"Brasileira ",Colombo
-"1929-01-01 00:00:00",1,1929,Português,STAGE_SCREEN,"Viva o Brás",Revista,Português,NULL,Tro-lo-lÃ³,"Brasileira ",Colombo
-"1929-01-02 00:00:00",1,1929,Italiano,STAGE_SCREEN,Primarosa,Opereta,Italiano,Italiana,"Italiana de Operetas Romano",Italiana,CapitÃ³lio
-"1929-01-02 00:00:00",1,1929,Italiano,COMPLETE,"Casa das tres meninas, A",Opereta,AlemÃ£o,Austríca,SiddivÃ³,Ãtalo-sul-americana,"Cassino Antártica"
-"1929-01-02 00:00:00",1,1929,Português,COMPLETE,"Stá na hora",Revista,Português,"Brasileira ",Tro-lo-lÃ³,"Brasileira ",Colombo
-"1930-01-01 00:00:00",3,1930,Português,SESSIONS,Malandrinha,Revista,Português,"Brasileira ","Alda Garrido","Brasileira ","Boa Vista"
-"1930-01-01 00:00:00",1,1930,Italiano,COMPLETE,"Mosqueteiros no convento, Os",Opereta,Italiano,Francesa,Candini-SiddivÃ³,Ãtalo-sul-americana,"Santa Helena"
-"1930-01-01 00:00:00",3,1930,Português,SESSIONS,"Lua de mel (revista)",Revista,Português,Portuguesa,"Eva Stacchino",Portuguesa,Santana
-"1930-01-01 00:00:00",2,1930,Português,SESSIONS,"Guerra ao mosquito",Revista,Português,"Brasileira ","Marques Porto-Luiz Peixoto","Brasileira ","Cassino Antártica"
-"1930-01-01 00:00:00",2,1930,Português,SESSIONS,"Eu sou de circo!","Teatro declamado",Português,AlemÃ£,"ProcÃ³pio Ferreira","Brasileira ",Apolo
-"1930-01-01 00:00:00",1,1930,Português,STAGE_SCREEN,"Bom que dÃ³i",Revista,Português,"Brasileira ",Arruda,"Brasileira ","SÃ£o Carlos"
-"1930-01-02 00:00:00",1,1930,Português,STAGE_SCREEN,"Aguenta, Malhadas",Burleta,Português,"Brasileira ",Arruda,"Brasileira ","SÃ£o Carlos"
-"1930-01-02 00:00:00",2,1930,Português,SESSIONS,Malandrinha,Revista,Português,"Brasileira ","Alda Garrido","Brasileira ","Boa Vista"
-"1930-01-02 00:00:00",1,1930,Italiano,COMPLETE,"Acqua cheta",Opereta,Italiano,Italiana,Candini-SiddivÃ³,Ãtalo-sul-americana,"Santa Helena"
-"1930-01-02 00:00:00",2,1930,Português,SESSIONS,"Lua de mel (revista)",Revista,Português,Portuguesa,"Eva Stacchino",Portuguesa,Santana
-"1931-01-01 00:00:00",3,1931,Português,STAGE_SCREEN,"Comigo nÃ£o, violÃ£o",Revuette,Português,"Brasileira ","Pinto Filho","Brasileira ","Santa Helena"
-"1931-01-01 00:00:00",2,1931,Português,SESSIONS,"TostÃ£ozinho de felicidade, Um","Teatro declamado",Português,"Brasileira ",Abigail-Oduvaldo,"Brasileira ",Apolo
-"1931-01-01 00:00:00",2,1931,Português,SESSIONS,"Sonhos de um moÃ§o loiro","Teatro declamado",Português,NULL,Abigail-Oduvaldo,"Brasileira ",Apolo
-"1931-01-01 00:00:00",2,1931,Português,SESSIONS,"AdÃ£o, Eva e outros membros da familia","Teatro declamado",Português,"Brasileira ","Jayme Costa","Brasileira ","Boa Vista"
-"1931-01-02 00:00:00",1,1931,Português,SESSIONS,"TostÃ£ozinho de felicidade, Um","Teatro declamado",Português,"Brasileira ",Abigail-Oduvaldo,"Brasileira ",Apolo
-"1931-01-02 00:00:00",1,1931,Português,SESSIONS,"Sonhos de um moÃ§o loiro","Teatro declamado",Português,NULL,Abigail-Oduvaldo,"Brasileira ",Apolo
-"1931-01-02 00:00:00",1,1931,Português,COMPLETE,"Futebol em familia","Teatro declamado",Português,NULL,"Moinho do Jeca","Brasileira ","Moinho do Jeca"
-"1931-01-02 00:00:00",2,1931,Português,STAGE_SCREEN,"Tira teima",Revista,Português,"Brasileira ","Pinto Filho","Brasileira ","Santa Helena"
-"1931-01-03 00:00:00",1,1931,Português,SESSIONS,"Sonhos de um moÃ§o loiro","Teatro declamado",Português,NULL,Abigail-Oduvaldo,"Brasileira ",Apolo
-"1931-01-03 00:00:00",1,1931,Português,SESSIONS,"TostÃ£ozinho de felicidade, Um","Teatro declamado",Português,"Brasileira ",Abigail-Oduvaldo,"Brasileira ",Apolo
-"1932-01-01 00:00:00",1,1932,Português,SESSIONS,"Saudade... Palavra doce",Revista,Português,"Brasileira ",Tro-lo-lÃ³,"Brasileira ",Santana
-"1932-01-01 00:00:00",1,1932,Português,SESSIONS,"Desfile tropical",Revista,Português,"Brasileira ",Tro-lo-lÃ³,"Brasileira ",Santana
-"1932-01-01 00:00:00",2,1932,Português,SESSIONS,"Marido de minha noiva, O","Teatro declamado",Português,Espanhola,"ProcÃ³pio Ferreira","Brasileira ",Apolo
-"1932-01-01 00:00:00",3,1932,Português,SESSIONS,"Brasil do amor",Revista,Português,"Brasileira ","Margarida Max","Brasileira ","Cassino Antártica"
-"1932-01-01 00:00:00",2,1932,Português,SESSIONS,"Divino perfume","Teatro declamado",Português,"Brasileira ","Jayme Costa","Brasileira ","Boa Vista"
-"1932-01-01 00:00:00",1,1932,Português,COMPLETE,"Três homens para 10 mil virgens","Teatro declamado",Português,NULL,"Moinho do Jeca","Brasileira ","Moinho do Jeca"
-"1932-01-02 00:00:00",2,1932,Português,SESSIONS,"Marido de minha noiva, O","Teatro declamado",Português,Espanhola,"ProcÃ³pio Ferreira","Brasileira ",Apolo
-"1932-01-02 00:00:00",2,1932,Português,SESSIONS,"Nosso céu tem mais estrelas",Revista,Português,"Brasileira ",Tro-lo-lÃ³,"Brasileira ",Avenida
-"1932-01-02 00:00:00",1,1932,AlemÃ£o,COMPLETE,Jaegerblut,"Teatro declamado",AlemÃ£o,NULL,"Riesch Buehne",AlemÃ£,Santana
-"1932-01-02 00:00:00",2,1932,Português,SESSIONS,"Brasil do amor",Revista,Português,"Brasileira ","Margarida Max","Brasileira ","Cassino Antártica"
-"1933-01-01 00:00:00",3,1933,"Napolitano (dialeto)",SESSIONS,"Piscatore Ã¨ curalle","CanÃ§Ã£o encenada",Italiano,Italiana,"Canzone di Napoli",Ãtalo-sul-americana,Santana
-"1933-01-01 00:00:00",3,1933,Português,SESSIONS,"Sal e pimenta",Revista,Português,NULL,Montparnasse,"Brasileira ",Recreio
-"1933-01-01 00:00:00",3,1933,"Napolitano (dialeto)",SESSIONS,"Tarantella Scugnizza","CanÃ§Ã£o encenada",Italiano,Italiana,"Napoli canta",Ãtalo-sul-americana,"Cassino Antártica"
-"1933-01-01 00:00:00",3,1933,Português,SESSIONS,"A ver navios",Revista,Português,"Brasileira ","Permanente do Colombo","Brasileira ",Colombo
-"1933-01-01 00:00:00",3,1933,Português,SESSIONS,"Deus lhe pague","Teatro declamado",Português,"Brasileira ","ProcÃ³pio Ferreira","Brasileira ","Boa Vista"
-"1933-01-02 00:00:00",2,1933,"Napolitano (dialeto)",SESSIONS,"Piscatore Ã¨ curalle","CanÃ§Ã£o encenada",Italiano,Italiana,"Napoli canta",Ãtalo-sul-americana,"Cassino Antártica"
-"1933-01-02 00:00:00",2,1933,"Napolitano (dialeto)",SESSIONS,"Piscatore Ã¨ curalle","CanÃ§Ã£o encenada",Italiano,Italiana,"Canzone di Napoli",Ãtalo-sul-americana,Santana
-"1933-01-02 00:00:00",2,1933,Português,SESSIONS,"Nu e cru",Revista,Português,NULL,Montparnasse,"Brasileira ",Recreio
-"1933-01-02 00:00:00",2,1933,Português,SESSIONS,"Deus lhe pague","Teatro declamado",Português,"Brasileira ","ProcÃ³pio Ferreira","Brasileira ","Boa Vista"
-"1933-01-02 00:00:00",1,1933,Português,COMPLETE,"A ver navios",Revista,Português,"Brasileira ","Permanente do Colombo","Brasileira ",Colombo
-"1934-01-01 00:00:00",2,1934,Português,SESSIONS,"CanÃ§Ã£o brasileira",Opereta,Português,"Brasileira ","Brasileira de Teatro Musicado","Brasileira ","Cassino Antártica"
-"1934-01-01 00:00:00",2,1934,Português,SESSIONS,"Meu bebê, O","Teatro declamado",Português,Estadunidense,"ProcÃ³pio Ferreira","Brasileira ","Boa Vista"
-"1934-01-01 00:00:00",2,1934,Português,SESSIONS,"Sistema do Bechara","Teatro declamado",Português,"Brasileira ","Espetáculos Ba-ta-clan","Brasileira ",Recreio
-"1934-01-01 00:00:00",1,1934,Italiano,COMPLETE,"Elisir d'amore",Ãpera,Italiano,Italiana,"Arturo De Angelis (Companhia LÃ­rica Italiana)",Ãtalo-sul-americana,Santana
-"1934-01-02 00:00:00",2,1934,Português,SESSIONS,"Sistema do Bechara","Teatro declamado",Português,"Brasileira ","Espetáculos Ba-ta-clan","Brasileira ",Recreio
-"1934-01-02 00:00:00",2,1934,Português,SESSIONS,"Meu bebê, O","Teatro declamado",Português,Estadunidense,"ProcÃ³pio Ferreira","Brasileira ","Boa Vista"
-"1934-01-02 00:00:00",2,1934,Português,SESSIONS,"CanÃ§Ã£o brasileira",Opereta,Português,"Brasileira ","Brasileira de Teatro Musicado","Brasileira ","Cassino Antártica"
-"1934-01-03 00:00:00",2,1934,Português,SESSIONS,"CanÃ§Ã£o brasileira",Opereta,Português,"Brasileira ","Brasileira de Teatro Musicado","Brasileira ","Cassino Antártica"
-"1934-01-03 00:00:00",2,1934,Português,SESSIONS,"Sistema do Bechara","Teatro declamado",Português,"Brasileira ","Espetáculos Ba-ta-clan","Brasileira ",Recreio
-"1934-01-03 00:00:00",1,1934,IÃ­diche,COMPLETE,"(sem anÃºncio do tÃ­tulo)","Teatro declamado",Italiano,NULL,"Israelita de operetas",Israelita,Santana
-"1934-02-16 00:00:00",1,1943,IÃ­diche,COMPLETE,Vênus,Opereta,Português,Austríca,"Israelita de operetas",Israelita,Santana
-"1928-02-14 00:00:00",2,1982,Português,STAGE_SCREEN,"MiscelÃ¢nea (revuette)",Revuette,NULL,NULL,"Raul Roulien","Brasileira ",Santana
+presentationDate,presentationSessionsN,presentationLanguage,presentationKind,playName,playGenre,playNationality,companyName,companyNationality,presentationTheater
+"1931-09-05 00:00:00",2,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
+"1931-09-06 00:00:00",3,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
+"1931-09-07 00:00:00",2,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
+"1931-09-08 00:00:00",2,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
+"1931-09-09 00:00:00",2,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
+"1931-09-10 00:00:00",2,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
+"1931-09-11 00:00:00",2,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
+"1931-09-12 00:00:00",2,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
+"1931-09-13 00:00:00",2,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
+"1931-09-14 00:00:00",2,Português,SESSIONS,"Sorrisos de mulher (revista)",Revista,"Brasileira ","Via Lactea","Brasileira ","Boa Vista"
+"1914-01-01 00:00:00",1,Espanhol,COMPLETE,"D. Juan Tenorio","Teatro declamado",Espanhola,"Mercedes Tressols",Espanhola,Politeama
+"1914-01-01 00:00:00",1,Português,COMPLETE,"Mártir do calvário, O","Teatro declamado",Portuguesa,"Eduardo Pereira","Brasileira ",Apolo
+"1914-01-01 00:00:00",1,Italiano,COMPLETE,"Diabo a quatro",Opereta,AlemÃ£,Scognamiglio-Caramba,Italiana,Palace
+"1914-01-02 00:00:00",1,Português,COMPLETE,"Mártir do calvário, O","Teatro declamado",Portuguesa,"Eduardo Pereira","Brasileira ",Apolo
+"1914-01-02 00:00:00",1,Espanhol,COMPLETE,"El novio de DoÃ±a Inés","Teatro declamado",NULL,"Mercedes Tressols",Espanhola,Politeama
+"1914-01-02 00:00:00",1,Espanhol,COMPLETE,"Los cadetes de la reina",Opereta,Espanhola,"Mercedes Tressols",Espanhola,Politeama
+"1914-01-02 00:00:00",1,Italiano,COMPLETE,Estancierita,Opereta,Italiana,Scognamiglio-Caramba,Italiana,Palace
+"1914-01-03 00:00:00",1,Espanhol,COMPLETE,"Banda de trombetas, A",Zarzuela,Espanhola,"Mercedes Tressols",Espanhola,Politeama
+"1914-01-03 00:00:00",1,Espanhol,COMPLETE,Bohemios,Zarzuela,Espanhola,"Mercedes Tressols",Espanhola,Politeama
+"1914-01-03 00:00:00",1,Espanhol,COMPLETE,"El novio de DoÃ±a Inés","Teatro declamado",NULL,"Mercedes Tressols",Espanhola,Politeama
+"1915-01-01 00:00:00",1,Português,STAGE_SCREEN,"Chateau Margaux",Zarzuela,Espanhola,"JoÃ£o Rodrigues","Brasileira ","SÃ£o Paulo"
+"1915-01-01 00:00:00",2,Português,SESSIONS,"Tambor-mÃ³r, O",Opereta,NULL,"Teatro S. José do Rio","Brasileira ",Apolo
+"1915-01-02 00:00:00",1,Português,STAGE_SCREEN,"Duas gatas, As","Teatro declamado",Portuguesa,"JoÃ£o Rodrigues","Brasileira ","SÃ£o Paulo"
+"1915-01-02 00:00:00",2,Português,SESSIONS,"Choro na zona",Revista,"Brasileira ","Teatro S. José do Rio","Brasileira ",Apolo
+"1915-01-03 00:00:00",1,Português,SESSIONS,"Menina Bertha, A",Burleta,"Brasileira ","Teatro S. José do Rio","Brasileira ",Apolo
+"1915-01-03 00:00:00",2,Português,SESSIONS,Chuá,Revista,"Brasileira ","Teatro S. José do Rio","Brasileira ",Apolo
+"1915-01-03 00:00:00",1,Português,STAGE_SCREEN,"Na ponta da faca",Revista,"Brasileira ","JoÃ£o Rodrigues","Brasileira ","SÃ£o Paulo"
+"1915-01-03 00:00:00",1,Português,STAGE_SCREEN,"Capital Federal, A",Burleta,"Brasileira ","JoÃ£o Rodrigues","Brasileira ","SÃ£o Paulo"
+"1915-01-04 00:00:00",2,Português,SESSIONS,"Em pé de guerra","Vaudeville musicado",NULL,"Teatro S. José do Rio","Brasileira ",Apolo
+"1915-01-04 00:00:00",1,Português,STAGE_SCREEN,"Festa em Guabiroba, Uma",Burleta,"Brasileira ","JoÃ£o Rodrigues","Brasileira ","SÃ£o Paulo"
+"1916-01-01 00:00:00",1,Português,COMPLETE,"O 31",Revista,Portuguesa,Galhardo-Palmyra,Portuguesa,Apolo
+"1916-01-02 00:00:00",2,Português,COMPLETE,"O 31",Revista,Portuguesa,Galhardo-Palmyra,Portuguesa,Apolo
+"1916-01-03 00:00:00",1,Português,COMPLETE,"Esposo feliz",Opereta,Austríca,Galhardo-Palmyra,Portuguesa,Apolo
+"1916-01-04 00:00:00",1,Português,COMPLETE,"O 31",Revista,Portuguesa,Galhardo-Palmyra,Portuguesa,Apolo
+"1916-01-05 00:00:00",1,Português,COMPLETE,"Homem das mangas, O",Opereta,AlemÃ£,Galhardo-Palmyra,Portuguesa,Apolo
+"1916-01-06 00:00:00",1,Português,COMPLETE,"Maridos alegres",Opereta,Austríca,Galhardo-Palmyra,Portuguesa,Apolo
+"1916-01-06 00:00:00",1,Português,COMPLETE,"Sonho de Valsa",Opereta,Austríca,Galhardo-Palmyra,Portuguesa,Apolo
+"1916-01-07 00:00:00",1,Português,COMPLETE,Susi,Opereta,HÃºngara,Galhardo-Palmyra,Portuguesa,Apolo
+"1916-01-08 00:00:00",1,Português,COMPLETE,"Esposo feliz",Opereta,Austríca,Galhardo-Palmyra,Portuguesa,Apolo
+"1916-01-09 00:00:00",1,Português,COMPLETE,"Princesa dos dollars, A",Opereta,Austríca,Galhardo-Palmyra,Portuguesa,Apolo
+"1917-01-01 00:00:00",3,Português,SESSIONS,"O 31",Revista,Portuguesa,"Carlos Leal",Portuguesa,Palace
+"1917-01-01 00:00:00",1,Italiano,COMPLETE,"Due celebri imbroglioni","Teatro declamado",Italiana,"CittÃ  di Napoli",Ãtalo-sul-americana,"SÃ£o José"
+"1917-01-01 00:00:00",2,Português,SESSIONS,"Flores de sombra","Teatro declamado","Brasileira ","Leopoldo FrÃ³es","Brasileira ","Boa Vista"
+"1917-01-01 00:00:00",1,Italiano,COMPLETE,"Casta Suzanna, A",Opereta,AlemÃ£,Vitale,Italiana,"Cassino Antártica"
+"1917-01-01 00:00:00",1,Italiano,COMPLETE,"Sangue de artista",Opereta,Austríca,Vitale,Italiana,"Cassino Antártica"
+"1917-01-02 00:00:00",1,Italiano,COMPLETE,"Addio giovinezza",Opereta,Italiana,Vitale,Italiana,"Cassino Antártica"
+"1917-01-02 00:00:00",2,Português,SESSIONS,"Flores de sombra","Teatro declamado","Brasileira ","Leopoldo FrÃ³es","Brasileira ","Boa Vista"
+"1917-01-02 00:00:00",1,Italiano,COMPLETE,"Santa Lucia","Teatro declamado",NULL,"CittÃ  di Napoli",Ãtalo-sul-americana,"SÃ£o José"
+"1917-01-02 00:00:00",2,Português,SESSIONS,"O 31",Revista,Portuguesa,"Carlos Leal",Portuguesa,Palace
+"1917-01-03 00:00:00",1,Português,COMPLETE,"Boa rapariga, A","Teatro declamado",Italiana,"Alexandre Azevedo","Brasileira ","SÃ£o José"
+"1918-01-01 00:00:00",1,Português,SESSIONS,"Festa em Guabiroba, Uma",Burleta,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1918-01-01 00:00:00",1,Português,STAGE_SCREEN,"Filha do mar, A","Teatro declamado",Francesa,"Alzira LeÃ£o","Brasileira ",Colombo
+"1918-01-01 00:00:00",1,Português,STAGE_SCREEN,"BarÃ£o de Cutia","Teatro declamado","Brasileira ",Carrara,"Brasileira ",Mafalda
+"1918-01-01 00:00:00",1,Português,SESSIONS,"Contrabando, O",Burleta,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1918-01-01 00:00:00",1,Português,COMPLETE,"Pauzinho, O",Revista,"Brasileira ","Edu Carvalho","Brasileira ",Palace
+"1918-01-01 00:00:00",1,Português,SESSIONS,"Sem tirar nem pÃ´r",Revista,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1918-01-01 00:00:00",1,Italiano,COMPLETE,BohÃ¨me,Ãpera,Italiana,"La Giovanissima",Italiana,"SÃ£o José"
+"1918-01-01 00:00:00",1,Português,COMPLETE,"NhÃ´ Quim na Capital",Burleta,NULL,"Edu Carvalho","Brasileira ",Palace
+"1918-01-01 00:00:00",1,Italiano,COMPLETE,"Casta Suzanna, A",Opereta,AlemÃ£,"La Giovanissima",Italiana,"SÃ£o José"
+"1918-01-02 00:00:00",1,Português,STAGE_SCREEN,"Filha do mar, A","Teatro declamado",Francesa,"Alzira LeÃ£o","Brasileira ",Colombo
+"1919-01-01 00:00:00",2,Português,SESSIONS,Blanchette,"Teatro declamado",Francesa,"Adelina Abranches-Chaby Pinheiro",Portuguesa,"SÃ£o José"
+"1919-01-01 00:00:00",3,Português,SESSIONS,"S. Paulo em fraldas",Revista,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1919-01-01 00:00:00",1,Português,STAGE_SCREEN,"Alma caipira",Sertaneja,"Brasileira ","JoÃ£o Rodrigues","Brasileira ",Brasil
+"1919-01-02 00:00:00",1,Português,COMPLETE,"Garota, A","Teatro declamado",Francesa,"Adelina Abranches-Chaby Pinheiro",Portuguesa,"SÃ£o José"
+"1919-01-02 00:00:00",1,Português,SESSIONS,"Festa na Freguesia do Ã, Uma",Burleta,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1919-01-02 00:00:00",1,Português,SESSIONS,"Cenas da roÃ§a (A sertaneja)",Sertaneja,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1919-01-02 00:00:00",1,Português,STAGE_SCREEN,"Mulher soldado, A (Os vinte e oito dias de Clarinha)",Opereta,Francesa,"JoÃ£o Rodrigues","Brasileira ",Brasil
+"1919-01-03 00:00:00",2,Português,SESSIONS,"Nhá MoÃ§a",Burleta,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1919-01-03 00:00:00",1,Português,COMPLETE,"Garota, A","Teatro declamado",Francesa,"Adelina Abranches-Chaby Pinheiro",Portuguesa,"SÃ£o José"
+"1919-01-03 00:00:00",1,Português,STAGE_SCREEN,"Na ponta da faca",Revista,"Brasileira ","JoÃ£o Rodrigues","Brasileira ",Brasil
+"1920-01-01 00:00:00",1,Português,SESSIONS,"HistÃ³ria do ano",Revista,Argentina,Arruda,"Brasileira ","Boa Vista"
+"1920-01-01 00:00:00",1,Português,COMPLETE,"ViÃºva alegre, A",Opereta,Austríca,"Armando de Vasconcellos",Portuguesa,"SÃ£o José"
+"1920-01-01 00:00:00",2,Português,SESSIONS,"Cenas da roÃ§a (A sertaneja)",Sertaneja,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1920-01-02 00:00:00",1,Português,SESSIONS,"HistÃ³ria do ano",Revista,Argentina,Arruda,"Brasileira ","Boa Vista"
+"1920-01-02 00:00:00",1,Português,SESSIONS,"Cenas da roÃ§a (A sertaneja)",Sertaneja,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1920-01-02 00:00:00",1,Português,COMPLETE,"Rainha do cinema",Opereta,AlemÃ£,"Armando de Vasconcellos",Portuguesa,"SÃ£o José"
+"1920-01-03 00:00:00",1,Português,COMPLETE,"Amor de prÃ­ncipe",Opereta,Italiana,"Armando de Vasconcellos",Portuguesa,"SÃ£o José"
+"1920-01-03 00:00:00",1,Português,SESSIONS,"Cenas da roÃ§a (A sertaneja)",Sertaneja,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1920-01-03 00:00:00",1,Português,SESSIONS,"HistÃ³ria do ano",Revista,Argentina,Arruda,"Brasileira ","Boa Vista"
+"1920-01-04 00:00:00",1,Português,SESSIONS,"HistÃ³ria do ano",Revista,Argentina,Arruda,"Brasileira ","Boa Vista"
+"1921-01-01 00:00:00",1,Português,COMPLETE,"CalÃ§as da autoridade, As","Teatro declamado",NULL,"Chaby Pinheiro",NULL,"Cassino Antártica"
+"1921-01-01 00:00:00",1,Português,SESSIONS,"Flor tapuia",Sertaneja,"Brasileira ",Arruda,"Brasileira ",Palace
+"1921-01-01 00:00:00",1,Português,SESSIONS,"Nhá MoÃ§a",Burleta,"Brasileira ",Arruda,"Brasileira ",Palace
+"1921-01-01 00:00:00",1,Português,SESSIONS,"Cenas da roÃ§a (A sertaneja)",Sertaneja,"Brasileira ",Arruda,"Brasileira ",Palace
+"1921-01-01 00:00:00",1,Português,COMPLETE,"Café do Felisberto, O","Teatro declamado",Francesa,"Leopoldo FrÃ³es","Brasileira ","Boa Vista"
+"1921-01-01 00:00:00",1,Português,COMPLETE,"Simpático Jeremias, O","Teatro declamado","Brasileira ","Leopoldo FrÃ³es","Brasileira ","Boa Vista"
+"1921-01-01 00:00:00",1,Português,COMPLETE,"Maluquinha de Arroios, A","Teatro declamado",Portuguesa,"Chaby Pinheiro",NULL,"Cassino Antártica"
+"1921-01-02 00:00:00",1,Português,COMPLETE,"SimÃ£o, SimÃµes e Comp.",Opereta,NULL,"Leopoldo FrÃ³es","Brasileira ","Boa Vista"
+"1921-01-02 00:00:00",1,Português,COMPLETE,"Genro de muitas sogras, O","Teatro declamado","Brasileira ","Leopoldo FrÃ³es","Brasileira ","Boa Vista"
+"1921-01-02 00:00:00",1,Português,COMPLETE,"Amigo de Peniche, O","Teatro declamado",Portuguesa,"Chaby Pinheiro",NULL,"Cassino Antártica"
+"1922-01-01 00:00:00",3,Português,SESSIONS,"FamÃ­lia Carrapatoso, A",Burleta,"Brasileira ",Arruda,"Brasileira ","Boa Vista"
+"1922-01-01 00:00:00",2,Português,COMPLETE,"Garota, A","Teatro declamado",Francesa,"Aura Abranches",Portuguesa,Santana
+"1922-01-02 00:00:00",1,Português,COMPLETE,"Homem da cadeirinha, O","Teatro declamado",NULL,"Aura Abranches",Portuguesa,Santana
+"1922-01-03 00:00:00",1,Português,COMPLETE,"Homem da cadeirinha, O","Teatro declamado",NULL,"Aura Abranches",Portuguesa,Santana
+"1922-01-04 00:00:00",1,Português,COMPLETE,"Grande amor, O","Teatro declamado",Italiana,"Aura Abranches",Portuguesa,Santana
+"1922-01-05 00:00:00",1,Português,COMPLETE,"Grande amor, O","Teatro declamado",Italiana,"Aura Abranches",Portuguesa,Santana
+"1922-01-05 00:00:00",2,Português,SESSIONS,"Sogra? Nem de barro",Revista,"Brasileira ","Celeste Reis","Brasileira ",Palace
+"1922-01-05 00:00:00",1,Italiano,COMPLETE,"Duquesa do Bal-Tabarin, A",Opereta,Italiana,"De Angelis",Ãtalo-sul-americana,"Boa Vista"
+"1922-01-06 00:00:00",1,Italiano,COMPLETE,"Ã arrivato l'accordatore","Teatro declamado",NULL,"La Romanissima",Ãtalo-sul-americana,"Cassino Antártica"
+"1922-01-06 00:00:00",2,Português,SESSIONS,"Ãltima noite, A",Opereta,"Brasileira ","Celeste Reis","Brasileira ",Palace
+"1923-01-01 00:00:00",1,Português,SESSIONS,"ManhÃ£s de sol","Teatro declamado","Brasileira ","Abigail Maia","Brasileira ",Apolo
+"1923-01-01 00:00:00",1,Português,SESSIONS,"Ministro do supremo, O","Teatro declamado","Brasileira ","Abigail Maia","Brasileira ",Apolo
+"1923-01-01 00:00:00",1,Português,STAGE_SCREEN,"Aguenta, Felippe!",Revista,"Brasileira ",Arruda,"Brasileira ","Brás Politeama"
+"1923-01-01 00:00:00",1,Italiano,COMPLETE,"Ãltima valsa, A",Opereta,Austríca,"De Angelis",Ãtalo-sul-americana,"Boa Vista"
+"1923-01-01 00:00:00",1,Português,STAGE_SCREEN,"Nhá MoÃ§a",Burleta,"Brasileira ","Nair Alves","Brasileira ","Olympia "
+"1923-01-01 00:00:00",1,Português,STAGE_SCREEN,"O 31 paulista (II)",Revista,"Brasileira ","Nair Alves","Brasileira ","Olympia "
+"1923-01-01 00:00:00",1,Português,COMPLETE,"Bichinha gata","Teatro declamado",Francesa,Satanella-Amarante,Portuguesa,Santana
+"1923-01-02 00:00:00",1,Português,COMPLETE,"Bichinha gata","Teatro declamado",Francesa,Satanella-Amarante,Portuguesa,Santana
+"1923-01-02 00:00:00",1,Português,STAGE_SCREEN,"Lagarta rosada, A",Sertaneja,"Brasileira ",Arruda,"Brasileira ","Brás Politeama"
+"1923-01-02 00:00:00",1,Português,STAGE_SCREEN,"Nhá MoÃ§a",Burleta,"Brasileira ","Nair Alves","Brasileira ","Olympia "
+"1924-01-01 00:00:00",2,Português,COMPLETE,"Levianas, As","Teatro declamado","Brasileira ","Abigail Maia","Brasileira ",Santana
+"1924-01-01 00:00:00",1,Italiano,COMPLETE,"Camponês alegre, O",Opereta,Austríca,"Clara Weiss",Ãtalo-sul-americana,"Cassino Antártica"
+"1924-01-01 00:00:00",1,Português,STAGE_SCREEN,"Aguenta, Felippe!",Revista,"Brasileira ",Arruda,"Brasileira ","Brás Politeama"
+"1924-01-01 00:00:00",1,Português,COMPLETE,"Senhorinha Talharim","Teatro declamado",Francesa,"Leopoldo FrÃ³es","Brasileira ",Apolo
+"1924-01-01 00:00:00",2,Português,SESSIONS,"Eva no ministério","Teatro declamado","Brasileira ","Brasileira de comédias do Trianon do Rio","Brasileira ","Boa Vista"
+"1924-01-02 00:00:00",1,Português,COMPLETE,"Secretário de Sua Excelêcia, O","Teatro declamado","Brasileira ","Abigail Maia","Brasileira ",Santana
+"1924-01-02 00:00:00",1,Português,STAGE_SCREEN,"O que o rei nÃ£o viu",Revista,"Brasileira ",Arruda,"Brasileira ","Brás Politeama"
+"1924-01-02 00:00:00",2,Português,SESSIONS,"Pés pelas mÃ£os","Teatro declamado","Brasileira ","Brasileira de comédias do Trianon do Rio","Brasileira ","Boa Vista"
+"1924-01-02 00:00:00",1,Italiano,COMPLETE,"Noite de danÃ§a, Uma",Opereta,Austríca,"Clara Weiss",Ãtalo-sul-americana,"Cassino Antártica"
+"1924-01-02 00:00:00",1,Português,COMPLETE,"Senhorinha Talharim","Teatro declamado",Francesa,"Leopoldo FrÃ³es","Brasileira ",Apolo
+"1925-01-01 00:00:00",1,AlemÃ£o,COMPLETE,Dolly,Opereta,NULL,"Georg Urban (opereta)",AlemÃ£,Santana
+"1925-01-01 00:00:00",3,Português,SESSIONS,"Tiro ao alvo",Revista,NULL,"Teatro Eden de Lisboa",Portuguesa,"Cassino Antártica"
+"1925-01-01 00:00:00",2,Português,COMPLETE,"Sangue azul","Teatro declamado",Francesa,"Leopoldo FrÃ³es","Brasileira ",Apolo
+"1925-01-01 00:00:00",1,AlemÃ£o,COMPLETE,"Primo lá de fora, O",Opereta,NULL,"Georg Urban (opereta)",AlemÃ£,Santana
+"1925-01-01 00:00:00",3,Português,SESSIONS,"Sua Exc. A Cozinheira","Teatro declamado",NULL,"Brasileira de comédias do Trianon do Rio","Brasileira ",Royal
+"1925-01-02 00:00:00",1,Português,COMPLETE,"Ilustre desconhecido, O","Teatro declamado",Portuguesa,"Leopoldo FrÃ³es","Brasileira ",Apolo
+"1925-01-02 00:00:00",2,Português,SESSIONS,"Tiro ao alvo",Revista,NULL,"Teatro Eden de Lisboa",Portuguesa,"Cassino Antártica"
+"1925-01-02 00:00:00",1,AlemÃ£o,COMPLETE,"Casa das tres meninas, A",Opereta,Austríca,"Georg Urban (opereta)",AlemÃ£,Santana
+"1925-01-02 00:00:00",2,Português,SESSIONS,"Lua de mel (comédia)","Teatro declamado",Francesa,"Brasileira de comédias do Trianon do Rio","Brasileira ",Royal
+"1925-01-03 00:00:00",2,Português,SESSIONS,"Lua de mel (comédia)","Teatro declamado",Francesa,"Brasileira de comédias do Trianon do Rio","Brasileira ",Royal
+"1926-01-01 00:00:00",3,Português,SESSIONS,"Comidas, meu santo",Revista,"Brasileira ","Abilio de Menezes","Brasileira ",Pathé
+"1926-01-01 00:00:00",1,Português,STAGE_SCREEN,"Comidas, meu santo",Revista,"Brasileira ","Antonio de Souza","Brasileira ","Brás Politeama"
+"1926-01-01 00:00:00",3,Português,SESSIONS,"Aventuras de um diplomata","Teatro declamado",Francesa,"Jayme Costa","Brasileira ",Apolo
+"1926-01-01 00:00:00",1,Italiano,COMPLETE,"Acqua cheta",Opereta,Italiana,"Lea Candini",Ãtalo-sul-americana,Santana
+"1926-01-01 00:00:00",1,Italiano,COMPLETE,Frasquita,Opereta,Austríca,"Lea Candini",Ãtalo-sul-americana,Santana
+"1926-01-01 00:00:00",2,Português,COMPLETE,"Sonhos de Theodoro","Teatro declamado",NULL,"Leopoldo FrÃ³es","Brasileira ","Cassino Antártica"
+"1926-01-02 00:00:00",1,Italiano,COMPLETE,Boccaccio,Opereta,Austríca,"Lea Candini",Ãtalo-sul-americana,Santana
+"1926-01-02 00:00:00",1,Português,COMPLETE,"Sonhos de Theodoro","Teatro declamado",NULL,"Leopoldo FrÃ³es","Brasileira ","Cassino Antártica"
+"1926-01-02 00:00:00",2,Português,SESSIONS,"Meu bem, nÃ£o chora!",Revista,"Brasileira ","Abilio de Menezes","Brasileira ",Pathé
+"1926-01-02 00:00:00",1,Português,STAGE_SCREEN,"Comidas, meu santo",Revista,"Brasileira ","Antonio de Souza","Brasileira ","Brás Politeama"
+"1927-01-01 00:00:00",2,Português,SESSIONS,Fox-trot,Revista,Portuguesa,"Teatro Maria Victoria de Lisboa",Portuguesa,"Cassino Antártica"
+"1927-01-01 00:00:00",2,Português,SESSIONS,"Meu bebê, O","Teatro declamado",Estadunidense,"ProcÃ³pio Ferreira","Brasileira ",Apolo
+"1927-01-01 00:00:00",2,Português,SESSIONS,"Cala a boca, Etelvina!","Teatro declamado","Brasileira ","Jayme Costa","Brasileira ","Boa Vista"
+"1927-01-02 00:00:00",3,Português,SESSIONS,"Seu Liborio continua...","Teatro declamado",NULL,"Jayme Costa","Brasileira ","Boa Vista"
+"1927-01-02 00:00:00",3,Português,SESSIONS,"O 31",Revista,Portuguesa,"Teatro Maria Victoria de Lisboa",Portuguesa,"Cassino Antártica"
+"1927-01-02 00:00:00",3,Português,SESSIONS,"Meu bebê, O","Teatro declamado",Estadunidense,"ProcÃ³pio Ferreira","Brasileira ",Apolo
+"1927-01-03 00:00:00",2,Português,SESSIONS,"Seu Liborio continua...","Teatro declamado",NULL,"Jayme Costa","Brasileira ","Boa Vista"
+"1927-01-03 00:00:00",2,Português,SESSIONS,"O 31",Revista,Portuguesa,"Teatro Maria Victoria de Lisboa",Portuguesa,"Cassino Antártica"
+"1927-01-03 00:00:00",2,Português,SESSIONS,"Meu bebê, O","Teatro declamado",Estadunidense,"ProcÃ³pio Ferreira","Brasileira ",Apolo
+"1927-01-04 00:00:00",2,Português,SESSIONS,"Meu amor","Teatro declamado","Brasileira ","Jayme Costa","Brasileira ","Boa Vista"
+"1928-01-01 00:00:00",1,Italiano,COMPLETE,"Acqua cheta",Opereta,Italiana,"Clara Weiss",Ãtalo-sul-americana,"Cassino Antártica"
+"1928-01-01 00:00:00",1,Italiano,COMPLETE,Frasquita,Opereta,Austríca,"Clara Weiss",Ãtalo-sul-americana,"Cassino Antártica"
+"1928-01-01 00:00:00",3,Português,SESSIONS,"Pétalas ao vento",Revista,"Brasileira ",Ra-ta-plan,"Brasileira ",Apolo
+"1928-01-02 00:00:00",1,Italiano,COMPLETE,Boccaccio,Opereta,Austríca,"Clara Weiss",Ãtalo-sul-americana,"Cassino Antártica"
+"1928-01-02 00:00:00",2,Português,SESSIONS,"Pétalas ao vento",Revista,"Brasileira ",Ra-ta-plan,"Brasileira ",Apolo
+"1928-01-03 00:00:00",2,Português,SESSIONS,"Pétalas ao vento",Revista,"Brasileira ",Ra-ta-plan,"Brasileira ",Apolo
+"1928-01-03 00:00:00",1,Italiano,COMPLETE,"Acqua cheta",Opereta,Italiana,"Clara Weiss",Ãtalo-sul-americana,"Olympia "
+"1928-01-04 00:00:00",2,Português,SESSIONS,"Sol de Portugal",Revista,Portuguesa,"Antonio de Macedo",Portuguesa,"Cassino Antártica"
+"1928-01-04 00:00:00",1,Italiano,COMPLETE,"Acqua cheta",Opereta,Italiana,"Clara Weiss",Ãtalo-sul-americana,"Olympia "
+"1928-01-04 00:00:00",2,Português,SESSIONS,"Pétalas ao vento",Revista,"Brasileira ",Ra-ta-plan,"Brasileira ",Apolo
+"1929-01-01 00:00:00",3,Português,SESSIONS,"Professor castidade","Teatro declamado",NULL,"Jayme Costa","Brasileira ","Boa Vista"
+"1929-01-01 00:00:00",1,Italiano,COMPLETE,"Cavalleria rusticana (Ã³pera)",Ãpera,Italiana,"Grande Companhia LÃ­rica Italiana do Centro Musical",Italiana,Municipal
+"1929-01-01 00:00:00",1,Italiano,COMPLETE,PalhaÃ§os,Ãpera,Italiana,"Grande Companhia LÃ­rica Italiana do Centro Musical",Italiana,Municipal
+"1929-01-01 00:00:00",3,Português,SESSIONS,"Com fogo nÃ£o se brinca","Teatro declamado",NULL,"ProcÃ³pio Ferreira","Brasileira ",Apolo
+"1929-01-01 00:00:00",1,Italiano,COMPLETE,Boccaccio,Opereta,Austríca,SiddivÃ³,Ãtalo-sul-americana,"Cassino Antártica"
+"1929-01-01 00:00:00",2,Português,STAGE_SCREEN,"Ano novo",Revista,NULL,Tro-lo-lÃ³,"Brasileira ",Colombo
+"1929-01-01 00:00:00",1,Português,STAGE_SCREEN,"Viva o Brás",Revista,NULL,Tro-lo-lÃ³,"Brasileira ",Colombo
+"1929-01-02 00:00:00",1,Italiano,STAGE_SCREEN,Primarosa,Opereta,Italiana,"Italiana de Operetas Romano",Italiana,CapitÃ³lio
+"1929-01-02 00:00:00",1,Italiano,COMPLETE,"Casa das tres meninas, A",Opereta,Austríca,SiddivÃ³,Ãtalo-sul-americana,"Cassino Antártica"
+"1929-01-02 00:00:00",1,Português,COMPLETE,"Stá na hora",Revista,"Brasileira ",Tro-lo-lÃ³,"Brasileira ",Colombo
+"1930-01-01 00:00:00",3,Português,SESSIONS,Malandrinha,Revista,"Brasileira ","Alda Garrido","Brasileira ","Boa Vista"
+"1930-01-01 00:00:00",1,Italiano,COMPLETE,"Mosqueteiros no convento, Os",Opereta,Francesa,Candini-SiddivÃ³,Ãtalo-sul-americana,"Santa Helena"
+"1930-01-01 00:00:00",3,Português,SESSIONS,"Lua de mel (revista)",Revista,Portuguesa,"Eva Stacchino",Portuguesa,Santana
+"1930-01-01 00:00:00",2,Português,SESSIONS,"Guerra ao mosquito",Revista,"Brasileira ","Marques Porto-Luiz Peixoto","Brasileira ","Cassino Antártica"
+"1930-01-01 00:00:00",2,Português,SESSIONS,"Eu sou de circo!","Teatro declamado",AlemÃ£,"ProcÃ³pio Ferreira","Brasileira ",Apolo
+"1930-01-01 00:00:00",1,Português,STAGE_SCREEN,"Bom que dÃ³i",Revista,"Brasileira ",Arruda,"Brasileira ","SÃ£o Carlos"
+"1930-01-02 00:00:00",1,Português,STAGE_SCREEN,"Aguenta, Malhadas",Burleta,"Brasileira ",Arruda,"Brasileira ","SÃ£o Carlos"
+"1930-01-02 00:00:00",2,Português,SESSIONS,Malandrinha,Revista,"Brasileira ","Alda Garrido","Brasileira ","Boa Vista"
+"1930-01-02 00:00:00",1,Italiano,COMPLETE,"Acqua cheta",Opereta,Italiana,Candini-SiddivÃ³,Ãtalo-sul-americana,"Santa Helena"
+"1930-01-02 00:00:00",2,Português,SESSIONS,"Lua de mel (revista)",Revista,Portuguesa,"Eva Stacchino",Portuguesa,Santana
+"1931-01-01 00:00:00",3,Português,STAGE_SCREEN,"Comigo nÃ£o, violÃ£o",Revuette,"Brasileira ","Pinto Filho","Brasileira ","Santa Helena"
+"1931-01-01 00:00:00",2,Português,SESSIONS,"TostÃ£ozinho de felicidade, Um","Teatro declamado","Brasileira ",Abigail-Oduvaldo,"Brasileira ",Apolo
+"1931-01-01 00:00:00",2,Português,SESSIONS,"Sonhos de um moÃ§o loiro","Teatro declamado",NULL,Abigail-Oduvaldo,"Brasileira ",Apolo
+"1931-01-01 00:00:00",2,Português,SESSIONS,"AdÃ£o, Eva e outros membros da familia","Teatro declamado","Brasileira ","Jayme Costa","Brasileira ","Boa Vista"
+"1931-01-02 00:00:00",1,Português,SESSIONS,"TostÃ£ozinho de felicidade, Um","Teatro declamado","Brasileira ",Abigail-Oduvaldo,"Brasileira ",Apolo
+"1931-01-02 00:00:00",1,Português,SESSIONS,"Sonhos de um moÃ§o loiro","Teatro declamado",NULL,Abigail-Oduvaldo,"Brasileira ",Apolo
+"1931-01-02 00:00:00",1,Português,COMPLETE,"Futebol em familia","Teatro declamado",NULL,"Moinho do Jeca","Brasileira ","Moinho do Jeca"
+"1931-01-02 00:00:00",2,Português,STAGE_SCREEN,"Tira teima",Revista,"Brasileira ","Pinto Filho","Brasileira ","Santa Helena"
+"1931-01-03 00:00:00",1,Português,SESSIONS,"Sonhos de um moÃ§o loiro","Teatro declamado",NULL,Abigail-Oduvaldo,"Brasileira ",Apolo
+"1931-01-03 00:00:00",1,Português,SESSIONS,"TostÃ£ozinho de felicidade, Um","Teatro declamado","Brasileira ",Abigail-Oduvaldo,"Brasileira ",Apolo
+"1932-01-01 00:00:00",1,Português,SESSIONS,"Saudade... Palavra doce",Revista,"Brasileira ",Tro-lo-lÃ³,"Brasileira ",Santana
+"1932-01-01 00:00:00",1,Português,SESSIONS,"Desfile tropical",Revista,"Brasileira ",Tro-lo-lÃ³,"Brasileira ",Santana
+"1932-01-01 00:00:00",2,Português,SESSIONS,"Marido de minha noiva, O","Teatro declamado",Espanhola,"ProcÃ³pio Ferreira","Brasileira ",Apolo
+"1932-01-01 00:00:00",3,Português,SESSIONS,"Brasil do amor",Revista,"Brasileira ","Margarida Max","Brasileira ","Cassino Antártica"
+"1932-01-01 00:00:00",2,Português,SESSIONS,"Divino perfume","Teatro declamado","Brasileira ","Jayme Costa","Brasileira ","Boa Vista"
+"1932-01-01 00:00:00",1,Português,COMPLETE,"Três homens para 10 mil virgens","Teatro declamado",NULL,"Moinho do Jeca","Brasileira ","Moinho do Jeca"
+"1932-01-02 00:00:00",2,Português,SESSIONS,"Marido de minha noiva, O","Teatro declamado",Espanhola,"ProcÃ³pio Ferreira","Brasileira ",Apolo
+"1932-01-02 00:00:00",2,Português,SESSIONS,"Nosso céu tem mais estrelas",Revista,"Brasileira ",Tro-lo-lÃ³,"Brasileira ",Avenida
+"1932-01-02 00:00:00",1,AlemÃ£o,COMPLETE,Jaegerblut,"Teatro declamado",NULL,"Riesch Buehne",AlemÃ£,Santana
+"1932-01-02 00:00:00",2,Português,SESSIONS,"Brasil do amor",Revista,"Brasileira ","Margarida Max","Brasileira ","Cassino Antártica"
+"1933-01-01 00:00:00",3,"Napolitano (dialeto)",SESSIONS,"Piscatore Ã¨ curalle","CanÃ§Ã£o encenada",Italiana,"Canzone di Napoli",Ãtalo-sul-americana,Santana
+"1933-01-01 00:00:00",3,Português,SESSIONS,"Sal e pimenta",Revista,NULL,Montparnasse,"Brasileira ",Recreio
+"1933-01-01 00:00:00",3,"Napolitano (dialeto)",SESSIONS,"Tarantella Scugnizza","CanÃ§Ã£o encenada",Italiana,"Napoli canta",Ãtalo-sul-americana,"Cassino Antártica"
+"1933-01-01 00:00:00",3,Português,SESSIONS,"A ver navios",Revista,"Brasileira ","Permanente do Colombo","Brasileira ",Colombo
+"1933-01-01 00:00:00",3,Português,SESSIONS,"Deus lhe pague","Teatro declamado","Brasileira ","ProcÃ³pio Ferreira","Brasileira ","Boa Vista"
+"1933-01-02 00:00:00",2,"Napolitano (dialeto)",SESSIONS,"Piscatore Ã¨ curalle","CanÃ§Ã£o encenada",Italiana,"Napoli canta",Ãtalo-sul-americana,"Cassino Antártica"
+"1933-01-02 00:00:00",2,"Napolitano (dialeto)",SESSIONS,"Piscatore Ã¨ curalle","CanÃ§Ã£o encenada",Italiana,"Canzone di Napoli",Ãtalo-sul-americana,Santana
+"1933-01-02 00:00:00",2,Português,SESSIONS,"Nu e cru",Revista,NULL,Montparnasse,"Brasileira ",Recreio
+"1933-01-02 00:00:00",2,Português,SESSIONS,"Deus lhe pague","Teatro declamado","Brasileira ","ProcÃ³pio Ferreira","Brasileira ","Boa Vista"
+"1933-01-02 00:00:00",1,Português,COMPLETE,"A ver navios",Revista,"Brasileira ","Permanente do Colombo","Brasileira ",Colombo
+"1934-01-01 00:00:00",2,Português,SESSIONS,"CanÃ§Ã£o brasileira",Opereta,"Brasileira ","Brasileira de Teatro Musicado","Brasileira ","Cassino Antártica"
+"1934-01-01 00:00:00",2,Português,SESSIONS,"Meu bebê, O","Teatro declamado",Estadunidense,"ProcÃ³pio Ferreira","Brasileira ","Boa Vista"
+"1934-01-01 00:00:00",2,Português,SESSIONS,"Sistema do Bechara","Teatro declamado","Brasileira ","Espetáculos Ba-ta-clan","Brasileira ",Recreio
+"1934-01-01 00:00:00",1,Italiano,COMPLETE,"Elisir d'amore",Ãpera,Italiana,"Arturo De Angelis (Companhia LÃ­rica Italiana)",Ãtalo-sul-americana,Santana
+"1934-01-02 00:00:00",2,Português,SESSIONS,"Sistema do Bechara","Teatro declamado","Brasileira ","Espetáculos Ba-ta-clan","Brasileira ",Recreio
+"1934-01-02 00:00:00",2,Português,SESSIONS,"Meu bebê, O","Teatro declamado",Estadunidense,"ProcÃ³pio Ferreira","Brasileira ","Boa Vista"
+"1934-01-02 00:00:00",2,Português,SESSIONS,"CanÃ§Ã£o brasileira",Opereta,"Brasileira ","Brasileira de Teatro Musicado","Brasileira ","Cassino Antártica"
+"1934-01-03 00:00:00",2,Português,SESSIONS,"CanÃ§Ã£o brasileira",Opereta,"Brasileira ","Brasileira de Teatro Musicado","Brasileira ","Cassino Antártica"
+"1934-01-03 00:00:00",2,Português,SESSIONS,"Sistema do Bechara","Teatro declamado","Brasileira ","Espetáculos Ba-ta-clan","Brasileira ",Recreio
+"1934-01-03 00:00:00",1,IÃ­diche,COMPLETE,"(sem anÃºncio do tÃ­tulo)","Teatro declamado",NULL,"Israelita de operetas",Israelita,Santana
+"1934-02-16 00:00:00",1,IÃ­diche,COMPLETE,Vênus,Opereta,Austríca,"Israelita de operetas",Israelita,Santana
+"1928-02-14 00:00:00",2,Português,STAGE_SCREEN,"MiscelÃ¢nea (revuette)",Revuette,NULL,"Raul Roulien","Brasileira ",Santana

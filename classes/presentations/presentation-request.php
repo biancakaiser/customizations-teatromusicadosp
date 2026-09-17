@@ -118,21 +118,30 @@ final class PresentationsRequest
     }
 
     /**
-     * Filtros por coluna: os atributos legados `theater`/`year` formam a base;
-     * a query var `tap_f` (escolhas do visitante) sobrescreve.
+     * Filtros por coluna: o atributo legado `theater` e o intervalo de datas
+     * (`date_from`/`date_to`) formam a base; a query var `tap_f`/`tap_from`/
+     * `tap_to` (escolhas do visitante) sobrescreve.
      */
     public function filters(): PresentationFilters {
         $from_atts = PresentationFilters::from_array(
             [
-                'theaterName' => (string) ( $this->atts['theater'] ?? '' ),
-                'settingYear' => (int) ( $this->atts['year'] ?? 0 ),
+                'presentationTheater'          => (string) ( $this->atts['theater'] ?? '' ),
+                PresentationFilters::DATE_FROM => (string) ( $this->atts['date_from'] ?? '' ),
+                PresentationFilters::DATE_TO   => (string) ( $this->atts['date_to'] ?? '' ),
             ]
         );
 
         $from_query = PresentationFilters::from_query( $this->get );
 
         return PresentationFilters::from_array(
-            array_merge( $from_atts->values(), $from_query->values() )
+            array_merge(
+                $from_atts->values(),
+                [
+                    PresentationFilters::DATE_FROM => $from_query->date_from() ?? $from_atts->date_from() ?? '',
+                    PresentationFilters::DATE_TO   => $from_query->date_to() ?? $from_atts->date_to() ?? '',
+                ],
+                $from_query->values()
+            )
         );
     }
 }

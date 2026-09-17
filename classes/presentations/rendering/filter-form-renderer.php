@@ -47,42 +47,59 @@ final class FilterFormRenderer
         <form class="teatro-apresentacoes__search" method="get" action="<?php echo esc_url( $this->page_url ); ?>" role="search">
             <?php echo $this->preserved_query_fields(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
             <input type="hidden" name="<?php echo esc_attr( PresentationsRequest::QV_SUBMITTED ); ?>" value="1" />
-            <div class="teatro-apresentacoes__search-field">
-                <label for="teatro-apresentacoes-s" class="teatro-apresentacoes__search-label">
-                    <?php esc_html_e( 'Buscar apresentações', 'customizations-teatromusicadosp' ); ?>
-                </label>
-                <input
-                    type="search"
-                    id="teatro-apresentacoes-s"
-                    name="<?php echo esc_attr( PresentationsRequest::QV_SEARCH ); ?>"
-                    value="<?php echo esc_attr( $has_request_search ? $search : '' ); ?>"
-                    placeholder="<?php esc_attr_e( 'Peça, companhia, teatro…', 'customizations-teatromusicadosp' ); ?>"
-                />
+            <div class="teatro-apresentacoes__section teatro-apresentacoes__section--controls">
+                <!-- <h3 class="teatro-apresentacoes__section-title" id="teatro-apresentacoes-controls-title">
+                    <?php esc_html_e( 'Buscar Espetáculos', 'customizations-teatromusicadosp' ); ?>
+                </h3> -->
+                <div class="teatro-apresentacoes__search-field">
+                    <label for="teatro-apresentacoes-s" class="teatro-apresentacoes__search-label">
+                        <?php esc_html_e( 'Buscar Espetáculos:', 'customizations-teatromusicadosp' ); ?>
+                    </label>
+                    <input
+                        type="search"
+                        id="teatro-apresentacoes-s"
+                        name="<?php echo esc_attr( PresentationsRequest::QV_SEARCH ); ?>"
+                        value="<?php echo esc_attr( $has_request_search ? $search : '' ); ?>"
+                        placeholder="<?php esc_attr_e( 'Peça, companhia, teatro…', 'customizations-teatromusicadosp' ); ?>"
+                    />
+                </div>
+                <?php echo $this->date_range_field( $filters ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+                <div class="teatro-apresentacoes__section-row" role="group" aria-labelledby="teatro-apresentacoes-controls-title">
+                    <div class="teatro-apresentacoes__group-field">
+                        <label for="teatro-apresentacoes-group" class="teatro-apresentacoes__search-label">
+                            <?php esc_html_e( 'Agrupado por:', 'customizations-teatromusicadosp' ); ?>
+                        </label>
+                        <select
+                            id="teatro-apresentacoes-group"
+                            name="<?php echo esc_attr( PresentationsRequest::QV_GROUP ); ?>"
+                        >
+                            <option value=""><?php esc_html_e( 'Nenhum', 'customizations-teatromusicadosp' ); ?></option>
+                            <?php foreach ( GroupingModes::all() as $group_key => $mode ) : ?>
+                                <option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $group, $group_key ); ?>>
+                                    <?php echo esc_html( $mode->select_label ); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php echo $this->sort_field( $group, $orderby, $order ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+                </div>
             </div>
-            <div class="teatro-apresentacoes__group-field">
-                <label for="teatro-apresentacoes-group" class="teatro-apresentacoes__search-label">
-                    <?php esc_html_e( 'Agrupado por', 'customizations-teatromusicadosp' ); ?>
-                </label>
-                <select
-                    id="teatro-apresentacoes-group"
-                    name="<?php echo esc_attr( PresentationsRequest::QV_GROUP ); ?>"
-                >
-                    <option value=""><?php esc_html_e( 'Nenhum', 'customizations-teatromusicadosp' ); ?></option>
-                    <?php foreach ( GroupingModes::all() as $group_key => $mode ) : ?>
-                        <option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $group, $group_key ); ?>>
-                            <?php echo esc_html( $mode->label ); ?>
-                        </option>
+            <div class="teatro-apresentacoes__section teatro-apresentacoes__section--filters">
+                <h3 class="teatro-apresentacoes__section-title" id="teatro-apresentacoes-filters-title">
+                    <?php esc_html_e( 'Filtros Avançados', 'customizations-teatromusicadosp' ); ?>
+                </h3>
+                
+                <div class="teatro-apresentacoes__filters" role="group" aria-labelledby="teatro-apresentacoes-filters-title">
+                    <?php foreach ( PresentationsSchema::filter_columns_ordered() as $key => $column ) : ?>
+                        <?php echo $this->checkbox_field( $key, $column, $filters->get( $key ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
                     <?php endforeach; ?>
-                </select>
-            </div>
-            <?php echo $this->sort_field( $group, $orderby, $order ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-            <div class="teatro-apresentacoes__filters">
-                <?php foreach ( PresentationsSchema::filter_columns_ordered() as $key => $column ) : ?>
-                    <?php echo $this->checkbox_field( $key, $column, $filters->get( $key ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-                <?php endforeach; ?>
+                </div>
             </div>
             <div class="teatro-apresentacoes__submit-field">
-                <button type="submit"><?php esc_html_e( 'Buscar', 'customizations-teatromusicadosp' ); ?></button>
+                <button type="submit" class="teatro-apresentacoes__button-search"><?php esc_html_e( 'Buscar', 'customizations-teatromusicadosp' ); ?></button>
+                <button type="button" class="teatro-apresentacoes__button-clear">
+                    <?php esc_html_e( 'Limpar Filtros', 'customizations-teatromusicadosp' ); ?>
+                </button>
             </div>
         </form>
         <?php
@@ -115,7 +132,7 @@ final class FilterFormRenderer
                 <?php endforeach; ?>
             </select>
             <label for="teatro-apresentacoes-order" class="teatro-apresentacoes__search-label">
-                <?php esc_html_e( 'Ordem', 'customizations-teatromusicadosp' ); ?>
+                <?php esc_html_e( 'Ordem:', 'customizations-teatromusicadosp' ); ?>
             </label>
             <select
                 id="teatro-apresentacoes-order"
@@ -161,6 +178,43 @@ final class FilterFormRenderer
     }
 
     /**
+     * Filtro por intervalo de datas: dois `<input type="date">` (Data inicial/
+     * Data final) sobre `PresentationFilters::DATE_COLUMN` (presentationDate).
+     * Diferente dos filtros de coluna (`checkbox_field()`), não é uma lista de
+     * valores distintos — é um `>=`/`<=` resolvido em `PresentationFilterClause`.
+     */
+    private function date_range_field( PresentationFilters $filters ): string {
+        ob_start();
+        ?>
+        <div class="teatro-apresentacoes__date-range-field">
+            <div class="teatro-apresentacoes__date-range-item">
+                <label for="teatro-apresentacoes-date-from" class="teatro-apresentacoes__search-label">
+                    <?php esc_html_e( 'Data inicial', 'customizations-teatromusicadosp' ); ?>
+                </label>
+                <input
+                    type="date"
+                    id="teatro-apresentacoes-date-from"
+                    name="<?php echo esc_attr( PresentationFilters::QUERY_VAR_DATE_FROM ); ?>"
+                    value="<?php echo esc_attr( (string) $filters->date_from() ); ?>"
+                />
+            </div>
+            <div class="teatro-apresentacoes__date-range-item">
+                <label for="teatro-apresentacoes-date-to" class="teatro-apresentacoes__search-label">
+                    <?php esc_html_e( 'Data final', 'customizations-teatromusicadosp' ); ?>
+                </label>
+                <input
+                    type="date"
+                    id="teatro-apresentacoes-date-to"
+                    name="<?php echo esc_attr( PresentationFilters::QUERY_VAR_DATE_TO ); ?>"
+                    value="<?php echo esc_attr( (string) $filters->date_to() ); ?>"
+                />
+            </div>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
      * Rótulo do campo de filtro. As colunas com busca interna usam um rótulo
      * "Nome da …" (mais claro para o visitante que o rótulo canônico curto).
      */
@@ -171,7 +225,7 @@ final class FilterFormRenderer
             case 'companyName':
                 return __( 'Nome da Companhia', 'customizations-teatromusicadosp' );
             default:
-                return $column->label;
+                return $column->full_label;
         }
     }
 
@@ -251,8 +305,8 @@ final class FilterFormRenderer
     /**
      * Campos ocultos para preservar outras query vars ao submeter a busca (mas
      * descartando as nossas — a busca sempre volta para a página 1). Os filtros
-     * (`tap_f`) não entram aqui: cada coluna facetável tem seu próprio `<select>`
-     * dentro deste mesmo formulário.
+     * (`tap_f`) e o intervalo de datas (`tap_from`/`tap_to`) não entram aqui:
+     * cada um já tem seu próprio campo dentro deste mesmo formulário.
      */
     private function preserved_query_fields(): string {
         $skip = [
@@ -263,6 +317,8 @@ final class FilterFormRenderer
             PresentationsRequest::QV_ORDER,
             PresentationsRequest::QV_SUBMITTED,
             PresentationFilters::QUERY_VAR,
+            PresentationFilters::QUERY_VAR_DATE_FROM,
+            PresentationFilters::QUERY_VAR_DATE_TO,
             'paged',
         ];
 

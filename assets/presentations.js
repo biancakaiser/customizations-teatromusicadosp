@@ -8,12 +8,14 @@
  * filtram em OR (`col IN (...)`, resolvido no backend); nenhum campo dispara
  * busca sozinho, só o submit do formulário.
  *
- * O modo agrupado não reimplementa o algoritmo de agrupamento em JS: a rota
- * `.../presentations/grouped` roda PresentationGrouper + GroupedTableRenderer
- * no servidor e devolve o HTML da tabela pronto (`{ html, total }`); este
- * script só troca o innerHTML do wrapper. A lista de colunas filtráveis
- * (`filterKeys`) vem de `window.TeatroApresentacoes`, localizada pelo PHP a
- * partir de PresentationsSchema.
+ * Nem o modo plano nem o agrupado reimplementam a montagem da tabela em JS:
+ * as duas rotas REST (`/presentations` e `/presentations/grouped`) devolvem
+ * `{ html, total, ... }` com o `<table>` (ou a mensagem de "nada encontrado")
+ * já pronto — `FlatTableRenderer`/`GroupedTableRenderer`/`ResultsContentRenderer`
+ * no servidor. Este script só lê o estado do formulário, monta a URL da
+ * requisição e troca o `innerHTML` do wrapper pelo HTML devolvido; paginação e
+ * o texto de contagem continuam sendo pequenos templates aqui (não duplicam
+ * formatação de dado, só interpolam números/links atrelados à URL atual).
  */
 (function () {
 	'use strict';
@@ -131,17 +133,6 @@
 		var perPage = parseInt(root.getAttribute('data-per-page'), 10) || 25;
 		var DEFAULT_ORDERBY = 'presentationDate';
 
-		var columns = {};
-		try {
-			columns = JSON.parse(root.getAttribute('data-columns') || '{}');
-		} catch (e) {
-			columns = {};
-		}
-		var colKeys = Object.keys(columns);
-		if (!colKeys.length) {
-			return;
-		}
-
 		// Opções de "Ordenado por:" por modo de agrupamento ('' = modo plano),
 		// para repopular o <select> quando o agrupamento muda sem recarregar.
 		var sortColumns = {};
@@ -156,6 +147,9 @@
 		var groupSelect = root.querySelector('#teatro-apresentacoes-group');
 		var orderbySelect = root.querySelector('#teatro-apresentacoes-orderby');
 		var orderSelect = root.querySelector('#teatro-apresentacoes-order');
+		var dateFromInput = root.querySelector('#teatro-apresentacoes-date-from');
+		var dateToInput = root.querySelector('#teatro-apresentacoes-date-to');
+		var clearButton = root.querySelector('.teatro-apresentacoes__clear-button');
 		var wrap = root.querySelector('.teatro-apresentacoes__table-wrap');
 		var countEl = root.querySelector('.teatro-apresentacoes__count');
 		if (!wrap) {
@@ -171,7 +165,9 @@
 			group: '',
 			orderby: DEFAULT_ORDERBY,
 			order: 'ASC',
-			filters: {}
+			filters: {},
+			dateFrom: '',
+			dateTo: ''
 		};
 
 		// Lê todos os campos do formulário para o `state` (chamado no submit e uma
@@ -181,6 +177,8 @@
 			state.group = groupSelect ? groupSelect.value : '';
 			state.orderby = orderbySelect ? orderbySelect.value : DEFAULT_ORDERBY;
 			state.order = (orderSelect ? orderSelect.value : 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+			state.dateFrom = dateFromInput ? dateFromInput.value.trim() : '';
+			state.dateTo = dateToInput ? dateToInput.value.trim() : '';
 			state.filters = {};
 			var checked = root.querySelectorAll('input[type="checkbox"][name^="tap_f["]:checked');
 			Array.prototype.forEach.call(checked, function (box) {
@@ -250,6 +248,8 @@
 
 		// Vários valores por coluna são combinados em OR pelo backend
 		// (`col IN (...)`) — cada um vira sua própria entrada `filters[col][]`.
+		// O intervalo de datas (`date_from`/`date_to`) é um `>=`/`<=` sobre
+		// presentationDate, resolvido no mesmo backend (PresentationFilterClause).
 		function applyFilterParams(url) {
 			Object.keys(state.filters).forEach(function (col) {
 				(state.filters[col] || []).forEach(function (value) {
@@ -258,6 +258,12 @@
 					}
 				});
 			});
+			if (state.dateFrom) {
+				url.searchParams.set('date_from', state.dateFrom);
+			}
+			if (state.dateTo) {
+				url.searchParams.set('date_to', state.dateTo);
+			}
 		}
 
 		function buildUrl() {
@@ -280,56 +286,6 @@
 			} else {
 				wrap.removeAttribute('aria-busy');
 			}
-		}
-
-		function ensureTable() {
-			var table = wrap.querySelector('.teatro-apresentacoes__table');
-			if (table && !table.classList.contains('teatro-apresentacoes__table--group')) {
-				return table;
-			}
-			wrap.innerHTML = '';
-			table = document.createElement('table');
-			table.className = 'teatro-apresentacoes__table';
-
-			var thead = document.createElement('thead');
-			var headRow = document.createElement('tr');
-			colKeys.forEach(function (key) {
-				var th = document.createElement('th');
-				th.scope = 'col';
-				th.textContent = columns[key];
-				headRow.appendChild(th);
-			});
-			thead.appendChild(headRow);
-			table.appendChild(thead);
-			table.appendChild(document.createElement('tbody'));
-			wrap.appendChild(table);
-			return table;
-		}
-
-		function renderRows(rows) {
-			if (!rows.length) {
-				wrap.innerHTML = '<p class="teatro-apresentacoes__empty">' +
-					escapeHtml(i18n.empty || '') + '</p>';
-				return;
-			}
-
-			var tbody = ensureTable().querySelector('tbody');
-			tbody.innerHTML = '';
-			rows.forEach(function (row) {
-				var tr = document.createElement('tr');
-				colKeys.forEach(function (key) {
-					var td = document.createElement('td');
-					td.setAttribute('data-label', columns[key]);
-					var value = row[key];
-					if (key === 'presentationDate' && typeof value === 'string') {
-						value = value.replace(/\s+00:00:00$/, '');
-					}
-					td.textContent = (value === null || value === undefined || value === '') ?
-						'—' : String(value);
-					tr.appendChild(td);
-				});
-				tbody.appendChild(tr);
-			});
 		}
 
 		function goTo(page) {
@@ -445,6 +401,16 @@
 			} else {
 				url.searchParams.delete('tap_order');
 			}
+			if (state.dateFrom) {
+				url.searchParams.set('tap_from', state.dateFrom);
+			} else {
+				url.searchParams.delete('tap_from');
+			}
+			if (state.dateTo) {
+				url.searchParams.set('tap_to', state.dateTo);
+			} else {
+				url.searchParams.delete('tap_to');
+			}
 			var staleFilterKeys = [];
 			url.searchParams.forEach(function (value, key) {
 				if (key.indexOf('tap_f[') === 0) {
@@ -488,9 +454,7 @@
 					return response.json();
 				})
 				.then(function (payload) {
-					wrap.innerHTML = payload.total ?
-						payload.html :
-						'<p class="teatro-apresentacoes__empty">' + escapeHtml(i18n.empty || '') + '</p>';
+					wrap.innerHTML = payload.html;
 					renderPagination(1);
 					if (countEl && i18n.results) {
 						countEl.hidden = false;
@@ -521,18 +485,14 @@
 					if (!response.ok) {
 						throw new Error('HTTP ' + response.status);
 					}
-					var total = parseInt(response.headers.get('X-WP-Total') || '0', 10);
-					var totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '1', 10);
-					return response.json().then(function (data) {
-						return { rows: data, total: total, totalPages: totalPages };
-					});
+					return response.json();
 				})
 				.then(function (payload) {
-					renderRows(payload.rows || []);
-					renderPagination(payload.totalPages);
+					wrap.innerHTML = payload.html;
+					renderPagination(payload.total_pages);
 					if (countEl && i18n.results) {
 						countEl.hidden = false;
-						countEl.textContent = i18n.results.replace('%s', payload.total.toLocaleString());
+						countEl.textContent = i18n.results.replace('%s', (payload.total || 0).toLocaleString());
 					}
 					syncHistory();
 				})
@@ -549,6 +509,55 @@
 		if (form) {
 			form.addEventListener('submit', function (event) {
 				event.preventDefault();
+				readFields();
+				syncOrderbyOptions();
+				state.submitted = true;
+				state.page = 1;
+				load();
+			});
+		}
+
+		// "Limpar Filtros": zera todos os campos do formulário (busca, datas,
+		// agrupamento, ordenação e caixas de filtro) e refaz a busca, como um
+		// submit — não é `type="reset"` porque isso devolveria os campos ao
+		// estado renderizado pelo servidor (ex.: filtros vindos da URL), não a
+		// um estado vazio.
+		if (clearButton) {
+			clearButton.addEventListener('click', function () {
+				if (searchInput) {
+					searchInput.value = '';
+				}
+				if (dateFromInput) {
+					dateFromInput.value = '';
+				}
+				if (dateToInput) {
+					dateToInput.value = '';
+				}
+				if (groupSelect) {
+					groupSelect.value = '';
+				}
+				if (orderSelect) {
+					orderSelect.value = 'ASC';
+				}
+
+				var checked = root.querySelectorAll('input[type="checkbox"][name^="tap_f["]');
+				Array.prototype.forEach.call(checked, function (box) {
+					box.checked = false;
+				});
+				var counts = root.querySelectorAll('.teatro-apresentacoes__filter-count');
+				Array.prototype.forEach.call(counts, function (countEl) {
+					countEl.textContent = '0';
+					countEl.hidden = true;
+				});
+				var searchBoxes = root.querySelectorAll('.teatro-apresentacoes__filter-search');
+				Array.prototype.forEach.call(searchBoxes, function (input) {
+					input.value = '';
+				});
+				var optionRows = root.querySelectorAll('.teatro-apresentacoes__filter-option');
+				Array.prototype.forEach.call(optionRows, function (row) {
+					row.hidden = false;
+				});
+
 				readFields();
 				syncOrderbyOptions();
 				state.submitted = true;

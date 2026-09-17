@@ -3,12 +3,15 @@
  * Shortcode público `[teatro_apresentacoes]`.
  *
  * Renderiza a tabela de apresentações (tabela `{$wpdb->prefix}teatro_presentations`,
- * populada pelo mock Flat_Table.csv) consultando a rota REST pública
- * `/wp-json/teatromusicadosp/v1/presentations` via `rest_do_request()`.
+ * populada pelo mock Flat_Table.csv) consultando `PresentationsRepository`
+ * diretamente (mesmos métodos `query_presentations()`/`query_all_presentations()`
+ * usados pelas rotas REST — sem round-trip via `rest_do_request()`).
  *
  * O HTML é gerado no servidor (funciona sem JavaScript e é indexável); um
  * script opcional melhora a experiência fazendo busca/filtro/paginação sem
- * recarregar a página, consumindo a mesma rota REST.
+ * recarregar a página, consumindo a rota REST pública
+ * `/wp-json/teatromusicadosp/v1/presentations`, que devolve o mesmo HTML já
+ * pronto (`ResultsContentRenderer`) — o JS só troca `innerHTML`.
  *
  * Esta classe é apenas o *controller* do shortcode: o trabalho pesado está em
  * peças coesas dentro de `classes/presentations/`:
@@ -18,12 +21,13 @@
  *   - Rendering\*                    formulário, tabelas e casco.
  *
  * Atributos:
- *   per_page  (int)    linhas por página (padrão 25, máx. 200)
- *   search    (string) busca inicial (varre todas as colunas)
- *   theater   (string) filtra por nome exato do teatro (equivale a tap_f[theaterName])
- *   year      (int)     filtra por ano da temporada (equivale a tap_f[settingYear])
- *   orderby   (string) coluna de ordenação (padrão presentationDate)
- *   order     (ASC|DESC)
+ *   per_page   (int)    linhas por página (padrão 25, máx. 200)
+ *   search     (string) busca inicial (varre todas as colunas)
+ *   theater    (string) filtra por nome exato do teatro (equivale a tap_f[presentationTheater])
+ *   date_from  (string) 'YYYY-MM-DD' — início do intervalo de datas (equivale a tap_from)
+ *   date_to    (string) 'YYYY-MM-DD' — fim do intervalo de datas (equivale a tap_to)
+ *   orderby    (string) coluna de ordenação (padrão presentationDate)
+ *   order      (ASC|DESC)
  */
 
 namespace TeatroMusicadoSP\Customizations\Presentations;
@@ -32,13 +36,11 @@ use TeatroMusicadoSP\Customizations\Contracts\Module;
 use TeatroMusicadoSP\Customizations\Traits\Singleton;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRepository;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRequest;
-use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilters;
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationsFacets;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingModes;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\PresentationGrouper;
 use TeatroMusicadoSP\Customizations\Presentations\Rendering\FilterFormRenderer;
-use TeatroMusicadoSP\Customizations\Presentations\Rendering\FlatTableRenderer;
-use TeatroMusicadoSP\Customizations\Presentations\Rendering\GroupedTableRenderer;
+use TeatroMusicadoSP\Customizations\Presentations\Rendering\ResultsContentRenderer;
 use TeatroMusicadoSP\Customizations\Presentations\Rendering\ResultsViewRenderer;
 use TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema;
 
@@ -133,12 +135,13 @@ class PresentationsShortcode implements Module
 
         $atts = shortcode_atts(
             [
-                'per_page' => self::DEFAULT_PER_PAGE,
-                'search'   => '',
-                'theater'  => '',
-                'year'     => '',
-                'orderby'  => 'presentationDate',
-                'order'    => 'ASC',
+                'per_page'  => self::DEFAULT_PER_PAGE,
+                'search'    => '',
+                'theater'   => '',
+                'date_from' => '',
+                'date_to'   => '',
+                'orderby'   => 'presentationDate',
+                'order'     => 'ASC',
             ],
             $atts,
             self::SHORTCODE
@@ -162,38 +165,40 @@ class PresentationsShortcode implements Module
         // Sem primeiro carregamento: a tabela só consulta o banco depois do 1º
         // submit do formulário (marcador `tap_go`).
         if ( $submitted && $is_grouped ) {
-            $mode        = GroupingModes::get( $group );
-            $rows        = PresentationsRepository::get_instance()->query_all_presentations(
+            $mode = GroupingModes::get( $group );
+            $rows = PresentationsRepository::get_instance()->query_all_presentations(
                 [
                     'orderby' => $request->orderby(),
                     'order'   => $request->order(),
                     'search'  => $request->search(),
-                    'filters' => $filters->values(),
+                    'filters' => $filters,
                 ]
             );
             $total       = count( $rows );
             $total_pages = 1;
-            $table_html  = ( new GroupedTableRenderer() )->render(
-                ( new PresentationGrouper() )->build(
-                    $rows,
-                    $mode,
-                    [ 'orderby' => $request->orderby(), 'order' => $request->order() ]
-                ),
-                $mode
+            $tree        = ( new PresentationGrouper() )->build(
+                $rows,
+                $mode,
+                [ 'orderby' => $request->orderby(), 'order' => $request->order() ]
             );
+            $table_html  = ResultsContentRenderer::grouped( $rows, $tree, $mode );
         } elseif ( $submitted ) {
-            $page = $this->fetch_page( $request, $filters );
+            $per_page = $request->per_page();
+            $result   = PresentationsRepository::get_instance()->query_presentations(
+                [
+                    'page'     => $request->page(),
+                    'per_page' => $per_page,
+                    'orderby'  => $request->orderby(),
+                    'order'    => $request->order(),
+                    'search'   => $request->search(),
+                    'filters'  => $filters,
+                ]
+            );
 
-            if ( $page['error'] ) {
-                return '<div class="teatro-apresentacoes teatro-apresentacoes--error"><p>'
-                    . esc_html__( 'Não foi possível carregar as apresentações.', 'customizations-teatromusicadosp' )
-                    . '</p></div>';
-            }
-
-            $rows        = $page['rows'];
-            $total       = $page['total'];
-            $total_pages = $page['total_pages'];
-            $table_html  = ( new FlatTableRenderer() )->render( $rows );
+            $rows        = $result['data'];
+            $total       = $result['total'];
+            $total_pages = $per_page > 0 ? (int) ceil( $total / $per_page ) : 1;
+            $table_html  = ResultsContentRenderer::flat( $rows );
         }
 
         $page_url = get_permalink();
@@ -238,48 +243,5 @@ class PresentationsShortcode implements Module
      */
     private function rest_endpoint_url(): string {
         return rest_url( PresentationsRepository::REST_NAMESPACE . PresentationsRepository::REST_ROUTE );
-    }
-
-    /**
-     * Uma página de resultados (modo "Nenhum") via rota REST interna.
-     *
-     * @return array{rows:array<int,array<string,mixed>>,total:int,total_pages:int,error:bool}
-     */
-    private function fetch_page( PresentationsRequest $request, PresentationFilters $filters ): array {
-        $per_page = $request->per_page();
-
-        $rest_request = new \WP_REST_Request(
-            'GET',
-            '/' . PresentationsRepository::REST_NAMESPACE . PresentationsRepository::REST_ROUTE
-        );
-        $rest_request->set_query_params(
-            array_merge(
-                [
-                    'page'     => $request->page(),
-                    'per_page' => $per_page,
-                    'orderby'  => $request->orderby(),
-                    'order'    => $request->order(),
-                    'search'   => $request->search(),
-                ],
-                $filters->to_rest_params()
-            )
-        );
-
-        $response = rest_do_request( $rest_request );
-
-        if ( $response->is_error() ) {
-            return [ 'rows' => [], 'total' => 0, 'total_pages' => 0, 'error' => true ];
-        }
-
-        $rows    = (array) $response->get_data();
-        $headers = $response->get_headers();
-        $total   = isset( $headers['X-WP-Total'] ) ? (int) $headers['X-WP-Total'] : count( $rows );
-
-        return [
-            'rows'        => $rows,
-            'total'       => $total,
-            'total_pages' => (int) ceil( $total / max( 1, $per_page ) ),
-            'error'       => false,
-        ];
     }
 }

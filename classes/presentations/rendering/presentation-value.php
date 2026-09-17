@@ -47,4 +47,26 @@ final class PresentationValue
         }
         return '—';
     }
+
+    /**
+     * Sigla de um valor de idioma/nacionalidade para exibição nas tabelas de
+     * resultado. Espera o valor no formato "XY - Nome" (ex.: "EN - English") e
+     * devolve só o "XY"; quando o valor não segue esse formato, usa os dois
+     * primeiros caracteres em maiúsculas (ex.: "English" → "EN"). "—" se vazio.
+     *
+     * @param mixed $value
+     */
+    public static function acronym( $value ): string {
+        $value = trim( (string) $value );
+        if ( '' === $value ) {
+            return '—';
+        }
+
+        $sep = strpos( $value, ' - ' );
+        if ( false !== $sep && $sep > 0 ) {
+            return strtoupper( trim( substr( $value, 0, $sep ) ) );
+        }
+
+        return strtoupper( mb_substr( $value, 0, 2 ) );
+    }
 }

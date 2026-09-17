@@ -8,13 +8,13 @@
  * Estrutura devolvida (por nível 1):
  *   [ '<l1 name>' => [
  *       'label'  => 'Companhia: X - Nacionalidade: Y',
- *       'total'  => (int) soma de sessionsNumber do grupo inteiro,
+ *       'total'  => (int) soma de presentationSessionsN do grupo inteiro,
  *       'sort'   => [ '<col>' => '<valor>' , ... ]  (campos da faixa de 1º nível),
  *       'l2'     => [ '<l2 name>' => [
  *           'identity' => [ '<col>' => '<valor>' , ... ],
- *           'total'    => (int) soma de sessionsNumber do bloco l2,
- *           'leaves'   => [ '<teatro|tipo|ano>' => [
- *               'theater' =>, 'kind' =>, 'year' =>, 'sessions' => (int),
+ *           'total'    => (int) soma de presentationSessionsN do bloco l2,
+ *           'leaves'   => [ '<teatro|tipo|idioma|ano>' => [
+ *               'theater' =>, 'kind' =>, 'language' =>, 'year' =>, 'sessions' => (int),
  *           ] ],
  *       ] ],
  *   ] ]
@@ -28,6 +28,7 @@
 namespace TeatroMusicadoSP\Customizations\Presentations\Grouping;
 
 use TeatroMusicadoSP\Customizations\Presentations\Rendering\PresentationValue;
+use TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema;
 
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
@@ -35,10 +36,11 @@ final class PresentationGrouper
 {
     /** Coluna do schema => chave no array da linha folha. */
     const LEAF_FIELDS = [
-        'theaterName'      => 'theater',
-        'settingKind'      => 'kind',
-        'presentationDate' => 'year',
-        'sessionsNumber'   => 'sessions',
+        'presentationTheater'   => 'theater',
+        'presentationKind'      => 'kind',
+        'presentationLanguage'  => 'language',
+        'presentationDate'      => 'year',
+        'presentationSessionsN' => 'sessions',
     ];
 
     /**
@@ -54,21 +56,24 @@ final class PresentationGrouper
         $tree = [];
 
         foreach ( $rows as $row ) {
-            $l1_name  = PresentationValue::non_empty( $row[ $mode->l1 ] ?? '' );
-            $l2_name  = PresentationValue::non_empty( $row[ $mode->l2 ] ?? '' );
-            $theater  = PresentationValue::non_empty( $row['theaterName'] ?? '' );
-            $kind     = PresentationValue::non_empty( $row['settingKind'] ?? '' );
+            $l1_name  = PresentationValue::non_empty( $row[ $mode->l1_key ] ?? '' );
+            $l2_name  = PresentationValue::non_empty( $row[ $mode->l2_key ] ?? '' );
+            $theater  = PresentationValue::non_empty( $row['presentationTheater'] ?? '' );
+            $kind     = PresentationValue::non_empty( $row['presentationKind'] ?? '' );
+            $language = PresentationValue::non_empty( $row['presentationLanguage'] ?? '' );
             $year     = PresentationValue::year_of( $row['presentationDate'] ?? null );
-            $sessions = (int) ( $row['sessionsNumber'] ?? 0 );
+            $sessions = (int) ( $row['presentationSessionsN'] ?? 0 );
 
             if ( ! isset( $tree[ $l1_name ] ) ) {
-                $parts = [];
-                $l1_sort = [];
-                foreach ( $mode->l1_label_fields as $label => $field ) {
-                    $parts[]           = $label . ': ' . PresentationValue::non_empty( $row[ $field ] ?? '' );
-                    $l1_sort[ $field ] = trim( (string) ( $row[ $field ] ?? '' ) );
+                $parts     = [];
+                $l1_sort   = [];
+                $l1_labels = $mode->labels_for( $mode->l1_label_fields );
+                foreach ( $mode->l1_label_fields as $field ) {
+                    $raw               = $row[ $field ] ?? '';
+                    $parts[]           = $l1_labels[ $field ] . ': ' . ( PresentationsSchema::is_acronym( $field ) ? PresentationValue::acronym( $raw ) : PresentationValue::non_empty( $raw ) );
+                    $l1_sort[ $field ] = trim( (string) $raw );
                 }
-                $l1_sort[ $mode->l1 ] = $l1_name;
+                $l1_sort[ $mode->l1_key ] = $l1_name;
                 $tree[ $l1_name ] = [
                     'label' => implode( ' - ', $parts ),
                     'total' => 0,
@@ -80,7 +85,7 @@ final class PresentationGrouper
 
             if ( ! isset( $tree[ $l1_name ]['l2'][ $l2_name ] ) ) {
                 $identity = [];
-                foreach ( array_keys( $mode->identity ) as $field ) {
+                foreach ( $mode->identity as $field ) {
                     $identity[ $field ] = trim( (string) ( $row[ $field ] ?? '' ) );
                 }
                 $tree[ $l1_name ]['l2'][ $l2_name ] = [
@@ -91,11 +96,12 @@ final class PresentationGrouper
             }
             $tree[ $l1_name ]['l2'][ $l2_name ]['total'] += $sessions;
 
-            $leaf_key = $theater . '|' . $kind . '|' . $year;
+            $leaf_key = $theater . '|' . $kind . '|' . $language . '|' . $year;
             if ( ! isset( $tree[ $l1_name ]['l2'][ $l2_name ]['leaves'][ $leaf_key ] ) ) {
                 $tree[ $l1_name ]['l2'][ $l2_name ]['leaves'][ $leaf_key ] = [
                     'theater'  => $theater,
                     'kind'     => $kind,
+                    'language' => $language,
                     'year'     => $year,
                     'sessions' => 0,
                 ];
@@ -130,6 +136,7 @@ final class PresentationGrouper
                         static function ( array $a, array $b ): int {
                             return strnatcasecmp( $a['theater'], $b['theater'] )
                                 ?: strnatcasecmp( $a['kind'], $b['kind'] )
+                                ?: strnatcasecmp( $a['language'], $b['language'] )
                                 ?: strnatcasecmp( (string) $a['year'], (string) $b['year'] );
                         }
                     );
@@ -153,12 +160,12 @@ final class PresentationGrouper
             return 'leaf';
         }
         if ( GroupingMode::SORT_TOTAL === $orderby
-            || $orderby === $mode->l1
-            || in_array( $orderby, array_values( $mode->l1_label_fields ), true )
+            || $orderby === $mode->l1_key
+            || in_array( $orderby, $mode->l1_label_fields, true )
         ) {
             return 'l1';
         }
-        if ( $orderby === $mode->l2 || array_key_exists( $orderby, $mode->identity ) ) {
+        if ( $orderby === $mode->l2_key || in_array( $orderby, $mode->identity, true ) ) {
             return 'l2';
         }
         return '';
@@ -172,7 +179,7 @@ final class PresentationGrouper
             $va = (string) ( $a['sort'][ $orderby ] ?? '' );
             $vb = (string) ( $b['sort'][ $orderby ] ?? '' );
             return $dir * strnatcasecmp( $va, $vb )
-                ?: strnatcasecmp( (string) ( $a['sort'][ $mode->l1 ] ?? '' ), (string) ( $b['sort'][ $mode->l1 ] ?? '' ) );
+                ?: strnatcasecmp( (string) ( $a['sort'][ $mode->l1_key ] ?? '' ), (string) ( $b['sort'][ $mode->l1_key ] ?? '' ) );
         };
     }
 
@@ -182,8 +189,8 @@ final class PresentationGrouper
             $vb = (string) ( $b['identity'][ $orderby ] ?? '' );
             return $dir * strnatcasecmp( $va, $vb )
                 ?: strnatcasecmp(
-                    (string) ( $a['identity'][ $mode->l2 ] ?? '' ),
-                    (string) ( $b['identity'][ $mode->l2 ] ?? '' )
+                    (string) ( $a['identity'][ $mode->l2_key ] ?? '' ),
+                    (string) ( $b['identity'][ $mode->l2_key ] ?? '' )
                 );
         };
     }
@@ -200,6 +207,7 @@ final class PresentationGrouper
             return $dir * $primary
                 ?: strnatcasecmp( $a['theater'], $b['theater'] )
                 ?: strnatcasecmp( $a['kind'], $b['kind'] )
+                ?: strnatcasecmp( $a['language'], $b['language'] )
                 ?: strnatcasecmp( (string) $a['year'], (string) $b['year'] );
         };
     }

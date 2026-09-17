@@ -1,17 +1,18 @@
 <?php
 /**
  * Renderiza o "casco" do shortcode: a `<div>` raiz com os `data-*` que o
- * `assets/presentations.js` lê, o container da tabela (com a mensagem de vazio),
- * a paginação (`paginate_links()`) e o parágrafo de contagem.
+ * `assets/presentations.js` lê, o container da tabela, a paginação
+ * (`paginate_links()`) e o parágrafo de contagem.
  *
- * O `<form>` de filtros e a tabela em si chegam prontos (`form_html` / `table_html`).
+ * O `<form>` de filtros e a tabela em si chegam prontos (`form_html` /
+ * `table_html` — este último já inclui a mensagem de "nada encontrado"
+ * quando não há linhas, ver `ResultsContentRenderer`).
  */
 
 namespace TeatroMusicadoSP\Customizations\Presentations\Rendering;
 
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRequest;
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilters;
-use TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema;
 
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
@@ -49,7 +50,6 @@ final class ResultsViewRenderer
      */
     public function render( array $ctx ): string {
         $is_grouped  = (bool) $ctx['is_grouped'];
-        $rows        = (array) $ctx['rows'];
         $total       = (int) $ctx['total'];
         $total_pages = (int) $ctx['total_pages'];
         $paged       = (int) $ctx['paged'];
@@ -69,7 +69,6 @@ final class ResultsViewRenderer
             data-order="<?php echo esc_attr( strtoupper( (string) $ctx['order'] ) === 'DESC' ? 'DESC' : 'ASC' ); ?>"
             data-preset-search="<?php echo esc_attr( $ctx['has_request_search'] ? '' : (string) $ctx['search'] ); ?>"
             data-group="<?php echo esc_attr( $is_grouped ? (string) $ctx['group'] : '' ); ?>"
-            data-columns="<?php echo esc_attr( (string) wp_json_encode( PresentationsSchema::flat_columns() ) ); ?>"
             data-sort-columns="<?php echo esc_attr( (string) wp_json_encode( FilterFormRenderer::sort_options_by_mode() ) ); ?>"
         >
             <?php echo $ctx['form_html']; // phpcs:ignore WordPress.Security.EscapeOutput ?>
@@ -79,11 +78,8 @@ final class ResultsViewRenderer
                     <p class="teatro-apresentacoes__prompt">
                         <?php esc_html_e( 'Use os filtros acima e clique em Buscar para listar as apresentações.', 'customizations-teatromusicadosp' ); ?>
                     </p>
-                <?php elseif ( empty( $rows ) ) : ?>
-                    <p class="teatro-apresentacoes__empty">
-                        <?php esc_html_e( 'Nenhuma apresentação encontrada.', 'customizations-teatromusicadosp' ); ?>
-                    </p>
                 <?php else : ?>
+                    <?php // table_html já traz a mensagem de "nada encontrado" quando $rows está vazio (ver ResultsContentRenderer). ?>
                     <?php echo $ctx['table_html']; // phpcs:ignore WordPress.Security.EscapeOutput ?>
                 <?php endif; ?>
             </div>

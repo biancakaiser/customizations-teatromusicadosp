@@ -7,7 +7,9 @@
  * valores entram sempre como placeholders (`%s`/`%d`) — nunca interpolados.
  *
  * Cada coluna filtrada vira `\`col\` IN (%s, %s, ...)` — múltiplos valores numa
- * mesma coluna são combinados em OR; colunas diferentes continuam em AND.
+ * mesma coluna são combinados em OR; colunas diferentes continuam em AND. O
+ * intervalo de datas de `PresentationFilters` (`date_from`/`date_to`) vira
+ * `\`presentationDate\` >= %s` / `<= %s`, também em AND com o resto.
  */
 
 namespace TeatroMusicadoSP\Customizations\Presentations\Filters;
@@ -53,6 +55,16 @@ final class PresentationFilterClause
             foreach ( $values as $value ) {
                 $params[] = $schema_column->is_numeric() ? (int) $value : (string) $value;
             }
+        }
+
+        $date_column = PresentationFilters::DATE_COLUMN;
+        if ( null !== $filters->date_from() ) {
+            $clauses[] = "`{$date_column}` >= %s";
+            $params[]  = $filters->date_from() . ' 00:00:00';
+        }
+        if ( null !== $filters->date_to() ) {
+            $clauses[] = "`{$date_column}` <= %s";
+            $params[]  = $filters->date_to() . ' 23:59:59';
         }
 
         return [
