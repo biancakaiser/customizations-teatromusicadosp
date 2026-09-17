@@ -208,7 +208,7 @@ final class PresentationsSchema
                 'presentationKind'      => [ 'Tipo de Espetáculo', 'Tipo', $s, false, true, true ],
                 'presentationLanguage'  => [ 'Idioma do Espetáculo', 'Idioma', $s, false, true, true, false, true ],
                 'presentationDate'      => [ 'Data da apresentação', 'Data', $d, false, false, false ],
-                'presentationSessionsN' => [ 'Nº de Sessões', 'Nº de Sessões', $i, false, false, false ],
+                'presentationSessionsN' => [ 'Nº de Sessões', 'Sessões', $i, false, false, false ],
             ],
         ];
 

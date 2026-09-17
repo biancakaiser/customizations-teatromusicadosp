@@ -18,6 +18,7 @@ use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilters;
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilterClause;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingMode;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingModes;
+use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupedPager;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\PresentationGrouper;
 use TeatroMusicadoSP\Customizations\Presentations\Rendering\ResultsContentRenderer;
 
@@ -260,16 +261,7 @@ class PresentationsRepository implements Module
                 'permission_callback' => '__return_true',
                 'callback'            => [ $this, 'rest_get_presentations' ],
                 'args'                => array_merge(
-                    [
-                        'page' => [
-                            'default'           => 1,
-                            'sanitize_callback' => 'absint',
-                        ],
-                        'per_page' => [
-                            'default'           => 50,
-                            'sanitize_callback' => 'absint',
-                        ],
-                    ],
+                    self::pagination_rest_args(),
                     self::shared_query_args()
                 ),
             ]
@@ -292,10 +284,34 @@ class PresentationsRepository implements Module
                             },
                         ],
                     ],
+                    self::pagination_rest_args(),
                     self::shared_query_args()
                 ),
             ]
         );
+    }
+
+    /**
+     * Argumentos `page`/`per_page` compartilhados pelas duas rotas (a plana e
+     * a agrupada) — `per_page` é o seletor "Resultados por página" visível
+     * nos dois modos; `0` significa "Sem Paginação".
+     *
+     * @return array<string,array<string,mixed>>
+     */
+    private static function pagination_rest_args(): array {
+        return [
+            'page' => [
+                'default'           => 1,
+                'sanitize_callback' => 'absint',
+            ],
+            'per_page' => [
+                'default'           => PresentationsRequest::DEFAULT_RESULTS_PER_PAGE,
+                'sanitize_callback' => 'absint',
+                'validate_callback' => static function ( $value ) {
+                    return in_array( (int) $value, PresentationsRequest::RESULTS_PER_PAGE_OPTIONS, true );
+                },
+            ],
+        ];
     }
 
     /**
@@ -381,13 +397,15 @@ class PresentationsRepository implements Module
             ]
         );
 
-        $tree = ( new PresentationGrouper() )->build( $rows, $mode, [ 'orderby' => $orderby, 'order' => $order ] );
-        $html = ResultsContentRenderer::grouped( $rows, $tree, $mode );
+        $tree  = ( new PresentationGrouper() )->build( $rows, $mode, [ 'orderby' => $orderby, 'order' => $order ] );
+        $paged = ( new GroupedPager() )->paginate( $tree, (int) $request['per_page'], max( 1, (int) $request['page'] ) );
+        $html  = ResultsContentRenderer::grouped( $rows, $paged['tree'], $mode );
 
         $response = new \WP_REST_Response(
             [
-                'html'  => $html,
-                'total' => count( $rows ),
+                'html'        => $html,
+                'total'       => count( $rows ),
+                'total_pages' => $paged['total_pages'],
             ],
             200
         );
@@ -404,24 +422,45 @@ class PresentationsRepository implements Module
      * (`ResultsContentRenderer::flat()`) — o cliente só troca `innerHTML`.
      */
     public function rest_get_presentations( \WP_REST_Request $request ): \WP_REST_Response {
-        $per_page = min( 200, max( 1, (int) $request['per_page'] ) );
+        $per_page = (int) $request['per_page'];
+        $orderby  = (string) $request['orderby'];
+        $order    = strtoupper( (string) $request['order'] ) === 'DESC' ? 'DESC' : 'ASC';
+        $search   = trim( (string) $request['search'] );
+        $filters  = PresentationFilters::from_rest_request( $request );
 
-        $args = [
-            'page'     => max( 1, (int) $request['page'] ),
-            'per_page' => $per_page,
-            'orderby'  => (string) $request['orderby'],
-            'order'    => strtoupper( (string) $request['order'] ) === 'DESC' ? 'DESC' : 'ASC',
-            'search'   => trim( (string) $request['search'] ),
-            'filters'  => PresentationFilters::from_rest_request( $request ),
-        ];
-
-        $result      = $this->query_presentations( $args );
-        $total_pages = $per_page > 0 ? (int) ceil( $result['total'] / $per_page ) : 1;
+        // 0 = "Sem Paginação": mesma consulta sem `LIMIT`/`OFFSET` do modo
+        // agrupado (mesmo teto de segurança de 10 mil linhas).
+        if ( 0 === $per_page ) {
+            $rows        = $this->query_all_presentations(
+                [
+                    'orderby' => $orderby,
+                    'order'   => $order,
+                    'search'  => $search,
+                    'filters' => $filters,
+                ]
+            );
+            $total       = count( $rows );
+            $total_pages = 1;
+        } else {
+            $result = $this->query_presentations(
+                [
+                    'page'     => max( 1, (int) $request['page'] ),
+                    'per_page' => $per_page,
+                    'orderby'  => $orderby,
+                    'order'    => $order,
+                    'search'   => $search,
+                    'filters'  => $filters,
+                ]
+            );
+            $rows        = $result['data'];
+            $total       = $result['total'];
+            $total_pages = (int) ceil( $total / $per_page );
+        }
 
         $response = new \WP_REST_Response(
             [
-                'html'        => ResultsContentRenderer::flat( $result['data'] ),
-                'total'       => $result['total'],
+                'html'        => ResultsContentRenderer::flat( $rows ),
+                'total'       => $total,
                 'total_pages' => $total_pages,
             ],
             200
@@ -460,7 +499,10 @@ class PresentationsRepository implements Module
 
         $orderby  = PresentationsSchema::is_orderable( (string) $args['orderby'] ) ? (string) $args['orderby'] : 'presentationDate';
         $order    = 'DESC' === strtoupper( (string) $args['order'] ) ? 'DESC' : 'ASC';
-        $per_page = min( 200, max( 1, (int) $args['per_page'] ) );
+        // O maior valor do seletor "Resultados por página" (ver
+        // PresentationsRequest::RESULTS_PER_PAGE_OPTIONS); "Sem Paginação" (0)
+        // é tratado antes de chegar aqui pelos chamadores.
+        $per_page = min( 1000, max( 1, (int) $args['per_page'] ) );
         $page     = max( 1, (int) $args['page'] );
         $offset   = ( $page - 1 ) * $per_page;
         $search   = trim( (string) $args['search'] );
@@ -510,11 +552,12 @@ class PresentationsRepository implements Module
     }
 
     /**
-     * Todas as linhas que satisfazem os filtros, sem paginação — usado apenas
-     * pelo modo agrupado, onde os grupos podem cruzar páginas e a tabela
-     * precisa do conjunto completo. Teto de segurança: nunca devolve mais que
-     * 10 mil linhas (mesmo limite que a antiga varredura página a página do
-     * shortcode aplicava: 200 × 50).
+     * Todas as linhas que satisfazem os filtros, sem paginação — usado pelo
+     * modo agrupado (onde os grupos podem cruzar páginas e a tabela precisa do
+     * conjunto completo antes de `GroupedPager` cortar em páginas) e pela
+     * opção "Sem Paginação" do seletor "Resultados por página" no modo plano.
+     * Teto de segurança: nunca devolve mais que 10 mil linhas (mesmo limite
+     * que a antiga varredura página a página do shortcode aplicava: 200 × 50).
      *
      * @param array $args orderby, order, search, filters (um `PresentationFilters` já pronto)
      * @return array<int,array<string,mixed>>

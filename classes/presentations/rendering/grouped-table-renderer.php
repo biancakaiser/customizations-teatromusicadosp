@@ -41,12 +41,15 @@ final class GroupedTableRenderer
             <thead>
                 <tr>
                     <?php foreach ( $identity_keys as $ikey ) : ?>
-                        <?php $class_attr = PresentationsSchema::is_acronym( $ikey ) ? ' class="teatro-apresentacoes__col--acronym"' : ''; ?>
-                        <th scope="col"<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php echo esc_html( $identity_label_map[ $ikey ] ); ?></th>
+                        <?php
+                        $is_acronym = PresentationsSchema::is_acronym( $ikey );
+                        $class_attr = $is_acronym ? ' class="teatro-apresentacoes__col--acronym"' : '';
+                        ?>
+                        <th scope="col"<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php if ( $is_acronym ) : ?><span class="teatro-apresentacoes__acronym-head"><?php echo esc_html( $identity_label_map[ $ikey ] ); ?></span><?php else : ?><?php echo esc_html( $identity_label_map[ $ikey ] ); ?><?php endif; ?></th>
                     <?php endforeach; ?>
                     <th scope="col"><?php echo esc_html( $theater_label ); ?></th>
                     <th scope="col"><?php echo esc_html( $kind_label ); ?></th>
-                    <th scope="col"<?php echo $language_class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php echo esc_html( $language_label ); ?></th>
+                    <th scope="col"<?php echo $language_class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php if ( $language_is_acronym ) : ?><span class="teatro-apresentacoes__acronym-head"><?php echo esc_html( $language_label ); ?></span><?php else : ?><?php echo esc_html( $language_label ); ?><?php endif; ?></th>
                     <th scope="col"><?php echo esc_html( $year_label ); ?></th>
                     <th scope="col"><?php echo esc_html( $sessions_label ); ?></th>
                     <th scope="col"><?php echo esc_html( $total_label ); ?></th>
@@ -85,8 +88,7 @@ final class GroupedTableRenderer
                                         <?php $value = $l2['identity'][ $ikey ] ?? ''; ?>
                                         <?php $is_acronym = PresentationsSchema::is_acronym( $ikey ); ?>
                                         <?php $value = $is_acronym ? PresentationValue::acronym( $value ) : ( '' !== $value ? $value : '—' ); ?>
-                                        <?php $cell_class = 'teatro-apresentacoes__group-cell' . ( $is_acronym ? ' teatro-apresentacoes__col--acronym' : '' ); ?>
-                                        <td class="<?php echo esc_attr( $cell_class ); ?>"<?php echo $span_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?> data-label="<?php echo esc_attr( $identity_label_map[ $ikey ] ); ?>">
+                                        <td class="teatro-apresentacoes__group-cell"<?php echo $span_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?> data-label="<?php echo esc_attr( $identity_label_map[ $ikey ] ); ?>">
                                             <?php echo esc_html( $value ); ?>
                                         </td>
                                     <?php endforeach; ?>
@@ -94,7 +96,7 @@ final class GroupedTableRenderer
                                 <td data-label="<?php echo esc_attr( $theater_label ); ?>"><?php echo esc_html( $leaf['theater'] ); ?></td>
                                 <td data-label="<?php echo esc_attr( $kind_label ); ?>"><?php echo esc_html( $leaf['kind'] ); ?></td>
                                 <?php $language_value = $language_is_acronym ? PresentationValue::acronym( $leaf['language'] ) : $leaf['language']; ?>
-                                <td data-label="<?php echo esc_attr( $language_label ); ?>"<?php echo $language_class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php echo esc_html( $language_value ); ?></td>
+                                <td data-label="<?php echo esc_attr( $language_label ); ?>"><?php echo esc_html( $language_value ); ?></td>
                                 <td data-label="<?php echo esc_attr( $year_label ); ?>"><?php echo esc_html( (string) $leaf['year'] ); ?></td>
                                 <td data-label="<?php echo esc_attr( $sessions_label ); ?>"><?php echo esc_html( number_format_i18n( $leaf['sessions'] ) ); ?></td>
                                 <?php if ( ! $l1_total_shown ) : ?>

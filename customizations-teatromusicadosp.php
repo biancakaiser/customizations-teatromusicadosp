@@ -58,6 +58,8 @@ require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/presentations/rendering/presentation-value.php';
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/presentations/grouping/presentation-grouper.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/grouping/grouped-pager.php';
 
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/presentations/presentations-repository.php';

@@ -21,7 +21,10 @@
  *   - Rendering\*                    formulário, tabelas e casco.
  *
  * Atributos:
- *   per_page   (int)    linhas por página (padrão 25, máx. 200)
+ *   per_page   (int)    linhas por página inicial; só tem efeito se já for uma
+ *                       das opções do seletor "Resultados por página" (ver
+ *                       PresentationsRequest::RESULTS_PER_PAGE_OPTIONS) — o
+ *                       visitante pode trocar livremente depois (padrão 100)
  *   search     (string) busca inicial (varre todas as colunas)
  *   theater    (string) filtra por nome exato do teatro (equivale a tap_f[presentationTheater])
  *   date_from  (string) 'YYYY-MM-DD' — início do intervalo de datas (equivale a tap_from)
@@ -38,6 +41,7 @@ use TeatroMusicadoSP\Customizations\Presentations\PresentationsRepository;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRequest;
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationsFacets;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingModes;
+use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupedPager;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\PresentationGrouper;
 use TeatroMusicadoSP\Customizations\Presentations\Rendering\FilterFormRenderer;
 use TeatroMusicadoSP\Customizations\Presentations\Rendering\ResultsContentRenderer;
@@ -175,30 +179,47 @@ class PresentationsShortcode implements Module
                 ]
             );
             $total       = count( $rows );
-            $total_pages = 1;
             $tree        = ( new PresentationGrouper() )->build(
                 $rows,
                 $mode,
                 [ 'orderby' => $request->orderby(), 'order' => $request->order() ]
             );
-            $table_html  = ResultsContentRenderer::grouped( $rows, $tree, $mode );
+            $paged       = ( new GroupedPager() )->paginate( $tree, $request->results_per_page(), $request->page() );
+            $total_pages = $paged['total_pages'];
+            $table_html  = ResultsContentRenderer::grouped( $rows, $paged['tree'], $mode );
         } elseif ( $submitted ) {
-            $per_page = $request->per_page();
-            $result   = PresentationsRepository::get_instance()->query_presentations(
-                [
-                    'page'     => $request->page(),
-                    'per_page' => $per_page,
-                    'orderby'  => $request->orderby(),
-                    'order'    => $request->order(),
-                    'search'   => $request->search(),
-                    'filters'  => $filters,
-                ]
-            );
+            $per_page = $request->results_per_page();
 
-            $rows        = $result['data'];
-            $total       = $result['total'];
-            $total_pages = $per_page > 0 ? (int) ceil( $total / $per_page ) : 1;
-            $table_html  = ResultsContentRenderer::flat( $rows );
+            // 0 = "Sem Paginação": mesma consulta sem `LIMIT`/`OFFSET` já usada
+            // pelo modo agrupado (mesmo teto de segurança de 10 mil linhas).
+            if ( 0 === $per_page ) {
+                $rows        = PresentationsRepository::get_instance()->query_all_presentations(
+                    [
+                        'orderby' => $request->orderby(),
+                        'order'   => $request->order(),
+                        'search'  => $request->search(),
+                        'filters' => $filters,
+                    ]
+                );
+                $total       = count( $rows );
+                $total_pages = 1;
+            } else {
+                $result = PresentationsRepository::get_instance()->query_presentations(
+                    [
+                        'page'     => $request->page(),
+                        'per_page' => $per_page,
+                        'orderby'  => $request->orderby(),
+                        'order'    => $request->order(),
+                        'search'   => $request->search(),
+                        'filters'  => $filters,
+                    ]
+                );
+
+                $rows        = $result['data'];
+                $total       = $result['total'];
+                $total_pages = (int) ceil( $total / $per_page );
+            }
+            $table_html = ResultsContentRenderer::flat( $rows );
         }
 
         $page_url = get_permalink();
@@ -224,7 +245,7 @@ class PresentationsShortcode implements Module
                 'total'              => $total,
                 'total_pages'        => $total_pages,
                 'paged'              => $request->page(),
-                'per_page'           => $request->per_page(),
+                'results_per_page'   => $request->results_per_page(),
                 'orderby'            => $request->orderby(),
                 'order'              => $request->order(),
                 'has_request_orderby' => $request->has_request_orderby(),

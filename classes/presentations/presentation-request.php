@@ -18,12 +18,22 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 final class PresentationsRequest
 {
-    const QV_SEARCH    = 'tap_s';
-    const QV_PAGED     = 'tap_paged';
-    const QV_GROUP     = 'tap_group';
-    const QV_ORDERBY   = 'tap_orderby';
-    const QV_ORDER     = 'tap_order';
-    const QV_SUBMITTED = 'tap_go';
+    const QV_SEARCH           = 'tap_s';
+    const QV_PAGED            = 'tap_paged';
+    const QV_GROUP            = 'tap_group';
+    const QV_ORDERBY          = 'tap_orderby';
+    const QV_ORDER            = 'tap_order';
+    const QV_SUBMITTED        = 'tap_go';
+    const QV_RESULTS_PER_PAGE = 'tap_rpp';
+
+    /**
+     * Tamanhos de página aceitos pelo seletor "Resultados por página" (modo
+     * plano e agrupado); `0` = "Sem Paginação".
+     */
+    const RESULTS_PER_PAGE_OPTIONS = [ 0, 50, 100, 200, 500, 1000 ];
+
+    /** Tamanho de página padrão quando o visitante não escolheu nenhum. */
+    const DEFAULT_RESULTS_PER_PAGE = 100;
 
     /** @var array<string,mixed> */
     private $get;
@@ -68,8 +78,25 @@ final class PresentationsRequest
         return isset( $this->get[ self::QV_PAGED ] ) ? max( 1, (int) $this->get[ self::QV_PAGED ] ) : 1;
     }
 
-    public function per_page(): int {
-        return min( 200, max( 1, (int) ( $this->atts['per_page'] ?? 25 ) ) );
+    /**
+     * Tamanho de página do seletor "Resultados por página" (`0` = "Sem
+     * Paginação"), usado pelos dois modos (plano e agrupado). A escolha do
+     * visitante (`tap_rpp`) prevalece; na ausência dela, cai para o atributo
+     * `per_page` do shortcode só se ele já for um dos valores aceitos —
+     * senão (ex.: o padrão antigo, 25), usa `DEFAULT_RESULTS_PER_PAGE`.
+     */
+    public function results_per_page(): int {
+        if ( isset( $this->get[ self::QV_RESULTS_PER_PAGE ] ) ) {
+            $value = (int) $this->get[ self::QV_RESULTS_PER_PAGE ];
+            if ( in_array( $value, self::RESULTS_PER_PAGE_OPTIONS, true ) ) {
+                return $value;
+            }
+        }
+        $attr_value = (int) ( $this->atts['per_page'] ?? 0 );
+        if ( $attr_value > 0 && in_array( $attr_value, self::RESULTS_PER_PAGE_OPTIONS, true ) ) {
+            return $attr_value;
+        }
+        return self::DEFAULT_RESULTS_PER_PAGE;
     }
 
     /**

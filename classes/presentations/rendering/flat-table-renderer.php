@@ -39,9 +39,10 @@ final class FlatTableRenderer
                             <?php
                             $solo_key   = array_key_first( $members );
                             $solo       = $members[ $solo_key ];
-                            $class_attr = PresentationsSchema::is_acronym( $solo_key ) ? ' class="teatro-apresentacoes__col--acronym"' : '';
+                            $is_acronym = PresentationsSchema::is_acronym( $solo_key );
+                            $class_attr = $is_acronym ? ' class="teatro-apresentacoes__col--acronym"' : '';
                             ?>
-                            <th scope="col" rowspan="2" abbr="<?php echo esc_attr( $solo['full_label'] ); ?>"<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php echo esc_html( $solo['short_label'] ); ?></th>
+                            <th scope="col" rowspan="2" abbr="<?php echo esc_attr( $solo['full_label'] ); ?>"<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php if ( $is_acronym ) : ?><span class="teatro-apresentacoes__acronym-head"><?php echo esc_html( $solo['short_label'] ); ?></span><?php else : ?><?php echo esc_html( $solo['short_label'] ); ?><?php endif; ?></th>
                         <?php endif; ?>
                     <?php endforeach; ?>
                 </tr>
@@ -49,8 +50,11 @@ final class FlatTableRenderer
                     <?php foreach ( $groups as $members ) : ?>
                         <?php if ( count( $members ) > 1 ) : ?>
                             <?php foreach ( $members as $key => $col ) : ?>
-                                <?php $class_attr = PresentationsSchema::is_acronym( $key ) ? ' class="teatro-apresentacoes__col--acronym"' : ''; ?>
-                                <th scope="col" abbr="<?php echo esc_attr( $col['full_label'] ); ?>"<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php echo esc_html( $col['short_label'] ); ?></th>
+                                <?php
+                                $is_acronym = PresentationsSchema::is_acronym( $key );
+                                $class_attr = $is_acronym ? ' class="teatro-apresentacoes__col--acronym"' : '';
+                                ?>
+                                <th scope="col" abbr="<?php echo esc_attr( $col['full_label'] ); ?>"<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php if ( $is_acronym ) : ?><span class="teatro-apresentacoes__acronym-head"><?php echo esc_html( $col['short_label'] ); ?></span><?php else : ?><?php echo esc_html( $col['short_label'] ); ?><?php endif; ?></th>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     <?php endforeach; ?>
@@ -64,8 +68,7 @@ final class FlatTableRenderer
                             <?php if ( 'presentationDate' === $key ) { $value = PresentationValue::date_br( $value ); } ?>
                             <?php $is_acronym = PresentationsSchema::is_acronym( $key ); ?>
                             <?php if ( $is_acronym ) { $value = PresentationValue::acronym( $value ); } ?>
-                            <?php $class_attr = $is_acronym ? ' class="teatro-apresentacoes__col--acronym"' : ''; ?>
-                            <td<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?> data-label="<?php echo esc_attr( $columns[ $key ] ); ?>">
+                            <td data-label="<?php echo esc_attr( $columns[ $key ] ); ?>">
                                 <?php echo esc_html( ( null === $value || '' === $value ) ? '—' : (string) $value ); ?>
                             </td>
                         <?php endforeach; ?>

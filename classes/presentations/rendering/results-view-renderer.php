@@ -37,7 +37,7 @@ final class ResultsViewRenderer
      *   total:int,
      *   total_pages:int,
      *   paged:int,
-     *   per_page:int,
+     *   results_per_page:int,
      *   orderby:string,
      *   order:string,
      *   search:string,
@@ -64,7 +64,6 @@ final class ResultsViewRenderer
             class="teatro-apresentacoes alignfull"
             data-rest="<?php echo esc_url( $this->rest_url ); ?>"
             data-submitted="<?php echo esc_attr( $submitted ? '1' : '' ); ?>"
-            data-per-page="<?php echo esc_attr( (string) $ctx['per_page'] ); ?>"
             data-orderby="<?php echo esc_attr( (string) $ctx['orderby'] ); ?>"
             data-order="<?php echo esc_attr( strtoupper( (string) $ctx['order'] ) === 'DESC' ? 'DESC' : 'ASC' ); ?>"
             data-preset-search="<?php echo esc_attr( $ctx['has_request_search'] ? '' : (string) $ctx['search'] ); ?>"
@@ -73,7 +72,7 @@ final class ResultsViewRenderer
         >
             <?php echo $ctx['form_html']; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
-            <div class="teatro-apresentacoes__table-wrap<?php echo $is_grouped ? ' teatro-apresentacoes__table-wrap--grouped' : ''; ?>" aria-live="polite">
+            <div id="teatro-apresentacoes-table-wrap" class="teatro-apresentacoes__table-wrap<?php echo $is_grouped ? ' teatro-apresentacoes__table-wrap--grouped' : ''; ?>" aria-live="polite">
                 <?php if ( ! $submitted ) : ?>
                     <p class="teatro-apresentacoes__prompt">
                         <?php esc_html_e( 'Use os filtros acima e clique em Buscar para listar as apresentações.', 'customizations-teatromusicadosp' ); ?>
@@ -84,35 +83,62 @@ final class ResultsViewRenderer
                 <?php endif; ?>
             </div>
 
-            <?php if ( $submitted && $total_pages > 1 ) : ?>
-                <nav class="teatro-apresentacoes__pagination" aria-label="<?php esc_attr_e( 'Paginação', 'customizations-teatromusicadosp' ); ?>">
-                    <?php
-                    echo wp_kses_post(
-                        (string) paginate_links(
-                            [
-                                'base'      => add_query_arg( PresentationsRequest::QV_PAGED, '%#%', $this->page_url ),
-                                'format'    => '',
-                                'current'   => $paged,
-                                'total'     => $total_pages,
-                                'add_args'  => $this->pagination_args(
-                                $filters,
-                                (string) $ctx['group'],
-                                (bool) $ctx['has_request_search'],
-                                (string) $ctx['search'],
-                                $has_request_orderby,
-                                (string) $ctx['orderby'],
-                                (string) $ctx['order']
-                            ),
-                                'prev_text' => __( '&laquo; Anterior', 'customizations-teatromusicadosp' ),
-                                'next_text' => __( 'Próxima &raquo;', 'customizations-teatromusicadosp' ),
-                            ]
-                        )
-                    );
-                    ?>
-                </nav>
+            <?php if ( $submitted ) : ?>
+                <div class="teatro-apresentacoes__pagination-bar">
+                    <?php if ( $total_pages > 1 ) : ?>
+                        <nav id="teatro-apresentacoes-pagination" class="teatro-apresentacoes__pagination" aria-label="<?php esc_attr_e( 'Paginação', 'customizations-teatromusicadosp' ); ?>">
+                            <?php
+                            echo wp_kses_post(
+                                (string) paginate_links(
+                                    [
+                                        'base'      => add_query_arg( PresentationsRequest::QV_PAGED, '%#%', $this->page_url ),
+                                        'format'    => '',
+                                        'current'   => $paged,
+                                        'total'     => $total_pages,
+                                        'add_args'  => $this->pagination_args(
+                                        $filters,
+                                        (string) $ctx['group'],
+                                        (bool) $ctx['has_request_search'],
+                                        (string) $ctx['search'],
+                                        $has_request_orderby,
+                                        (string) $ctx['orderby'],
+                                        (string) $ctx['order'],
+                                        (int) $ctx['results_per_page']
+                                    ),
+                                        'prev_text' => __( '&laquo; Anterior', 'customizations-teatromusicadosp' ),
+                                        'next_text' => __( 'Próxima &raquo;', 'customizations-teatromusicadosp' ),
+                                    ]
+                                )
+                            );
+                            ?>
+                        </nav>
+                    <?php endif; ?>
+
+                    <div class="teatro-apresentacoes__page-size">
+                        <label for="teatro-apresentacoes-results-per-page" class="teatro-apresentacoes__search-label">
+                            <?php esc_html_e( 'Resultados por página:', 'customizations-teatromusicadosp' ); ?>
+                        </label>
+                        <select
+                            id="teatro-apresentacoes-results-per-page"
+                            name="<?php echo esc_attr( PresentationsRequest::QV_RESULTS_PER_PAGE ); ?>"
+                            form="teatro-apresentacoes-form"
+                        >
+                            <?php foreach ( PresentationsRequest::RESULTS_PER_PAGE_OPTIONS as $option ) : ?>
+                                <option value="<?php echo esc_attr( (string) $option ); ?>" <?php selected( (int) $ctx['results_per_page'], $option ); ?>>
+                                    <?php echo 0 === $option
+                                        ? esc_html__( 'Sem Paginação', 'customizations-teatromusicadosp' )
+                                        : esc_html( number_format_i18n( $option ) ); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" form="teatro-apresentacoes-form" class="teatro-apresentacoes__button-page-size">
+                            <?php esc_html_e( 'Aplicar', 'customizations-teatromusicadosp' ); ?>
+                        </button>
+                    </div>
+                </div>
             <?php endif; ?>
 
-            <p class="teatro-apresentacoes__count" role="status"<?php echo $submitted ? '' : ' hidden'; ?>>
+            <p id="teatro-apresentacoes-count" class="teatro-apresentacoes__count" role="status"<?php echo $submitted ? '' : ' hidden'; ?>>
                 <?php
                 echo esc_html(
                     sprintf(
@@ -141,7 +167,8 @@ final class ResultsViewRenderer
         string $search,
         bool $has_request_orderby = false,
         string $orderby = 'presentationDate',
-        string $order = 'ASC'
+        string $order = 'ASC',
+        int $results_per_page = PresentationsRequest::DEFAULT_RESULTS_PER_PAGE
     ): array {
         $args = $filters->to_query_args();
 
@@ -160,6 +187,12 @@ final class ResultsViewRenderer
         if ( $has_request_orderby ) {
             $args[ PresentationsRequest::QV_ORDERBY ] = $orderby;
             $args[ PresentationsRequest::QV_ORDER ]   = strtoupper( $order ) === 'DESC' ? 'DESC' : 'ASC';
+        }
+
+        // Preserva o tamanho de página escolhido ao navegar entre páginas sem
+        // JavaScript (senão cada clique voltaria ao padrão).
+        if ( PresentationsRequest::DEFAULT_RESULTS_PER_PAGE !== $results_per_page ) {
+            $args[ PresentationsRequest::QV_RESULTS_PER_PAGE ] = $results_per_page;
         }
 
         return $args;

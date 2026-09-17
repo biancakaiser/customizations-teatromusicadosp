@@ -67,9 +67,9 @@
 	 * Nenhum dos dois altera o valor que vai no submit — só a apresentação.
 	 */
 	function enhanceFilterField(fieldEl) {
-		var search = fieldEl.querySelector('.teatro-apresentacoes__filter-search');
+		var search = fieldEl.id ? document.getElementById(fieldEl.id + '-search') : null;
 		var rows = fieldEl.querySelectorAll('.teatro-apresentacoes__filter-option');
-		var countEl = fieldEl.querySelector('.teatro-apresentacoes__filter-count');
+		var countEl = fieldEl.id ? document.getElementById(fieldEl.id + '-count') : null;
 		var boxes = fieldEl.querySelectorAll('input[type="checkbox"]');
 
 		if (search) {
@@ -130,8 +130,8 @@
 			return;
 		}
 
-		var perPage = parseInt(root.getAttribute('data-per-page'), 10) || 25;
 		var DEFAULT_ORDERBY = 'presentationDate';
+		var DEFAULT_RESULTS_PER_PAGE = 100;
 
 		// Opções de "Ordenado por:" por modo de agrupamento ('' = modo plano),
 		// para repopular o <select> quando o agrupamento muda sem recarregar.
@@ -142,16 +142,17 @@
 			sortColumns = {};
 		}
 
-		var form = root.querySelector('.teatro-apresentacoes__search');
+		var form = root.querySelector('#teatro-apresentacoes-form');
 		var searchInput = root.querySelector('#teatro-apresentacoes-s');
 		var groupSelect = root.querySelector('#teatro-apresentacoes-group');
 		var orderbySelect = root.querySelector('#teatro-apresentacoes-orderby');
 		var orderSelect = root.querySelector('#teatro-apresentacoes-order');
 		var dateFromInput = root.querySelector('#teatro-apresentacoes-date-from');
 		var dateToInput = root.querySelector('#teatro-apresentacoes-date-to');
-		var clearButton = root.querySelector('.teatro-apresentacoes__clear-button');
-		var wrap = root.querySelector('.teatro-apresentacoes__table-wrap');
-		var countEl = root.querySelector('.teatro-apresentacoes__count');
+		var clearButton = root.querySelector('#teatro-apresentacoes-clear-button');
+		var resultsPerPageSelect = root.querySelector('#teatro-apresentacoes-results-per-page');
+		var wrap = root.querySelector('#teatro-apresentacoes-table-wrap');
+		var countEl = root.querySelector('#teatro-apresentacoes-count');
 		if (!wrap) {
 			return;
 		}
@@ -167,7 +168,8 @@
 			order: 'ASC',
 			filters: {},
 			dateFrom: '',
-			dateTo: ''
+			dateTo: '',
+			resultsPerPage: DEFAULT_RESULTS_PER_PAGE
 		};
 
 		// Lê todos os campos do formulário para o `state` (chamado no submit e uma
@@ -179,6 +181,7 @@
 			state.order = (orderSelect ? orderSelect.value : 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 			state.dateFrom = dateFromInput ? dateFromInput.value.trim() : '';
 			state.dateTo = dateToInput ? dateToInput.value.trim() : '';
+			state.resultsPerPage = resultsPerPageSelect ? (parseInt(resultsPerPageSelect.value, 10) || 0) : DEFAULT_RESULTS_PER_PAGE;
 			state.filters = {};
 			var checked = root.querySelectorAll('input[type="checkbox"][name^="tap_f["]:checked');
 			Array.prototype.forEach.call(checked, function (box) {
@@ -269,7 +272,7 @@
 		function buildUrl() {
 			var url = new URL(rest, window.location.origin);
 			url.searchParams.set('page', state.page);
-			url.searchParams.set('per_page', perPage);
+			url.searchParams.set('per_page', state.resultsPerPage);
 			url.searchParams.set('orderby', state.orderby);
 			url.searchParams.set('order', state.order);
 			if (state.search) {
@@ -294,7 +297,7 @@
 		}
 
 		function renderPagination(totalPages) {
-			var nav = root.querySelector('.teatro-apresentacoes__pagination');
+			var nav = root.querySelector('#teatro-apresentacoes-pagination');
 
 			if (totalPages <= 1) {
 				if (nav) {
@@ -305,9 +308,17 @@
 
 			if (!nav) {
 				nav = document.createElement('nav');
+				nav.id = 'teatro-apresentacoes-pagination';
 				nav.className = 'teatro-apresentacoes__pagination';
 				nav.setAttribute('aria-label', 'Paginação');
-				if (countEl) {
+				// A nav some do DOM quando totalPages<=1 (acima) — se ela precisa
+				// reaparecer, tem que voltar dentro da mesma barra que já tem o
+				// seletor "Resultados por página" (renderizada pelo servidor desde
+				// o 1º submit), não solta como filha direta de `root`.
+				var bar = root.querySelector('.teatro-apresentacoes__pagination-bar');
+				if (bar) {
+					bar.insertBefore(nav, bar.firstChild);
+				} else if (countEl) {
 					root.insertBefore(nav, countEl);
 				} else {
 					root.appendChild(nav);
@@ -391,6 +402,11 @@
 			} else {
 				url.searchParams.delete('tap_group');
 			}
+			if (state.resultsPerPage !== DEFAULT_RESULTS_PER_PAGE) {
+				url.searchParams.set('tap_rpp', String(state.resultsPerPage));
+			} else {
+				url.searchParams.delete('tap_rpp');
+			}
 			if (state.orderby && state.orderby !== DEFAULT_ORDERBY) {
 				url.searchParams.set('tap_orderby', state.orderby);
 			} else {
@@ -439,6 +455,8 @@
 
 			var url = new URL(rest + '/grouped', window.location.origin);
 			url.searchParams.set('group', state.group);
+			url.searchParams.set('page', state.page);
+			url.searchParams.set('per_page', state.resultsPerPage);
 			url.searchParams.set('orderby', state.orderby);
 			url.searchParams.set('order', state.order);
 			if (state.search) {
@@ -455,7 +473,7 @@
 				})
 				.then(function (payload) {
 					wrap.innerHTML = payload.html;
-					renderPagination(1);
+					renderPagination(payload.total_pages);
 					if (countEl && i18n.results) {
 						countEl.hidden = false;
 						countEl.textContent = i18n.results.replace('%s', (payload.total || 0).toLocaleString());
@@ -566,11 +584,23 @@
 			});
 		}
 
+		// Seletor "Resultados por página" (existe nos dois modos): trocar o
+		// valor recarrega na hora, como um clique de paginação — não é um campo
+		// de filtro, é navegação, então não precisa esperar o submit do form.
+		if (resultsPerPageSelect) {
+			resultsPerPageSelect.addEventListener('change', function () {
+				state.resultsPerPage = parseInt(resultsPerPageSelect.value, 10) || 0;
+				state.page = 1;
+				state.submitted = true;
+				load();
+			});
+		}
+
 		// Intercepta os links de paginação renderizados pelo servidor.
 		root.addEventListener('click', function (event) {
 			var target = event.target;
 			var link = target && target.closest ?
-				target.closest('.teatro-apresentacoes__pagination a') : null;
+				target.closest('#teatro-apresentacoes-pagination a') : null;
 			if (!link) {
 				return;
 			}

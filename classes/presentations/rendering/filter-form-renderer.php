@@ -44,7 +44,7 @@ final class FilterFormRenderer
     ): string {
         ob_start();
         ?>
-        <form class="teatro-apresentacoes__search" method="get" action="<?php echo esc_url( $this->page_url ); ?>" role="search">
+        <form id="teatro-apresentacoes-form" class="teatro-apresentacoes__search" method="get" action="<?php echo esc_url( $this->page_url ); ?>" role="search">
             <?php echo $this->preserved_query_fields(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
             <input type="hidden" name="<?php echo esc_attr( PresentationsRequest::QV_SUBMITTED ); ?>" value="1" />
             <div class="teatro-apresentacoes__section teatro-apresentacoes__section--controls">
@@ -97,7 +97,7 @@ final class FilterFormRenderer
             </div>
             <div class="teatro-apresentacoes__submit-field">
                 <button type="submit" class="teatro-apresentacoes__button-search"><?php esc_html_e( 'Buscar', 'customizations-teatromusicadosp' ); ?></button>
-                <button type="button" class="teatro-apresentacoes__button-clear">
+                <button type="button" id="teatro-apresentacoes-clear-button" class="teatro-apresentacoes__button-clear">
                     <?php esc_html_e( 'Limpar Filtros', 'customizations-teatromusicadosp' ); ?>
                 </button>
             </div>
@@ -252,6 +252,7 @@ final class FilterFormRenderer
         ob_start();
         ?>
         <details
+            id="<?php echo esc_attr( $field_id ); ?>"
             class="<?php echo esc_attr( $field_class ); ?>"
             <?php if ( $column->searchable ) : ?>
             data-search-placeholder="<?php esc_attr_e( 'Digite para buscar…', 'customizations-teatromusicadosp' ); ?>"
@@ -260,6 +261,7 @@ final class FilterFormRenderer
             <summary id="<?php echo esc_attr( $field_id ); ?>-label">
                 <span class="teatro-apresentacoes__filter-label"><?php echo esc_html( $label ); ?></span>
                 <span
+                    id="<?php echo esc_attr( $field_id ); ?>-count"
                     class="teatro-apresentacoes__filter-count"
                     <?php echo 0 === $selected_count ? ' hidden' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
                 ><?php echo esc_html( (string) $selected_count ); ?></span>
@@ -268,6 +270,7 @@ final class FilterFormRenderer
                 <?php if ( $column->searchable ) : ?>
                     <input
                         type="text"
+                        id="<?php echo esc_attr( $field_id ); ?>-search"
                         class="teatro-apresentacoes__filter-search"
                         placeholder="<?php esc_attr_e( 'Digite para buscar…', 'customizations-teatromusicadosp' ); ?>"
                         aria-controls="<?php echo esc_attr( $field_id ); ?>-options"

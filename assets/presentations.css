@@ -52,7 +52,8 @@
 }
 
 .teatro-apresentacoes__group-field select,
-.teatro-apresentacoes__sort-field select {
+.teatro-apresentacoes__sort-field select,
+.teatro-apresentacoes__page-size select {
 	padding: 0.45rem 0.6rem;
 	border: 1px solid var(--paletteColor6);
 	border-radius: 4px;
@@ -318,6 +319,7 @@
 .teatro-apresentacoes__table {
 	width: 100%;
 	border-collapse: collapse;
+	font-size: 14px;
 }
 
 .teatro-apresentacoes__table th,
@@ -329,12 +331,17 @@
 	white-space: nowrap;
 }
 
-/* Colunas de sigla (Nacionalidade/Idioma): encolhe para a largura do
-   conteúdo em vez de dividir igualmente o espaço sobrando da tabela. */
-.teatro-apresentacoes__table th.teatro-apresentacoes__col--acronym,
-.teatro-apresentacoes__table td.teatro-apresentacoes__col--acronym {
-	width: 1%;
+/* Colunas de sigla (Nacionalidade/Idioma): o corpo já é curto (2 letras) e
+   dita a largura da coluna; só o rótulo do cabeçalho, que é mais longo,
+   precisa ser truncado. O limite fica num <span> interno do cabeçalho — e
+   não na própria célula — para não interferir no algoritmo de largura da
+   tabela (table-layout: auto). */
+.teatro-apresentacoes__table th.teatro-apresentacoes__col--acronym .teatro-apresentacoes__acronym-head {
+	display: block;
+	width: 80px;
 	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .teatro-apresentacoes__table thead th {
@@ -392,11 +399,19 @@
 
 /* Rodapé --------------------------------------------------------------------- */
 
+.teatro-apresentacoes__pagination-bar {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.75rem;
+	margin-top: 1rem;
+}
+
 .teatro-apresentacoes__pagination {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.35rem;
-	margin-top: 1rem;
 }
 
 .teatro-apresentacoes__pagination .page-numbers {
@@ -416,6 +431,23 @@
 
 .teatro-apresentacoes__pagination .page-numbers.dots {
 	border-color: transparent;
+}
+
+.teatro-apresentacoes__page-size {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	margin-left: auto;
+}
+
+.teatro-apresentacoes__button-page-size {
+	padding: 0.35rem 0.7rem;
+	border: 1px solid var(--paletteColor6);
+	border-radius: 4px;
+	background: #fff;
+	cursor: pointer;
+	font-size: 14px;
 }
 
 .teatro-apresentacoes__count {
@@ -471,13 +503,6 @@
 		white-space: normal;
 		padding-left: 42%;
 		position: relative;
-	}
-
-	/* Empilhado em cartão: a coluna de sigla volta a ocupar a linha inteira
-	   (a regra de encolher à largura do conteúdo só faz sentido em tabela). */
-	.teatro-apresentacoes__table td.teatro-apresentacoes__col--acronym {
-		width: 100%;
-		white-space: normal;
 	}
 
 	.teatro-apresentacoes__table td::before {
