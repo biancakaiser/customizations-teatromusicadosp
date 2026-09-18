@@ -70,7 +70,8 @@ final class GroupedTableRenderer
                             <?php
                             echo esc_html(
                                 $l1['label']
-                                . ' - ' . $mode->count_label . ': ' . number_format_i18n( count( $l1['l2'] ) )
+                                . ' | ' . $mode->count_label . ': ' . number_format_i18n( count( $l1['l2'] ) )
+                                . ' | ' . $total_label . ': ' . number_format_i18n( $l1['total'] )
                             );
                             ?>
                         </th>

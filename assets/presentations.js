@@ -22,6 +22,7 @@
 
 	var cfg = window.TeatroApresentacoes || {};
 	var i18n = cfg.i18n || {};
+	var groupIdSeq = 0;
 
 	function ready(fn) {
 		if (document.readyState !== 'loading') {
@@ -124,6 +125,40 @@
 		});
 	}
 
+	// Faixa do grupo (`.teatro-apresentacoes__group-row`) vira um disclosure:
+	// injeta um <button> real dentro do <th> (move o texto existente para
+	// dentro, sem alterá-lo) e fecha o grupo por padrão. O <th> mantém
+	// scope/colspan intactos — só ganha um filho interativo. Feito 100% em JS
+	// para preservar a garantia de "funciona sem JS": sem JS, a classe
+	// `is-collapsed` nunca existe e nenhuma linha some.
+	function setupGroupAccordion(container) {
+		var rows = container.querySelectorAll('.teatro-apresentacoes__group-row');
+		Array.prototype.forEach.call(rows, function (row) {
+			var th = row.querySelector('th');
+			var tbody = row.parentNode;
+			if (!th || !tbody || th.querySelector('.teatro-apresentacoes__group-toggle')) {
+				return;
+			}
+
+			var button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'teatro-apresentacoes__group-toggle';
+			button.innerHTML = th.innerHTML;
+			button.setAttribute('aria-expanded', 'false');
+
+			if (!tbody.id) {
+				groupIdSeq += 1;
+				tbody.id = 'teatro-apresentacoes-group-' + groupIdSeq;
+			}
+			button.setAttribute('aria-controls', tbody.id);
+
+			th.innerHTML = '';
+			th.appendChild(button);
+
+			tbody.classList.add('is-collapsed');
+		});
+	}
+
 	function enhance(root) {
 		var rest = root.getAttribute('data-rest');
 		if (!rest || typeof window.fetch !== 'function') {
@@ -156,6 +191,8 @@
 		if (!wrap) {
 			return;
 		}
+
+		setupGroupAccordion(wrap);
 
 		// Formulário de submit único: nenhum campo é listener de ação imediata.
 		// O estado só é lido (readFields) e a tabela só recarrega no submit.
@@ -473,6 +510,7 @@
 				})
 				.then(function (payload) {
 					wrap.innerHTML = payload.html;
+					setupGroupAccordion(wrap);
 					renderPagination(payload.total_pages);
 					if (countEl && i18n.results) {
 						countEl.hidden = false;
@@ -610,6 +648,24 @@
 			}
 			event.preventDefault();
 			goTo(parseInt(match[1], 10));
+		});
+
+		// Clique no botão injetado por setupGroupAccordion alterna a
+		// visibilidade das linhas do grupo (CSS cuida via `.is-collapsed`).
+		// Não há listener de teclado separado: é um <button> nativo, então
+		// Enter/Espaço já funcionam sem código extra.
+		root.addEventListener('click', function (event) {
+			var button = event.target && event.target.closest ?
+				event.target.closest('.teatro-apresentacoes__group-toggle') : null;
+			if (!button) {
+				return;
+			}
+			var tbody = button.closest('tbody.teatro-apresentacoes__group');
+			if (!tbody) {
+				return;
+			}
+			var collapsed = tbody.classList.toggle('is-collapsed');
+			button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
 		});
 	}
 

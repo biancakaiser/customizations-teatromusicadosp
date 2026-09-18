@@ -86,7 +86,7 @@ final class PresentationGrouper
                 }
                 $l1_sort[ $mode->l1_key ] = $l1_name;
                 $tree[ $l1_name ] = [
-                    'label' => implode( ' - ', $parts ),
+                    'label' => implode( ' | ', $parts ),
                     'total' => 0,
                     'sort'  => $l1_sort,
                     'l2'    => [],
