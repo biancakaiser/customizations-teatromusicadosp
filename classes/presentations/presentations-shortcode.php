@@ -37,6 +37,7 @@ namespace TeatroMusicadoSP\Customizations\Presentations;
 
 use TeatroMusicadoSP\Customizations\Contracts\Module;
 use TeatroMusicadoSP\Customizations\Traits\Singleton;
+use TeatroMusicadoSP\Customizations\Settings\Features;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRepository;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRequest;
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationsFacets;
@@ -260,9 +261,15 @@ class PresentationsShortcode implements Module
     }
 
     /**
-     * URL completa da rota REST de apresentações.
+     * URL completa da rota REST de apresentações — vazia quando a API REST
+     * está desligada nas configurações; o JS então não se ativa e a página
+     * segue funcionando só com o HTML renderizado no servidor.
      */
     private function rest_endpoint_url(): string {
+        if ( ! Features::get_instance()->is_enabled( 'presentations_rest' ) ) {
+            return '';
+        }
+
         return rest_url( PresentationsRepository::REST_NAMESPACE . PresentationsRepository::REST_ROUTE );
     }
 }

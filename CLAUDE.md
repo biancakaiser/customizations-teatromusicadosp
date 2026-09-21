@@ -66,12 +66,17 @@ loosely, on one Tainacan add-on. Keep these straight, since names are similar:
 
 1. `classes/contracts/module.php` — the `Module` interface (`register()`)
 2. `classes/traits/singleton.php` — shared `Singleton` trait
+2b. `classes/settings/` — `Features` (which features are on) and `SettingsPage`; must
+   load before step 5, which already reads the saved state
 3. Presentations: `schema/` → `filters/` → `grouping/` → `rendering/` →
    `PresentationsRepository` → remaining facets/renderers → `PresentationsRequest` →
    `PresentationsShortcode`/`PresentationsPage`
-4. Activation hook: `register_activation_hook(__FILE__, [PresentationsRepository::class, 'install'])`
+4. Activation hook: `register_activation_hook(__FILE__, [Features::class, 'on_activation'])`
+   (fresh install → all features off; installs the presentations table only if it's on),
+   then `Features::maybe_migrate()` (see "Feature toggles" below)
 5. `classes/metadata-types/register-metadatas.php`, then immediately
-   `add_action('tainacan-register-metadata-type', ...)` **outside** the
+   `add_action('tainacan-register-metadata-type', ...)` (only if the `metadata_types`
+   feature is on) **outside** the
    `plugins_loaded` cycle — this is deliberate: Tainacan fires
    `tainacan-register-metadata-type` while loading its own main file, before
    `plugins_loaded` runs, so registering it later would miss the hook.
@@ -88,6 +93,7 @@ bootstrapping style.
 | Path | Purpose |
 |---|---|
 | `contracts/` | `Module` interface all feature classes implement |
+| `settings/` | `Features` (feature registry + saved state) and `SettingsPage` (Settings > Teatro Musicado SP) |
 | `traits/` | `Singleton` trait |
 | `form/collection-form.php` | Injects a custom Vue form into Tainacan's admin item-edit screen, for the "Montagem" collection (ID 3922) |
 | `metadata-types/slug-id/` | Custom Tainacan metadata type ("Slug/ID"), extends `Tainacan\Metadata_Types\Metadata_Type` |
@@ -95,6 +101,33 @@ bootstrapping style.
 | `related-items/pessoa-related-items-order.php` | Reorders related-item groups on Tainacan item pages via `tainacan-fetch-args`/`posts_results` filters |
 | `blocks/bibliographic.php` | Gutenberg block calling `Tainacan\Repositories\Items::get_instance()->fetch()` directly |
 | `presentations/` | The `[teatro_apresentacoes]` feature — largest, most actively developed part of the plugin (see below) |
+
+## Feature toggles (`settings/`)
+
+`Plugin::boot()` no longer hardcodes the module list: it registers `SettingsPage`
+(always, even without Tainacan) and then every module class returned by
+`Features::enabled_modules()`. `Features::definitions()` is the single registry — feature
+key → module classes, plus `children` (sub-options). To add a feature: add a module class,
+add it to `definitions()`, and add its label/description in `SettingsPage::copy()`.
+
+- State is one option, `tmsp_customizations_features` (`key => 0|1`). Missing key = off; a
+  sub-option only counts when its parent is on (`is_enabled()` already enforces this).
+- `Features` must stay free of translatable strings: it's read at file load (before `init`),
+  and calling `__()` that early triggers WP's just-in-time translation notice. Labels live
+  in `SettingsPage`.
+- **Defaults**: fresh activation → all off (`on_activation()`); an install that already had
+  the plugin active but no option → all on, once (`maybe_migrate()`), so deploying doesn't
+  switch the live site off. Reactivation keeps the saved choices.
+- Presentations sub-options: `presentations_shortcode`, `presentations_rest`,
+  `presentations_admin_page`, `presentations_table`. `PresentationsRepository::register()`
+  only adds its `admin_init` install hook if the table option is on and its REST routes if
+  the REST option is on; its transient caching is bypassed when the table option is off.
+  `Features::sanitize()` forces the table on when shortcode or REST is on (both query it).
+  With REST off, the shortcode emits an empty `data-rest`, so the JS doesn't enhance and the
+  server-rendered page still works.
+- Turning `presentations_table` (or all of Presentations) off deletes the `tmsp_pres_*`
+  transients (`SettingsPage::on_features_updated()`); the DB table itself is never dropped.
+  Turning it on runs `PresentationsRepository::install()`.
 
 ## `presentations/` module — the `[teatro_apresentacoes]` shortcode
 

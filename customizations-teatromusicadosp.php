@@ -38,6 +38,15 @@ require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/traits/singleton.php';
 
 /*
+ * Configurações (quais funcionalidades estão ligadas). Precisa vir antes do
+ * registro do hook de metadados, mais abaixo, que já consulta esse estado.
+ */
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/settings/features.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/settings/settings-page.php';
+
+/*
  * Apresentações: schema (fonte única das colunas) e utilitários sem estado
  * primeiro; depois o repositório; então as peças que dependem dele (facets,
  * renderers, parser de request) e, por fim, o shortcode.
@@ -86,8 +95,11 @@ require_once TMSP_CUSTOMIZATIONS_PATH
 
 register_activation_hook(
     __FILE__,
-    array( '\TeatroMusicadoSP\Customizations\Presentations\PresentationsRepository', 'install' )
+    array( '\TeatroMusicadoSP\Customizations\Settings\Features', 'on_activation' )
 );
+
+// Instalações anteriores à página de configurações mantêm tudo ligado.
+\TeatroMusicadoSP\Customizations\Settings\Features::get_instance()->maybe_migrate();
 
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/metadata-types/register-metadatas.php';
@@ -97,13 +109,15 @@ require_once TMSP_CUSTOMIZATIONS_PATH
 * o Tainacan dispara 'tainacan-register-metadata-type' no carregamento do seu
 * próprio arquivo principal, antes de 'plugins_loaded' ser executado.
 */
-add_action(
-    'tainacan-register-metadata-type',
-    array(
-        \TeatroMusicadoSP\Customizations\MetadataTypes\RegisterMetadatas::get_instance(),
-        'register_metadata_type'
-    )
-);
+if ( \TeatroMusicadoSP\Customizations\Settings\Features::get_instance()->is_enabled( 'metadata_types' ) ) {
+    add_action(
+        'tainacan-register-metadata-type',
+        array(
+            \TeatroMusicadoSP\Customizations\MetadataTypes\RegisterMetadatas::get_instance(),
+            'register_metadata_type'
+        )
+    );
+}
             
 require_once TMSP_CUSTOMIZATIONS_PATH
 . 'classes/view-modes/register-viewmodes.php';

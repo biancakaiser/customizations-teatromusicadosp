@@ -13,6 +13,7 @@ namespace TeatroMusicadoSP\Customizations\Presentations;
 
 use TeatroMusicadoSP\Customizations\Contracts\Module;
 use TeatroMusicadoSP\Customizations\Traits\Singleton;
+use TeatroMusicadoSP\Customizations\Settings\Features;
 use TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema;
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilters;
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilterClause;
@@ -62,8 +63,14 @@ class PresentationsRepository implements Module
     public function register(): void {
         // admin_init (e não init) para não rodar em cada requisição de front-end
         // ou em chamadas de wp-cron, que podem colidir durante o seed.
-        add_action( 'admin_init', [ $this, 'maybe_install_table' ] );
-        add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
+        $features = Features::get_instance();
+
+        if ( $features->is_enabled( Features::TABLE_KEY ) ) {
+            add_action( 'admin_init', [ $this, 'maybe_install_table' ] );
+        }
+        if ( $features->is_enabled( 'presentations_rest' ) ) {
+            add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
+        }
     }
 
     /**
@@ -84,6 +91,14 @@ class PresentationsRepository implements Module
             && function_exists( 'tainacan_items' )
             && function_exists( 'tainacan_collections' )
             && function_exists( 'tainacan_taxonomies' );
+    }
+
+    /**
+     * O cache (transients) só é usado com a opção "Banco de dados e cache"
+     * ligada nas configurações do plugin.
+     */
+    private static function cache_enabled(): bool {
+        return Features::get_instance()->is_enabled( Features::TABLE_KEY );
     }
 
     /**
@@ -523,7 +538,7 @@ class PresentationsRepository implements Module
                 ]
             )
         );
-        $cached = get_transient( $cache_key );
+        $cached = self::cache_enabled() ? get_transient( $cache_key ) : false;
         if ( is_array( $cached ) ) {
             return $cached;
         }
@@ -546,7 +561,9 @@ class PresentationsRepository implements Module
             'total' => $total,
         ];
 
-        set_transient( $cache_key, $result, 5 * MINUTE_IN_SECONDS );
+        if ( self::cache_enabled() ) {
+            set_transient( $cache_key, $result, 5 * MINUTE_IN_SECONDS );
+        }
 
         return $result;
     }
@@ -593,7 +610,7 @@ class PresentationsRepository implements Module
                 ]
             )
         );
-        $cached = get_transient( $cache_key );
+        $cached = self::cache_enabled() ? get_transient( $cache_key ) : false;
         if ( is_array( $cached ) ) {
             return $cached;
         }
@@ -609,7 +626,9 @@ class PresentationsRepository implements Module
 
         $data = array_map( [ self::class, 'map_row' ], $rows ?: [] );
 
-        set_transient( $cache_key, $data, 5 * MINUTE_IN_SECONDS );
+        if ( self::cache_enabled() ) {
+            set_transient( $cache_key, $data, 5 * MINUTE_IN_SECONDS );
+        }
 
         return $data;
     }
@@ -669,7 +688,9 @@ class PresentationsRepository implements Module
             $raw ?: []
         );
 
-        set_transient( $cache_key, $values, HOUR_IN_SECONDS );
+        if ( self::cache_enabled() ) {
+            set_transient( $cache_key, $values, HOUR_IN_SECONDS );
+        }
 
         return $values;
     }
