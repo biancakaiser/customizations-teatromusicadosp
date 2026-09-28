@@ -157,6 +157,58 @@
 
 			tbody.classList.add('is-collapsed');
 		});
+
+		setupToggleAll(container);
+	}
+
+	// Botão "Expandir todos / Recolher todos" acima da tabela agrupada. Também
+	// só existe com JS (sem JS nenhum grupo colapsa, então não há o que
+	// alternar). Recriado a cada troca de `innerHTML` do wrapper.
+	function setupToggleAll(container) {
+		var groups = container.querySelectorAll('tbody.teatro-apresentacoes__group');
+		var table = container.querySelector('.teatro-apresentacoes__table--group');
+		if (!groups.length || !table || container.querySelector('.teatro-apresentacoes__group-toggle-all')) {
+			return;
+		}
+
+		var ids = Array.prototype.map.call(groups, function (tbody) {
+			return tbody.id;
+		});
+
+		var actions = document.createElement('div');
+		actions.className = 'teatro-apresentacoes__group-actions';
+
+		var button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'teatro-apresentacoes__group-toggle-all';
+		button.setAttribute('aria-controls', ids.join(' '));
+
+		actions.appendChild(button);
+		table.parentNode.insertBefore(actions, table);
+
+		syncToggleAll(container);
+	}
+
+	// Rótulo/estado do botão global refletem o estado real dos grupos: se
+	// algum está fechado, a ação é "Expandir todos"; senão, "Recolher todos".
+	function syncToggleAll(container) {
+		var button = container.querySelector('.teatro-apresentacoes__group-toggle-all');
+		if (!button) {
+			return;
+		}
+		var anyCollapsed = !!container.querySelector('tbody.teatro-apresentacoes__group.is-collapsed');
+		button.setAttribute('aria-expanded', anyCollapsed ? 'false' : 'true');
+		button.textContent = anyCollapsed ?
+			(i18n.expandAll || 'Expandir todos') :
+			(i18n.collapseAll || 'Recolher todos');
+	}
+
+	function setGroupCollapsed(tbody, collapsed) {
+		tbody.classList.toggle('is-collapsed', collapsed);
+		var toggle = tbody.querySelector('.teatro-apresentacoes__group-toggle');
+		if (toggle) {
+			toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+		}
 	}
 
 	function enhance(root) {
@@ -182,6 +234,7 @@
 		var groupSelect = root.querySelector('#teatro-apresentacoes-group');
 		var orderbySelect = root.querySelector('#teatro-apresentacoes-orderby');
 		var orderSelect = root.querySelector('#teatro-apresentacoes-order');
+		var sortField = root.querySelector('.teatro-apresentacoes__sort-field');
 		var dateFromInput = root.querySelector('#teatro-apresentacoes-date-from');
 		var dateToInput = root.querySelector('#teatro-apresentacoes-date-to');
 		var clearButton = root.querySelector('#teatro-apresentacoes-clear-button');
@@ -214,8 +267,14 @@
 		function readFields() {
 			state.search = searchInput ? searchInput.value.trim() : '';
 			state.group = groupSelect ? groupSelect.value : '';
-			state.orderby = orderbySelect ? orderbySelect.value : DEFAULT_ORDERBY;
-			state.order = (orderSelect ? orderSelect.value : 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+			// A ordenação só existe no modo agrupado; no plano vale o padrão.
+			if (state.group) {
+				state.orderby = orderbySelect ? orderbySelect.value : DEFAULT_ORDERBY;
+				state.order = (orderSelect ? orderSelect.value : 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+			} else {
+				state.orderby = DEFAULT_ORDERBY;
+				state.order = 'ASC';
+			}
 			state.dateFrom = dateFromInput ? dateFromInput.value.trim() : '';
 			state.dateTo = dateToInput ? dateToInput.value.trim() : '';
 			state.resultsPerPage = resultsPerPageSelect ? (parseInt(resultsPerPageSelect.value, 10) || 0) : DEFAULT_RESULTS_PER_PAGE;
@@ -234,14 +293,35 @@
 		}
 		readFields();
 
+		// O ordenador só aparece (e só é enviado) com algum agrupamento ativo.
+		function toggleSortField() {
+			var active = !!state.group;
+			if (sortField) {
+				sortField.hidden = !active;
+			}
+			if (orderbySelect) {
+				orderbySelect.disabled = !active;
+			}
+			if (orderSelect) {
+				orderSelect.disabled = !active;
+			}
+		}
+
 		// Ao trocar o agrupamento, as colunas ordenáveis mudam: repopula o
 		// <select> "Ordenado por:" a partir de data-sort-columns e descarta uma
-		// seleção que não exista no novo modo. Só mexe nas <option> — não busca.
+		// seleção que não exista no novo modo. Sem agrupamento, esconde o campo e
+		// volta à ordem padrão. Só mexe no formulário — não busca.
 		function syncOrderbyOptions() {
+			toggleSortField();
+			if (!state.group) {
+				state.orderby = DEFAULT_ORDERBY;
+				state.order = 'ASC';
+				return;
+			}
 			if (!orderbySelect) {
 				return;
 			}
-			var opts = sortColumns[state.group] || sortColumns[''] || {};
+			var opts = sortColumns[state.group] || {};
 			var keys = Object.keys(opts);
 			if (!keys.length) {
 				return;
@@ -310,8 +390,7 @@
 			var url = new URL(rest, window.location.origin);
 			url.searchParams.set('page', state.page);
 			url.searchParams.set('per_page', state.resultsPerPage);
-			url.searchParams.set('orderby', state.orderby);
-			url.searchParams.set('order', state.order);
+			// Tabela plana: sem ordenação escolhível, o REST usa o padrão.
 			if (state.search) {
 				url.searchParams.set('search', state.search);
 			}
@@ -444,12 +523,12 @@
 			} else {
 				url.searchParams.delete('tap_rpp');
 			}
-			if (state.orderby && state.orderby !== DEFAULT_ORDERBY) {
+			if (state.group && state.orderby && state.orderby !== DEFAULT_ORDERBY) {
 				url.searchParams.set('tap_orderby', state.orderby);
 			} else {
 				url.searchParams.delete('tap_orderby');
 			}
-			if (state.order === 'DESC') {
+			if (state.group && state.order === 'DESC') {
 				url.searchParams.set('tap_order', 'DESC');
 			} else {
 				url.searchParams.delete('tap_order');
@@ -655,8 +734,24 @@
 		// Não há listener de teclado separado: é um <button> nativo, então
 		// Enter/Espaço já funcionam sem código extra.
 		root.addEventListener('click', function (event) {
-			var button = event.target && event.target.closest ?
-				event.target.closest('.teatro-apresentacoes__group-toggle') : null;
+			var target = event.target && event.target.closest ? event.target : null;
+			if (!target) {
+				return;
+			}
+
+			// Botão global: expande tudo se algum grupo está fechado; senão
+			// recolhe tudo.
+			if (target.closest('.teatro-apresentacoes__group-toggle-all')) {
+				var groups = wrap.querySelectorAll('tbody.teatro-apresentacoes__group');
+				var expand = !!wrap.querySelector('tbody.teatro-apresentacoes__group.is-collapsed');
+				Array.prototype.forEach.call(groups, function (tbody) {
+					setGroupCollapsed(tbody, !expand);
+				});
+				syncToggleAll(wrap);
+				return;
+			}
+
+			var button = target.closest('.teatro-apresentacoes__group-toggle');
 			if (!button) {
 				return;
 			}
@@ -664,8 +759,8 @@
 			if (!tbody) {
 				return;
 			}
-			var collapsed = tbody.classList.toggle('is-collapsed');
-			button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+			setGroupCollapsed(tbody, !tbody.classList.contains('is-collapsed'));
+			syncToggleAll(wrap);
 		});
 	}
 

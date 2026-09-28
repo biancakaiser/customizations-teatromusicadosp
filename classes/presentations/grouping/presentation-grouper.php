@@ -1,9 +1,8 @@
 <?php
 /**
- * Monta a árvore de agrupamento de 4 níveis para um `GroupingMode`.
+ * Monta a árvore de agrupamento para um `GroupingMode`.
  *
- * Movido, sem mudança de comportamento, do antigo
- * `PresentationsShortcode::build_groups()`.
+ * Movido do antigo `PresentationsShortcode::build_groups()`.
  *
  * Estrutura devolvida (por nível 1):
  *   [ '<l1 name>' => [
@@ -13,11 +12,20 @@
  *       'l2'     => [ '<l2 name>' => [
  *           'identity' => [ '<col>' => '<valor>' , ... ],
  *           'total'    => (int) soma de presentationSessionsN do bloco l2,
- *           'leaves'   => [ '<teatro|tipo|idioma|ano>' => [
- *               'theater' =>, 'kind' =>, 'language' =>, 'year' =>, 'sessions' => (int),
+ *           'leaves'   => [ '<valores das leaf_columns, unidos por |>' => [
+ *               '<campo>' => ..., (só os de `leaf_columns`, ver `field_for()`:
+ *                             theater|kind|language|year nos modos de 3 níveis;
+ *                             também play|genre|play_nationality|company|
+ *                             company_nationality nos de 2 níveis)
+ *               'sessions' => (int) soma das sessões dessa combinação,
  *           ] ],
  *       ] ],
  *   ] ]
+ *
+ * Nos modos de 2 níveis (`GroupingMode::has_identity_level()` falso) cada faixa
+ * tem um único bloco l2 sintético (chave `''`, `identity` vazio): as folhas
+ * ficam logo abaixo da faixa e o resto (paginação, ordenação, renderização)
+ * trata os dois formatos da mesma forma.
  *
  * A ordenação default (sem `$sort`) é natural/alfabética em todos os níveis.
  * Passando um `$sort` (`['orderby' => <coluna>, 'order' => 'ASC'|'DESC']`):
@@ -55,6 +63,27 @@ final class PresentationGrouper
     ];
 
     /**
+     * Colunas de Peça/Companhia que também podem virar campo da linha folha —
+     * nos modos de 2 níveis cada linha repete esses dados, como na tabela plana.
+     * Separadas de `LEAF_FIELDS` porque este também decide o nível de ordenação
+     * (`sort_level()`), e essas colunas não são ordenáveis na folha.
+     */
+    const ROW_FIELDS = [
+        'playName'           => 'play',
+        'playGenre'          => 'genre',
+        'playNationality'    => 'play_nationality',
+        'companyName'        => 'company',
+        'companyNationality' => 'company_nationality',
+    ];
+
+    /**
+     * Chave, no array da linha folha, de uma coluna de `GroupingMode::leaf_columns`.
+     */
+    public static function field_for( string $column ): string {
+        return self::ROW_FIELDS[ $column ] ?? self::LEAF_FIELDS[ $column ];
+    }
+
+    /**
      * @param array<int,array<string,mixed>> $rows
      * @param array{orderby?:string,order?:string} $sort
      * @return array<string,array<string,mixed>>
@@ -64,16 +93,22 @@ final class PresentationGrouper
         $order   = 'DESC' === strtoupper( (string) ( $sort['order'] ?? 'ASC' ) ) ? 'DESC' : 'ASC';
         $dir     = 'DESC' === $order ? -1 : 1;
 
-        $tree = [];
+        $tree        = [];
+        $leaf_fields = $this->leaf_fields( $mode );
 
         foreach ( $rows as $row ) {
             $l1_name  = PresentationValue::non_empty( $row[ $mode->l1_key ] ?? '' );
-            $l2_name  = PresentationValue::non_empty( $row[ $mode->l2_key ] ?? '' );
-            $theater  = PresentationValue::non_empty( $row['presentationTheater'] ?? '' );
-            $kind     = PresentationValue::non_empty( $row['presentationKind'] ?? '' );
-            $language = PresentationValue::non_empty( $row['presentationLanguage'] ?? '' );
-            $year     = PresentationValue::year_of( $row['presentationDate'] ?? null );
+            $l2_name  = $mode->has_identity_level()
+                ? PresentationValue::non_empty( $row[ $mode->l2_key ] ?? '' )
+                : '';
             $sessions = (int) ( $row['presentationSessionsN'] ?? 0 );
+
+            $leaf = [];
+            foreach ( $leaf_fields as $column => $field ) {
+                $leaf[ $field ] = 'year' === $field
+                    ? PresentationValue::year_of( $row[ $column ] ?? null )
+                    : PresentationValue::non_empty( $row[ $column ] ?? '' );
+            }
 
             if ( ! isset( $tree[ $l1_name ] ) ) {
                 $parts     = [];
@@ -107,15 +142,9 @@ final class PresentationGrouper
             }
             $tree[ $l1_name ]['l2'][ $l2_name ]['total'] += $sessions;
 
-            $leaf_key = $theater . '|' . $kind . '|' . $language . '|' . $year;
+            $leaf_key = implode( '|', $leaf );
             if ( ! isset( $tree[ $l1_name ]['l2'][ $l2_name ]['leaves'][ $leaf_key ] ) ) {
-                $tree[ $l1_name ]['l2'][ $l2_name ]['leaves'][ $leaf_key ] = [
-                    'theater'  => $theater,
-                    'kind'     => $kind,
-                    'language' => $language,
-                    'year'     => $year,
-                    'sessions' => 0,
-                ];
+                $tree[ $l1_name ]['l2'][ $l2_name ]['leaves'][ $leaf_key ] = $leaf + [ 'sessions' => 0 ];
             }
             $tree[ $l1_name ]['l2'][ $l2_name ]['leaves'][ $leaf_key ]['sessions'] += $sessions;
         }
@@ -142,16 +171,11 @@ final class PresentationGrouper
             foreach ( $l1['l2'] as &$l2 ) {
                 // Linhas folha.
                 if ( 'leaf' === $level ) {
-                    uasort( $l2['leaves'], $this->leaf_comparator( $orderby, $dir ) );
+                    uasort( $l2['leaves'], $this->leaf_comparator( $orderby, $dir, $leaf_fields ) );
                 } else {
                     uasort(
                         $l2['leaves'],
-                        static function ( array $a, array $b ): int {
-                            return strnatcasecmp( $a['theater'], $b['theater'] )
-                                ?: strnatcasecmp( $a['kind'], $b['kind'] )
-                                ?: strnatcasecmp( $a['language'], $b['language'] )
-                                ?: strnatcasecmp( (string) $a['year'], (string) $b['year'] );
-                        }
+                        static fn( array $a, array $b ): int => self::compare_leaf_fields( $a, $b, $leaf_fields )
                     );
                 }
             }
@@ -197,31 +221,63 @@ final class PresentationGrouper
     }
 
     private function l2_comparator( string $orderby, GroupingMode $mode, int $dir ): callable {
-        return static function ( array $a, array $b ) use ( $orderby, $mode, $dir ): int {
+        $l2_key = (string) $mode->l2_key;
+
+        return static function ( array $a, array $b ) use ( $orderby, $l2_key, $dir ): int {
             $va = (string) ( $a['identity'][ $orderby ] ?? '' );
             $vb = (string) ( $b['identity'][ $orderby ] ?? '' );
             return $dir * strnatcasecmp( $va, $vb )
                 ?: strnatcasecmp(
-                    (string) ( $a['identity'][ $mode->l2_key ] ?? '' ),
-                    (string) ( $b['identity'][ $mode->l2_key ] ?? '' )
+                    (string) ( $a['identity'][ $l2_key ] ?? '' ),
+                    (string) ( $b['identity'][ $l2_key ] ?? '' )
                 );
         };
     }
 
-    private function leaf_comparator( string $orderby, int $dir ): callable {
+    /**
+     * @param array<string,string> $leaf_fields Ver `leaf_fields()`.
+     */
+    private function leaf_comparator( string $orderby, int $dir, array $leaf_fields ): callable {
         $field   = self::LEAF_FIELDS[ $orderby ];
         $numeric = in_array( $field, [ 'year', 'sessions' ], true );
 
-        return static function ( array $a, array $b ) use ( $field, $numeric, $dir ): int {
+        return static function ( array $a, array $b ) use ( $field, $numeric, $dir, $leaf_fields ): int {
             $primary = $numeric
-                ? ( (int) $a[ $field ] <=> (int) $b[ $field ] )
-                : strnatcasecmp( (string) $a[ $field ], (string) $b[ $field ] );
+                ? ( (int) ( $a[ $field ] ?? 0 ) <=> (int) ( $b[ $field ] ?? 0 ) )
+                : strnatcasecmp( (string) ( $a[ $field ] ?? '' ), (string) ( $b[ $field ] ?? '' ) );
 
-            return $dir * $primary
-                ?: strnatcasecmp( $a['theater'], $b['theater'] )
-                ?: strnatcasecmp( $a['kind'], $b['kind'] )
-                ?: strnatcasecmp( $a['language'], $b['language'] )
-                ?: strnatcasecmp( (string) $a['year'], (string) $b['year'] );
+            return $dir * $primary ?: self::compare_leaf_fields( $a, $b, $leaf_fields );
         };
+    }
+
+    /**
+     * Ordem natural das folhas: compara campo a campo, na ordem das
+     * `leaf_columns` do modo (ex.: teatro, tipo, idioma, ano).
+     *
+     * @param array<string,mixed>  $a
+     * @param array<string,mixed>  $b
+     * @param array<string,string> $leaf_fields
+     */
+    private static function compare_leaf_fields( array $a, array $b, array $leaf_fields ): int {
+        foreach ( $leaf_fields as $field ) {
+            $cmp = strnatcasecmp( (string) $a[ $field ], (string) $b[ $field ] );
+            if ( 0 !== $cmp ) {
+                return $cmp;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Colunas-folha do modo, `coluna do schema => chave na folha` (ver `field_for()`).
+     *
+     * @return array<string,string>
+     */
+    private function leaf_fields( GroupingMode $mode ): array {
+        $fields = [];
+        foreach ( $mode->leaf_columns as $column ) {
+            $fields[ $column ] = self::field_for( $column );
+        }
+        return $fields;
     }
 }

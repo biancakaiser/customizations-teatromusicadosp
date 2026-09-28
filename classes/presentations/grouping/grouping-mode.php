@@ -2,9 +2,13 @@
 /**
  * Value object de um modo do campo "Agrupado por".
  *
- * Substitui uma entrada do antigo `PresentationsShortcode::GROUPS`. A hierarquia
- * é sempre de 4 níveis: `l1_key` (faixa do grupo) > `l2_key` (bloco de
- * identidade + Total) > `presentationTheater` > `presentationKind` + ano.
+ * Substitui uma entrada do antigo `PresentationsShortcode::GROUPS`. Há dois
+ * formatos de hierarquia:
+ *   - 3 níveis (Companhia, Peça): `l1_key` (faixa do grupo) > `l2_key` (bloco de
+ *     identidade) > linhas-folha (`leaf_columns` + sessões somadas);
+ *   - 2 níveis (`l2_key` = null; Gênero, Nacionalidade, Teatro, Idioma): faixa
+ *     do grupo > linhas-folha, sem bloco de identidade.
+ * Em ambos, a coluna "Total" (soma de sessões da faixa) fecha a linha.
  */
 
 namespace TeatroMusicadoSP\Customizations\Presentations\Grouping;
@@ -18,62 +22,91 @@ final class GroupingMode
     /** Chave sintética de ordenação pela coluna "Total" (soma de sessões do grupo de 1º nível). */
     const SORT_TOTAL = '__total';
 
+    /** Colunas-folha padrão (as dos modos de 3 níveis), na ordem de exibição. */
+    const DEFAULT_LEAF_COLUMNS = [
+        'presentationTheater',
+        'presentationKind',
+        'presentationLanguage',
+        'presentationDate',
+    ];
+
     /**
-     * @param string       $key             'company' | 'play'
+     * @param string       $key             Chave do modo (`tap_group`), ex.: 'company'.
      * @param string       $select_label    Rótulo do <option>.
      * @param string       $l1_key          Coluna da faixa de 1º nível.
-     * @param string       $l2_key          Coluna do 2º nível (dado inverso).
-     * @param string       $count_label     Rótulo da contagem de grupos de 2º nível.
+     * @param string|null  $l2_key          Coluna do 2º nível (dado inverso); null = modo de 2 níveis.
+     * @param string       $count_label     Rótulo da contagem da faixa: blocos de 2º nível
+     *                                      (3 níveis) ou linhas-folha (2 níveis).
      * @param list<string> $identity        Colunas do bloco de identidade do 2º nível.
      * @param list<string> $l1_label_fields Colunas que compõem o texto da faixa de 1º nível.
+     * @param list<string> $leaf_columns    Colunas do schema (as de `PresentationGrouper::
+     *                                      ROW_FIELDS`/`LEAF_FIELDS`, sem Nº de Sessões)
+     *                                      que distinguem as linhas-folha — as sessões
+     *                                      são somadas por essa combinação. Cada uma
+     *                                      vira uma coluna da tabela, antes de
+     *                                      "Nº de Sessões" e "Total".
      */
     public function __construct(
         public string $key,
         public string $select_label,
         public string $l1_key,
-        public string $l2_key,
+        public ?string $l2_key,
         public string $count_label,
         public array $identity,
-        public array $l1_label_fields
+        public array $l1_label_fields,
+        public array $leaf_columns = self::DEFAULT_LEAF_COLUMNS
     ) {}
 
     /**
+     * Tem o bloco de identidade de 2º nível (modo de 3 níveis)?
+     */
+    public function has_identity_level(): bool {
+        return null !== $this->l2_key;
+    }
+
+    /**
+     * Rótulos das colunas-folha deste modo, na ordem de `leaf_columns`, seguidos
+     * de "Nº de Sessões" e "Total". Os de coluna real vêm do schema (fonte
+     * única); "Ano" é o ano extraído de `presentationDate` e "Total" é um
+     * agregado sintético — nenhum dos dois usa o rótulo do schema.
+     *
+     * @return array<string,string> coluna => rótulo (chaves `presentationSessionsN` e `SORT_TOTAL` no fim)
+     */
+    public function leaf_labels(): array {
+        $labels = [];
+        foreach ( $this->leaf_columns as $column ) {
+            $labels[ $column ] = 'presentationDate' === $column
+                ? 'Ano'
+                : PresentationsSchema::column( $column )->full_label;
+        }
+        $labels['presentationSessionsN'] = PresentationsSchema::column( 'presentationSessionsN' )->full_label;
+        $labels[ self::SORT_TOTAL ]      = 'Total';
+
+        return $labels;
+    }
+
+    /**
      * Colunas oferecidas no `<select>` "Ordenado por:" quando este modo está
-     * ativo, na ordem em que aparecem na tabela: identidade do 1º nível (faixa),
-     * identidade do 2º nível, colunas folha e, por fim, "Total".
+     * ativo (a ordenação só existe no modo agrupado). A 1ª é o padrão.
+     *   - "Ano": o ano extraído de `presentationDate` (linha-folha; ver
+     *     PresentationGrouper::LEAF_FIELDS);
+     *   - "Total de Sessões": a coluna "Total" (soma de sessões da faixa de
+     *     1º nível, `SORT_TOTAL`).
      *
      * @return array<string,string> chave da coluna => rótulo
      */
     public function sortable_columns(): array {
-        $columns = [];
-
-        // Faixa de 1º nível.
-        foreach ( $this->l1_label_fields as $field ) {
-            $columns[ $field ] = $this->column_label( $field );
-        }
-
-        // Bloco de identidade de 2º nível.
-        foreach ( $this->identity as $field ) {
-            $columns[ $field ] = $this->column_label( $field );
-        }
-
-        // Colunas folha, comuns aos dois modos. "Ano" não vem do schema: é o ano
-        // extraído de `presentationDate` (ver PresentationGrouper::LEAF_FIELDS),
-        // não o rótulo dessa coluna.
-        $columns['presentationTheater']    = $this->column_label( 'presentationTheater' );
-        $columns['presentationKind']       = $this->column_label( 'presentationKind' );
-        $columns['presentationLanguage']   = $this->column_label( 'presentationLanguage' );
-        $columns['presentationDate']       = 'Ano';
-        $columns['presentationSessionsN']  = $this->column_label( 'presentationSessionsN' );
-
-        $columns[ self::SORT_TOTAL ] = 'Total';
-
-        return $columns;
+        return [
+            'presentationDate' => 'Ano',
+            self::SORT_TOTAL   => 'Total de Sessões',
+        ];
     }
 
-    private function column_label( string $key ): string {
-        $column = PresentationsSchema::column( $key );
-        return null !== $column ? $column->full_label : $key;
+    /**
+     * A chave pedida é uma ordenação aceita por este modo?
+     */
+    public function is_sortable( string $key ): bool {
+        return isset( $this->sortable_columns()[ $key ] );
     }
 
     /**

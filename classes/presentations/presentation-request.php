@@ -10,7 +10,6 @@
 namespace TeatroMusicadoSP\Customizations\Presentations;
 
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationFilters;
-use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingMode;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingModes;
 use TeatroMusicadoSP\Customizations\Presentations\Schema\PresentationsSchema;
 
@@ -101,30 +100,45 @@ final class PresentationsRequest
 
     /**
      * O visitante escolheu a ordenação nesta requisição (query var `tap_orderby`)?
+     * A ordenação só existe no modo agrupado — no modo plano é sempre `false`.
      */
     public function has_request_orderby(): bool {
-        return isset( $this->get[ self::QV_ORDERBY ] );
+        return $this->is_grouped() && isset( $this->get[ self::QV_ORDERBY ] );
     }
 
     /**
-     * Coluna do `ORDER BY`. A escolha do visitante (`tap_orderby`) prevalece sobre
-     * o atributo do shortcode, desde que seja uma coluna ordenável conhecida.
+     * Coluna de ordenação.
+     *
+     * Modo agrupado: a escolha do visitante (`tap_orderby`), desde que seja uma
+     * das opções do modo (`GroupingMode::sortable_columns()`); senão a 1ª delas.
+     * Modo plano: não há ordenação escolhível — vale o atributo `orderby` do
+     * shortcode (se for uma coluna ordenável), senão `presentationDate`.
      *
      * Não usar `sanitize_key()`: ele força minúsculas e quebraria chaves camelCase
-     * como `presentationDate`. A validação é por match exato na whitelist do schema.
+     * como `presentationDate`. A validação é por match exato na whitelist.
      */
     public function orderby(): string {
-        if ( $this->has_request_orderby() ) {
-            $key = sanitize_text_field( wp_unslash( $this->get[ self::QV_ORDERBY ] ) );
-            if ( PresentationsSchema::is_orderable( $key ) || GroupingMode::SORT_TOTAL === $key ) {
-                return $key;
+        $mode = GroupingModes::get( $this->group() );
+        if ( null !== $mode ) {
+            if ( $this->has_request_orderby() ) {
+                $key = sanitize_text_field( wp_unslash( $this->get[ self::QV_ORDERBY ] ) );
+                if ( $mode->is_sortable( $key ) ) {
+                    return $key;
+                }
             }
+            return (string) array_key_first( $mode->sortable_columns() );
         }
-        return (string) ( $this->atts['orderby'] ?? 'presentationDate' );
+
+        $attr = (string) ( $this->atts['orderby'] ?? '' );
+        return PresentationsSchema::is_orderable( $attr ) ? $attr : 'presentationDate';
     }
 
+    /**
+     * Direção da ordenação: `tap_order` só é lido no modo agrupado; no modo
+     * plano vale o atributo `order` do shortcode.
+     */
     public function order(): string {
-        if ( isset( $this->get[ self::QV_ORDER ] ) ) {
+        if ( $this->is_grouped() && isset( $this->get[ self::QV_ORDER ] ) ) {
             return strtoupper( sanitize_text_field( wp_unslash( $this->get[ self::QV_ORDER ] ) ) ) === 'DESC' ? 'DESC' : 'ASC';
         }
         return strtoupper( (string) ( $this->atts['order'] ?? 'ASC' ) ) === 'DESC' ? 'DESC' : 'ASC';

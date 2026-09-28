@@ -121,7 +121,8 @@ class PresentationsShortcode implements Module
                     'prompt'          => __( 'Use os filtros acima e clique em Buscar para listar as apresentações.', 'customizations-teatromusicadosp' ),
                     'prev'            => __( 'Anterior', 'customizations-teatromusicadosp' ),
                     'next'            => __( 'Próxima', 'customizations-teatromusicadosp' ),
-                    /* translators: 1: total de resultados. */
+                    'expandAll'       => __( 'Expandir todos', 'customizations-teatromusicadosp' ),
+                    'collapseAll'     => __( 'Recolher todos', 'customizations-teatromusicadosp' ),
                     'results'         => __( '%s apresentação(ões)', 'customizations-teatromusicadosp' ),
                 ],
             ]

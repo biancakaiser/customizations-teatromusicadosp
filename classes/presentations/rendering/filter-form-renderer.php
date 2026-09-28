@@ -107,23 +107,26 @@ final class FilterFormRenderer
     }
 
     /**
-     * `<select>` "Ordenado por:" + `<select>` de direção. As colunas oferecidas
-     * dependem do modo: no modo plano são as colunas da tabela plana; num modo
-     * agrupado são as colunas daquele agrupamento (identidade + folha + Total).
+     * `<select>` "Ordenado por:" + `<select>` de direção. Só vale no modo
+     * agrupado (opções de `GroupingMode::sortable_columns()`). No modo plano o
+     * campo continua no HTML — o JS o revela ao trocar o agrupamento — mas fica
+     * `hidden` e com os `<select>` `disabled`, para não entrar no submit.
      */
     private function sort_field( string $group, string $orderby, string $order ): string {
-        $options = self::sort_options( $group );
-        $order   = strtoupper( $order ) === 'DESC' ? 'DESC' : 'ASC';
+        $options  = self::sort_options( $group );
+        $order    = strtoupper( $order ) === 'DESC' ? 'DESC' : 'ASC';
+        $inactive = ! $options;
 
         ob_start();
         ?>
-        <div class="teatro-apresentacoes__sort-field">
+        <div class="teatro-apresentacoes__sort-field"<?php echo $inactive ? ' hidden' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>>
             <label for="teatro-apresentacoes-orderby" class="teatro-apresentacoes__search-label">
                 <?php esc_html_e( 'Ordenado por:', 'customizations-teatromusicadosp' ); ?>
             </label>
             <select
                 id="teatro-apresentacoes-orderby"
                 name="<?php echo esc_attr( PresentationsRequest::QV_ORDERBY ); ?>"
+                <?php disabled( $inactive ); ?>
             >
                 <?php foreach ( $options as $value => $label ) : ?>
                     <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $orderby, $value ); ?>>
@@ -137,6 +140,7 @@ final class FilterFormRenderer
             <select
                 id="teatro-apresentacoes-order"
                 name="<?php echo esc_attr( PresentationsRequest::QV_ORDER ); ?>"
+                <?php disabled( $inactive ); ?>
             >
                 <option value="ASC" <?php selected( $order, 'ASC' ); ?>><?php esc_html_e( 'Crescente', 'customizations-teatromusicadosp' ); ?></option>
                 <option value="DESC" <?php selected( $order, 'DESC' ); ?>><?php esc_html_e( 'Decrescente', 'customizations-teatromusicadosp' ); ?></option>
@@ -148,27 +152,27 @@ final class FilterFormRenderer
 
     /**
      * Mapa `coluna => rótulo` do `<select>` "Ordenado por:" para um modo de
-     * agrupamento (`''` = modo plano). Também usado, agregado por modo, no
-     * `data-sort-columns` que o JS lê para repopular o campo sem recarregar.
+     * agrupamento; vazio no modo plano (`''`), que não tem ordenação escolhível.
+     * Também usado, agregado por modo, no `data-sort-columns` que o JS lê para
+     * repopular o campo sem recarregar.
      *
      * @return array<string,string>
      */
     public static function sort_options( string $group ): array {
-        $mode = '' !== $group ? GroupingModes::get( $group ) : null;
+        $mode = GroupingModes::get( $group );
 
-        return null !== $mode
-            ? $mode->sortable_columns()
-            : PresentationsSchema::flat_columns();
+        return null !== $mode ? $mode->sortable_columns() : [];
     }
 
     /**
-     * `data-sort-columns`: as opções de "Ordenado por:" de cada modo, para o JS
-     * trocar o conteúdo do `<select>` quando o agrupamento muda sem reload.
+     * `data-sort-columns`: as opções de "Ordenado por:" de cada modo de
+     * agrupamento, para o JS trocar o conteúdo do `<select>` quando o
+     * agrupamento muda sem reload. O modo plano não entra: nele o campo some.
      *
      * @return array<string,array<string,string>>
      */
     public static function sort_options_by_mode(): array {
-        $map = [ '' => self::sort_options( '' ) ];
+        $map = [];
 
         foreach ( array_keys( GroupingModes::all() ) as $group_key ) {
             $map[ $group_key ] = self::sort_options( $group_key );

@@ -400,7 +400,12 @@ class PresentationsRepository implements Module
             );
         }
 
+        // Só as ordenações oferecidas pelo modo (Ano / Total de Sessões); qualquer
+        // outra coluna cai para a 1ª delas, como em PresentationsRequest::orderby().
         $orderby = (string) $request['orderby'];
+        if ( ! $mode->is_sortable( $orderby ) ) {
+            $orderby = (string) array_key_first( $mode->sortable_columns() );
+        }
         $order   = strtoupper( (string) $request['order'] ) === 'DESC' ? 'DESC' : 'ASC';
 
         $rows = $this->query_all_presentations(
