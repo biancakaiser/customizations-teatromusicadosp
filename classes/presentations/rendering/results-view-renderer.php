@@ -2,7 +2,7 @@
 /**
  * Renderiza o "casco" do shortcode: a `<div>` raiz com os `data-*` que o
  * `assets/presentations.js` lê, o container da tabela, a paginação
- * (`paginate_links()`) e o parágrafo de contagem.
+ * (`paginate_links()`) e o parágrafo de contagem (logo acima da tabela).
  *
  * O `<form>` de filtros e a tabela em si chegam prontos (`form_html` /
  * `table_html` — este último já inclui a mensagem de "nada encontrado"
@@ -72,6 +72,22 @@ final class ResultsViewRenderer
         >
             <?php echo $ctx['form_html']; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
+            <div class="teatro-apresentacoes__results-bar">
+                <h3 id="teatro-apresentacoes-count" class="teatro-apresentacoes__count" role="status"<?php echo $submitted ? '' : ' hidden'; ?>>
+                    <?php
+                    echo esc_html(
+                        sprintf(
+                            /* translators: %s: total de apresentações. */
+                            _n( '%s apresentação', '%s apresentações', $total, 'customizations-teatromusicadosp' ),
+                            number_format_i18n( $total )
+                        )
+                    );
+                    ?>
+                </h3>
+                <?php // Slot do botão "Expandir/Recolher todos" — preenchido por assets/presentations.js no modo agrupado. ?>
+                <div class="teatro-apresentacoes__group-actions"></div>
+            </div>
+
             <div id="teatro-apresentacoes-table-wrap" class="teatro-apresentacoes__table-wrap<?php echo $is_grouped ? ' teatro-apresentacoes__table-wrap--grouped' : ''; ?>" aria-live="polite">
                 <?php if ( ! $submitted ) : ?>
                     <p class="teatro-apresentacoes__prompt">
@@ -137,18 +153,6 @@ final class ResultsViewRenderer
                     </div>
                 </div>
             <?php endif; ?>
-
-            <p id="teatro-apresentacoes-count" class="teatro-apresentacoes__count" role="status"<?php echo $submitted ? '' : ' hidden'; ?>>
-                <?php
-                echo esc_html(
-                    sprintf(
-                        /* translators: %s: total de apresentações. */
-                        _n( '%s apresentação', '%s apresentações', $total, 'customizations-teatromusicadosp' ),
-                        number_format_i18n( $total )
-                    )
-                );
-                ?>
-            </p>
         </div>
         <?php
         return (string) ob_get_clean();

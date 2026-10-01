@@ -9,6 +9,8 @@ use TeatroMusicadoSP\Customizations\MetadataTypes\RegisterMetadatas;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsPage;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRepository;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsShortcode;
+use TeatroMusicadoSP\Customizations\Presentations\Sync\PresentationsReconciler;
+use TeatroMusicadoSP\Customizations\Presentations\Sync\PresentationsSync;
 use TeatroMusicadoSP\Customizations\RelatedItems\PessoaRelatedItemsOrder;
 use TeatroMusicadoSP\Customizations\ViewModes\RegisterViewModes;
 
@@ -33,8 +35,11 @@ final class Features
 
     const OPTION = 'tmsp_customizations_features';
 
-    /** Ligar o shortcode ou a REST exige a tabela; ver sanitize(). */
+    /** Ligar o shortcode, a REST ou a sincronização exige a tabela; ver sanitize(). */
     const TABLE_KEY = 'presentations_table';
+
+    /** Sincronização Tainacan → tabela (hooks + conferência a cada 3 dias). */
+    const SYNC_KEY = 'presentations_sync';
 
     /** @var array<string,int>|null Estado salvo, em cache na requisição. */
     private $state = null;
@@ -57,12 +62,13 @@ final class Features
             'related_items_order' => array( 'modules' => array( PessoaRelatedItemsOrder::class ) ),
             'bibliographic'       => array( 'modules' => array( Bibliographic::class ) ),
             'presentations'       => array(
-                'modules'  => array( PresentationsRepository::class ),
+                'modules'  => array( PresentationsRepository::class, PresentationsReconciler::class ),
                 'children' => array(
                     'presentations_shortcode'  => array( 'modules' => array( PresentationsShortcode::class ) ),
                     'presentations_rest'       => array( 'modules' => array() ),
                     'presentations_admin_page' => array( 'modules' => array( PresentationsPage::class ) ),
                     self::TABLE_KEY            => array( 'modules' => array() ),
+                    self::SYNC_KEY             => array( 'modules' => array( PresentationsSync::class ) ),
                 ),
             ),
         );
@@ -173,8 +179,8 @@ final class Features
 
     /**
      * Normaliza o que veio do formulário: só chaves conhecidas, sempre 0|1, e
-     * o banco de dados é forçado quando o shortcode ou a REST estão ligados
-     * (ambos consultam a tabela).
+     * o banco de dados é forçado quando o shortcode, a REST ou a sincronização
+     * estão ligados (todos usam a tabela).
      *
      * @param mixed $input
      * @return array<string,int>
@@ -188,7 +194,7 @@ final class Features
             $clean[ $key ] = empty( $input[ $key ] ) ? 0 : 1;
         }
 
-        if ( $clean['presentations'] && ( $clean['presentations_shortcode'] || $clean['presentations_rest'] ) ) {
+        if ( $clean['presentations'] && ( $clean['presentations_shortcode'] || $clean['presentations_rest'] || $clean[ self::SYNC_KEY ] ) ) {
             $clean[ self::TABLE_KEY ] = 1;
         }
 

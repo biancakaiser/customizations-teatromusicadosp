@@ -4,6 +4,7 @@ namespace TeatroMusicadoSP\Customizations\RelatedItems;
 
 use TeatroMusicadoSP\Customizations\Contracts\Module;
 use TeatroMusicadoSP\Customizations\Traits\Singleton;
+use TeatroMusicadoSP\Customizations\References\TainacanIds;
 
 // Evita acesso direto ao arquivo
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
@@ -13,7 +14,7 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
  * relacionados exibidos em um item (ex: "Membros", "Peças", "Espetáculos"),
  * apenas os itens dentro de cada grupo (via orderby/order de
  * tainacan_the_related_items). A ordem dos grupos vem de quais metadados de
- * Relacionamento (apontando para a coleção Pessoas, 3408) o Tainacan encontra,
+ * Relacionamento (apontando para a coleção Pessoa) o Tainacan encontra,
  * na ordem em que a query em Repositories\Metadata::fetch() os devolve — sem
  * hook de ordenação disponível, e sem nenhum dado nativo que represente
  * "ordem entre coleções diferentes".
@@ -50,7 +51,7 @@ class PessoaRelatedItemsOrder implements Module
 {
     use Singleton;
 
-    const PESSOA_COLLECTION_ID = 3408;
+    const PESSOA_COLLECTION_ID = TainacanIds::PESSOA;
 
     /**
      * Nome da query var usada só para marcar, dentro do próprio WP_Query, que
@@ -65,9 +66,9 @@ class PessoaRelatedItemsOrder implements Module
      * desejada de exibição dos grupos.
      */
     const COLLECTIONS_ORDER = [
-        4859, // Membros
-        3415, // Peças
-        3922, // Espetáculos
+        TainacanIds::MEMBROS,
+        TainacanIds::PECA,
+        TainacanIds::ESPETACULOS,
     ];
 
     public function register(): void {

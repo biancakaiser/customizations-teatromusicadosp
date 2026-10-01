@@ -127,14 +127,15 @@
 </template>
 
 <script>
+import { metadatumId } from '../tainacan-ids.js';
+
 /*
- * IDs dos metadados filhos do campo composto "Elenco" (slug: elenco) da
- * coleção Membros: Pessoa (7975) e Função (7979). Usados para localizar cada
- * subcampo dentro de uma repetição por id em vez de por posição, já que a
- * ordem só é garantida pela configuração atual do composto no Tainacan.
+ * Metadados filhos do campo composto "Elenco" (slug: elenco) da coleção
+ * Membros: Pessoa e Função (IDs na referência única do plugin,
+ * classes/references/tainacan-ids.php). Usados para localizar cada subcampo
+ * dentro de uma repetição por id em vez de por posição, já que a ordem só é
+ * garantida pela configuração atual do composto no Tainacan.
  */
-const PERSON_METADATUM_ID = 7975;
-const FUNCTION_METADATUM_ID = 7979;
 
 export default {
     name: 'CompanyViewMode',
@@ -306,8 +307,8 @@ export default {
             const groupsByKey = {};
 
             repetitions.forEach((repetitionFields, repetitionIndex) => {
-                const personField = this.getCastSubfield(repetitionFields, PERSON_METADATUM_ID, 0);
-                const roleField = this.getCastSubfield(repetitionFields, FUNCTION_METADATUM_ID, 1);
+                const personField = this.getCastSubfield(repetitionFields, metadatumId('membrosElencoPessoa'), 0);
+                const roleField = this.getCastSubfield(repetitionFields, metadatumId('membrosElencoFuncao'), 1);
 
                 const personHtml = personField ? (personField.value_as_html || '') : '';
                 const personText = personField ? (personField.value_as_string || '') : '';

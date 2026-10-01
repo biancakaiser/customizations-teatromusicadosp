@@ -1,12 +1,14 @@
 <?php
 /**
- * "Tabela nova" no WordPress para as apresentações (mock Flat_Table.csv) e a
- * respectiva rota REST usada pela página administrativa.
- *
- * A ideia é tratar o CSV como se fosse uma tabela recém-criada no banco do
- * WordPress: ele é importado uma única vez para `{$wpdb->prefix}teatro_presentations`
- * e passa a ser consultado exclusivamente via REST
+ * Tabela plana `{$wpdb->prefix}teatro_presentations` (uma linha por item
+ * publicado da coleção Espetáculos do Tainacan) e a rota REST que a consulta
  * (`/wp-json/teatromusicadosp/v1/presentations`).
+ *
+ * A fonte dos dados é escolhida pela opção `SOURCE_OPTION`:
+ *   - `tainacan`: populada pelo backfill e mantida pelos hooks/cron de
+ *     `Presentations\Sync\*` — a instalação aqui só cria a estrutura;
+ *   - `csv` (padrão até o primeiro backfill, e caminho de rollback): o mock
+ *     `data/flat-table.csv`, importado por `seed_from_csv()`.
  */
 
 namespace TeatroMusicadoSP\Customizations\Presentations;
@@ -45,7 +47,36 @@ class PresentationsRepository implements Module
     //        "Ano" continua existindo só como derivado no agrupamento — ver
     //        PresentationGrouper::LEAF_FIELDS). O filtro por ano vira filtro por
     //        intervalo de datas (PresentationFilters::DATE_FROM/DATE_TO).
-    const SCHEMA_VERSION = '1.3.0';
+    // 2.0.0: colunas técnicas da sincronização com o Tainacan
+    //        (PresentationsSchema::technical_column_definitions()) e índice em
+    //        presentationDate.
+    const SCHEMA_VERSION = '2.0.0';
+
+    /** Opção com a fonte dos dados da tabela: SOURCE_CSV | SOURCE_TAINACAN. */
+    const SOURCE_OPTION   = 'tmsp_presentations_source';
+    const SOURCE_CSV      = 'csv';
+    const SOURCE_TAINACAN = 'tainacan';
+
+    /**
+     * Opção incrementada a cada escrita da sincronização; entra na chave de
+     * todos os transients, então qualquer mudança nos dados invalida o cache.
+     */
+    const DATA_VERSION_OPTION = 'tmsp_presentations_data_version';
+
+    /** Evento único agendado quando o schema muda com a fonte já no Tainacan. */
+    const BACKFILL_EVENT = 'tmsp_presentations_backfill';
+
+    /**
+     * Teto de linhas das consultas sem paginação (modo agrupado e "Sem
+     * Paginação"); acima da previsão de ~25 mil espetáculos.
+     */
+    const MAX_ROWS = 30000;
+
+    /**
+     * Resultados sem paginação maiores que isto não vão para transient (evita
+     * entradas de vários MB em wp_options).
+     */
+    const CACHE_MAX_ROWS = 2000;
 
     /**
      * As colunas da "tabela nova" agora vivem em
@@ -59,6 +90,9 @@ class PresentationsRepository implements Module
 
     /** Lock (transient) para evitar seed concorrente (ex.: requisições paralelas / wp-cron). */
     const INSTALL_LOCK = 'teatromusicadosp_presentations_installing';
+
+    /** A checagem de instalação já rodou nesta requisição. */
+    private $installed_in_request = false;
 
     public function register(): void {
         // admin_init (e não init) para não rodar em cada requisição de front-end
@@ -109,12 +143,73 @@ class PresentationsRepository implements Module
         return $wpdb->prefix . self::TABLE_SUFFIX;
     }
 
+    public static function source(): string {
+        return self::SOURCE_TAINACAN === get_option( self::SOURCE_OPTION, self::SOURCE_CSV )
+            ? self::SOURCE_TAINACAN
+            : self::SOURCE_CSV;
+    }
+
+    public static function set_source( string $source ): void {
+        update_option( self::SOURCE_OPTION, self::SOURCE_TAINACAN === $source ? self::SOURCE_TAINACAN : self::SOURCE_CSV );
+    }
+
+    public static function data_version(): string {
+        return (string) get_option( self::DATA_VERSION_OPTION, '0' );
+    }
+
     /**
-     * Cria a tabela e importa o CSV uma única vez (ou quando a versão muda).
+     * Invalida todo o cache da tabela: muda a versão que entra nas chaves.
+     */
+    public static function bump_data_version(): void {
+        update_option( self::DATA_VERSION_OPTION, (string) ( (int) self::data_version() + 1 ), false );
+    }
+
+    /**
+     * Fragmento comum às chaves de transient: schema + versão dos dados.
+     */
+    private static function cache_version(): string {
+        return self::SCHEMA_VERSION . '|' . self::data_version();
+    }
+
+    /**
+     * `CREATE TABLE` completo (colunas de exibição + técnicas), para a tabela
+     * oficial ou para a tabela temporária do backfill.
+     */
+    public static function create_table_sql( string $table ): string {
+        global $wpdb;
+
+        $column_defs = array_merge(
+            PresentationsSchema::sql_column_definitions(),
+            array_values( PresentationsSchema::technical_column_definitions() )
+        );
+
+        $key_defs = array_merge(
+            array_map(
+                static fn( string $key ): string => "KEY {$key} ({$key})",
+                PresentationsSchema::indexed_keys()
+            ),
+            PresentationsSchema::technical_key_definitions()
+        );
+
+        return "CREATE TABLE {$table} (\n"
+            . "  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,\n  "
+            . implode( ",\n  ", $column_defs ) . ",\n"
+            . "  PRIMARY KEY  (id),\n  "
+            . implode( ",\n  ", $key_defs ) . "\n"
+            . ") {$wpdb->get_charset_collate()};";
+    }
+
+    /**
+     * Cria a estrutura quando a versão do schema muda.
+     *
+     * - Fonte CSV: recria a tabela do zero e reimporta o mock (reproduzível).
+     * - Fonte Tainacan: nunca apaga dados aqui. Agenda um backfill, que monta
+     *   uma tabela nova no schema atual e a troca atomicamente pela oficial
+     *   (ver Sync\PresentationsReconciler::backfill()); até lá a tabela antiga
+     *   continua servindo.
      */
     public function maybe_install_table(): void {
-        static $done_in_request = false;
-        if ( $done_in_request ) {
+        if ( $this->installed_in_request ) {
             return;
         }
 
@@ -125,7 +220,17 @@ class PresentationsRepository implements Module
         }
 
         if ( get_option( self::SCHEMA_OPTION ) === self::SCHEMA_VERSION ) {
-            $done_in_request = true;
+            $this->installed_in_request = true;
+            return;
+        }
+
+        // Fonte Tainacan: o backfill (evento único, fora da requisição do admin)
+        // é quem recria a tabela no schema novo e marca a versão ao terminar.
+        if ( self::SOURCE_TAINACAN === self::source() ) {
+            if ( ! wp_next_scheduled( self::BACKFILL_EVENT ) ) {
+                wp_schedule_single_event( time(), self::BACKFILL_EVENT );
+            }
+            $this->installed_in_request = true;
             return;
         }
 
@@ -139,37 +244,34 @@ class PresentationsRepository implements Module
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        $table           = self::table_name();
-        $charset_collate = $wpdb->get_charset_collate();
+        $table = self::table_name();
 
         // dbDelta só adiciona colunas/índices novos — nunca renomeia nem remove os
-        // antigos. Como esta tabela é inteiramente reproduzível a partir do CSV
-        // (ver seed_from_csv()), o caminho mais simples e seguro numa mudança de
-        // schema (coluna renomeada/removida) é recriar a tabela do zero.
+        // antigos. Como, na fonte CSV, esta tabela é inteiramente reproduzível a
+        // partir do mock (ver seed_from_csv()), o caminho mais simples e seguro
+        // numa mudança de schema é recriar a tabela do zero.
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
 
-        $column_defs = PresentationsSchema::sql_column_definitions();
-
-        $key_defs = array_map(
-            static fn( string $key ): string => "  KEY {$key} ({$key})",
-            PresentationsSchema::indexed_keys()
-        );
-
-        $sql = "CREATE TABLE {$table} (\n"
-            . "  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,\n  "
-            . implode( ",\n  ", $column_defs ) . ",\n"
-            . "  PRIMARY KEY  (id),\n"
-            . implode( ",\n", $key_defs ) . "\n"
-            . ") {$charset_collate};";
-
-        dbDelta( $sql );
+        dbDelta( self::create_table_sql( $table ) );
 
         $this->seed_from_csv( $table );
 
         update_option( self::SCHEMA_OPTION, self::SCHEMA_VERSION );
         delete_transient( self::INSTALL_LOCK );
-        $done_in_request = true;
+        $this->installed_in_request = true;
+    }
+
+    /**
+     * Reimporta o mock CSV na tabela oficial, recriando-a no schema atual
+     * (usado pelo rollback quando não há tabela anterior para restaurar).
+     */
+    public function reinstall_from_csv(): void {
+        self::set_source( self::SOURCE_CSV );
+        delete_option( self::SCHEMA_OPTION );
+        delete_transient( self::INSTALL_LOCK );
+        $this->installed_in_request = false;
+        $this->maybe_install_table();
     }
 
     /**
@@ -235,10 +337,8 @@ class PresentationsRepository implements Module
 
         fclose( $handle );
 
-        // O seed mudou o conjunto de valores: invalida os caches de DISTINCT.
-        foreach ( array_keys( PresentationsSchema::facetable_columns() ) as $facet_column ) {
-            delete_transient( self::facet_cache_key( $facet_column ) );
-        }
+        // O seed mudou o conjunto de valores: invalida todo o cache (consultas e DISTINCT).
+        self::bump_data_version();
     }
 
     /**
@@ -449,7 +549,7 @@ class PresentationsRepository implements Module
         $filters  = PresentationFilters::from_rest_request( $request );
 
         // 0 = "Sem Paginação": mesma consulta sem `LIMIT`/`OFFSET` do modo
-        // agrupado (mesmo teto de segurança de 10 mil linhas).
+        // agrupado (mesmo teto de segurança, `MAX_ROWS`).
         if ( 0 === $per_page ) {
             $rows        = $this->query_all_presentations(
                 [
@@ -496,8 +596,8 @@ class PresentationsRepository implements Module
     }
 
     /**
-     * Consulta paginada da tabela, com cache curto em transient (o seed é
-     * estático; a chave inclui a versão do schema, então um re-seed invalida).
+     * Consulta paginada da tabela, com cache curto em transient (a chave inclui
+     * a versão do schema e dos dados, então qualquer sincronização invalida).
      *
      * @param array $args page, per_page, orderby, order, search, filters (um `PresentationFilters` já pronto)
      * @return array{data:array<int,array<string,mixed>>,total:int}
@@ -532,7 +632,7 @@ class PresentationsRepository implements Module
             : PresentationFilters::from_array( [] );
 
         $cache_key = 'tmsp_pres_' . md5(
-            self::SCHEMA_VERSION . '|' . wp_json_encode(
+            self::cache_version() . '|' . wp_json_encode(
                 [
                     'orderby'  => $orderby,
                     'order'    => $order,
@@ -578,8 +678,8 @@ class PresentationsRepository implements Module
      * modo agrupado (onde os grupos podem cruzar páginas e a tabela precisa do
      * conjunto completo antes de `GroupedPager` cortar em páginas) e pela
      * opção "Sem Paginação" do seletor "Resultados por página" no modo plano.
-     * Teto de segurança: nunca devolve mais que 10 mil linhas (mesmo limite
-     * que a antiga varredura página a página do shortcode aplicava: 200 × 50).
+     * Teto de segurança: nunca devolve mais que `MAX_ROWS` linhas; resultados
+     * maiores que `CACHE_MAX_ROWS` não são cacheados.
      *
      * @param array $args orderby, order, search, filters (um `PresentationFilters` já pronto)
      * @return array<int,array<string,mixed>>
@@ -603,10 +703,10 @@ class PresentationsRepository implements Module
         $filters  = $args['filters'] instanceof PresentationFilters
             ? $args['filters']
             : PresentationFilters::from_array( [] );
-        $max_rows = 10000;
+        $max_rows = self::MAX_ROWS;
 
         $cache_key = 'tmsp_pres_all_' . md5(
-            self::SCHEMA_VERSION . '|' . wp_json_encode(
+            self::cache_version() . '|' . wp_json_encode(
                 [
                     'orderby' => $orderby,
                     'order'   => $order,
@@ -631,7 +731,7 @@ class PresentationsRepository implements Module
 
         $data = array_map( [ self::class, 'map_row' ], $rows ?: [] );
 
-        if ( self::cache_enabled() ) {
+        if ( self::cache_enabled() && count( $data ) <= self::CACHE_MAX_ROWS ) {
             set_transient( $cache_key, $data, 5 * MINUTE_IN_SECONDS );
         }
 
@@ -655,13 +755,13 @@ class PresentationsRepository implements Module
      * Chave do transient que guarda os valores distintos de uma coluna.
      */
     public static function facet_cache_key( string $column ): string {
-        return self::FACET_CACHE_PREFIX . md5( self::SCHEMA_VERSION . '|' . $column );
+        return self::FACET_CACHE_PREFIX . md5( self::cache_version() . '|' . $column );
     }
 
     /**
      * Valores distintos, não vazios e ordenados de uma coluna facetável — usados
-     * para popular os `<select>` de filtro. Resultado cacheado por 1h (o seed é
-     * estático; `seed_from_csv()` limpa esses transients ao re-importar).
+     * para popular os `<select>` de filtro. Resultado cacheado por 1h (a chave
+     * inclui a versão dos dados, incrementada a cada escrita da sincronização).
      *
      * @return list<string|int>
      */

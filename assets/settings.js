@@ -1,6 +1,6 @@
 /**
  * Página de configurações: sub-opções acompanham a funcionalidade-mãe e o
- * banco de dados fica preso enquanto o shortcode ou a REST estiverem ligados
+ * banco de dados fica preso enquanto o shortcode, a REST ou a sincronização estiverem ligados
  * (o servidor aplica a mesma regra em Features::sanitize()).
  *
  * `inert` (e não `disabled`) para que os valores continuem sendo enviados.
@@ -9,7 +9,7 @@
 	'use strict';
 
 	var TABLE_KEY = 'presentations_table';
-	var NEEDS_TABLE = ['presentations_shortcode', 'presentations_rest'];
+	var NEEDS_TABLE = ['presentations_shortcode', 'presentations_rest', 'presentations_sync'];
 
 	function byKey(root, key) {
 		return root.querySelector('input[data-key="' + key + '"]');

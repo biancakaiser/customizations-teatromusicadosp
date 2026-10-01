@@ -6,7 +6,7 @@
                     <th scope="col">Teatro</th>
                     <th scope="col">Data</th>
                     <th scope="col">Tipo</th>
-                    <th scope="col">Nº de Sessões</th>
+                    <th scope="col">Sessões</th>
                     <th scope="col" class="column-actions">Ações</th>
                 </tr>
             </thead>

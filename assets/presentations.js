@@ -157,17 +157,23 @@
 
 			tbody.classList.add('is-collapsed');
 		});
-
-		setupToggleAll(container);
 	}
 
-	// Botão "Expandir todos / Recolher todos" acima da tabela agrupada. Também
-	// só existe com JS (sem JS nenhum grupo colapsa, então não há o que
-	// alternar). Recriado a cada troca de `innerHTML` do wrapper.
-	function setupToggleAll(container) {
-		var groups = container.querySelectorAll('tbody.teatro-apresentacoes__group');
-		var table = container.querySelector('.teatro-apresentacoes__table--group');
-		if (!groups.length || !table || container.querySelector('.teatro-apresentacoes__group-toggle-all')) {
+	// Botão "Expandir todos / Recolher todos": vai no slot
+	// `.teatro-apresentacoes__group-actions` renderizado pelo PHP ao lado do
+	// contador (fora do wrapper da tabela, cujo `innerHTML` é trocado a cada
+	// busca). O slot é sempre esvaziado antes, então o botão nunca duplica e
+	// some no modo plano/sem resultados. Só existe com JS (sem JS nenhum
+	// grupo colapsa, então não há o que alternar).
+	function setupToggleAll(root) {
+		var slot = root.querySelector('.teatro-apresentacoes__group-actions');
+		if (!slot) {
+			return;
+		}
+		slot.innerHTML = '';
+
+		var groups = root.querySelectorAll('tbody.teatro-apresentacoes__group');
+		if (!groups.length) {
 			return;
 		}
 
@@ -175,18 +181,14 @@
 			return tbody.id;
 		});
 
-		var actions = document.createElement('div');
-		actions.className = 'teatro-apresentacoes__group-actions';
-
 		var button = document.createElement('button');
 		button.type = 'button';
 		button.className = 'teatro-apresentacoes__group-toggle-all';
 		button.setAttribute('aria-controls', ids.join(' '));
 
-		actions.appendChild(button);
-		table.parentNode.insertBefore(actions, table);
+		slot.appendChild(button);
 
-		syncToggleAll(container);
+		syncToggleAll(root);
 	}
 
 	// Rótulo/estado do botão global refletem o estado real dos grupos: se
@@ -246,6 +248,7 @@
 		}
 
 		setupGroupAccordion(wrap);
+		setupToggleAll(root);
 
 		// Formulário de submit único: nenhum campo é listener de ação imediata.
 		// O estado só é lido (readFields) e a tabela só recarrega no submit.
@@ -434,8 +437,6 @@
 				var bar = root.querySelector('.teatro-apresentacoes__pagination-bar');
 				if (bar) {
 					bar.insertBefore(nav, bar.firstChild);
-				} else if (countEl) {
-					root.insertBefore(nav, countEl);
 				} else {
 					root.appendChild(nav);
 				}
@@ -590,6 +591,7 @@
 				.then(function (payload) {
 					wrap.innerHTML = payload.html;
 					setupGroupAccordion(wrap);
+					setupToggleAll(root);
 					renderPagination(payload.total_pages);
 					if (countEl && i18n.results) {
 						countEl.hidden = false;
@@ -600,6 +602,7 @@
 				.catch(function () {
 					wrap.innerHTML = '<p class="teatro-apresentacoes__empty">' +
 						escapeHtml(i18n.error || '') + '</p>';
+					setupToggleAll(root);
 				})
 				.then(function () {
 					setBusy(false);
@@ -624,6 +627,7 @@
 				})
 				.then(function (payload) {
 					wrap.innerHTML = payload.html;
+					setupToggleAll(root);
 					renderPagination(payload.total_pages);
 					if (countEl && i18n.results) {
 						countEl.hidden = false;
@@ -634,6 +638,7 @@
 				.catch(function () {
 					wrap.innerHTML = '<p class="teatro-apresentacoes__empty">' +
 						escapeHtml(i18n.error || '') + '</p>';
+					setupToggleAll(root);
 				})
 				.then(function () {
 					setBusy(false);
@@ -747,7 +752,7 @@
 				Array.prototype.forEach.call(groups, function (tbody) {
 					setGroupCollapsed(tbody, !expand);
 				});
-				syncToggleAll(wrap);
+				syncToggleAll(root);
 				return;
 			}
 
@@ -760,7 +765,7 @@
 				return;
 			}
 			setGroupCollapsed(tbody, !tbody.classList.contains('is-collapsed'));
-			syncToggleAll(wrap);
+			syncToggleAll(root);
 		});
 	}
 

@@ -78,8 +78,10 @@
 </template>
 
 <script>
+import { collectionId as tainacanCollectionId } from '../tainacan-ids.js';
+
 /*
- * Peças (3415) e Espetáculos (3922): mesmos IDs usados em person-view-mode.vue
+ * Peça e Espetáculos: mesmas coleções usadas em person-template.vue
  * para decidir que ambas as coleções renderizam ConceptionTemplate. O Tainacan
  * (Theme_Helper::get_tainacan_related_items_list()) gera um .wp-block-group e
  * um <h3> por coleção relacionada, sem nenhum filtro para unir grupos de
@@ -87,8 +89,6 @@
  * uma única vez, antes do primeiro desses grupos a montar (ver
  * insertSharedConceptionTitle) — sem mexer nos grupos/headings originais.
  */
-const PECAS_COLLECTION_ID = 3415;
-const ESPETACULOS_COLLECTION_ID = 3922;
 const SHARED_GROUP_TITLE = 'Peças de cujas concepção participou';
 
 export default {
@@ -220,7 +220,7 @@ export default {
         insertSharedConceptionTitle(groupElement) {
             const collectionId = Number(this.collectionId);
 
-            if (!groupElement || (collectionId !== PECAS_COLLECTION_ID && collectionId !== ESPETACULOS_COLLECTION_ID))
+            if (!groupElement || (collectionId !== tainacanCollectionId('peca') && collectionId !== tainacanCollectionId('espetaculos')))
                 return;
 
             const relatedItemsList = groupElement.closest('[data-module="related-items-list"]');

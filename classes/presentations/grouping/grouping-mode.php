@@ -22,6 +22,9 @@ final class GroupingMode
     /** Chave sintética de ordenação pela coluna "Total" (soma de sessões do grupo de 1º nível). */
     const SORT_TOTAL = '__total';
 
+    /** Rótulo do total na faixa do grupo de 1º nível (texto do botão `group-toggle`); o `<th>` e o `data-label` da coluna seguem com "Total" (`leaf_labels()`). */
+    const GROUP_TOTAL_LABEL = 'Total de Sessões';
+
     /** Colunas-folha padrão (as dos modos de 3 níveis), na ordem de exibição. */
     const DEFAULT_LEAF_COLUMNS = [
         'presentationTheater',
@@ -40,11 +43,11 @@ final class GroupingMode
      * @param list<string> $identity        Colunas do bloco de identidade do 2º nível.
      * @param list<string> $l1_label_fields Colunas que compõem o texto da faixa de 1º nível.
      * @param list<string> $leaf_columns    Colunas do schema (as de `PresentationGrouper::
-     *                                      ROW_FIELDS`/`LEAF_FIELDS`, sem Nº de Sessões)
+     *                                      ROW_FIELDS`/`LEAF_FIELDS`, sem Sessões)
      *                                      que distinguem as linhas-folha — as sessões
      *                                      são somadas por essa combinação. Cada uma
      *                                      vira uma coluna da tabela, antes de
-     *                                      "Nº de Sessões" e "Total".
+     *                                      "Sessões" e "Total".
      */
     public function __construct(
         public string $key,
@@ -66,7 +69,7 @@ final class GroupingMode
 
     /**
      * Rótulos das colunas-folha deste modo, na ordem de `leaf_columns`, seguidos
-     * de "Nº de Sessões" e "Total". Os de coluna real vêm do schema (fonte
+     * de "Sessões" e "Total". Os de coluna real vêm do schema (fonte
      * única); "Ano" é o ano extraído de `presentationDate` e "Total" é um
      * agregado sintético — nenhum dos dois usa o rótulo do schema.
      *

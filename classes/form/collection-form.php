@@ -4,6 +4,7 @@ namespace TeatroMusicadoSP\Customizations\Form;
 
 use TeatroMusicadoSP\Customizations\Contracts\Module;
 use TeatroMusicadoSP\Customizations\Traits\Singleton;
+use TeatroMusicadoSP\Customizations\References\TainacanIds;
 
 // Evita acesso direto ao arquivo
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
@@ -11,8 +12,6 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 class CollectionForm implements Module
 {
     use Singleton;
-
-    const MONTAGEM_COLLECTION_ID = '3922';
 
     /**
      * ID do container que a instância Vue do Form Hook (bundle próprio,
@@ -37,7 +36,7 @@ class CollectionForm implements Module
             'item',
             array($this, 'form'),
             'end-right',
-            [ 'collectionId' => self::MONTAGEM_COLLECTION_ID ]
+            [ 'collectionId' => (string) TainacanIds::ESPETACULOS ]
         );
     }
 

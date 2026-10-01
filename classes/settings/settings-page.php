@@ -5,6 +5,9 @@ namespace TeatroMusicadoSP\Customizations\Settings;
 use TeatroMusicadoSP\Customizations\Contracts\Module;
 use TeatroMusicadoSP\Customizations\Traits\Singleton;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRepository;
+use TeatroMusicadoSP\Customizations\Presentations\Sync\PresentationsReconciler;
+use TeatroMusicadoSP\Customizations\Presentations\Sync\PresentationsSync;
+use TeatroMusicadoSP\Customizations\Presentations\Sync\SyncState;
 
 // Evita acesso direto ao arquivo
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
@@ -136,6 +139,9 @@ final class SettingsPage implements Module
         } elseif ( ! $was_on && $is_on ) {
             PresentationsRepository::install();
         }
+
+        // Agenda (ou remove) a conferência a cada 3 dias conforme a sincronização.
+        PresentationsReconciler::ensure_schedule();
     }
 
     /**
@@ -172,8 +178,8 @@ final class SettingsPage implements Module
 
         return array(
             'collection_form' => array(
-                'label'       => __( 'Formulário de Espetáculos (Montagem)', $d ),
-                'description' => __( 'Insere a tabela de espetáculos no formulário de edição de itens da coleção Montagem.', $d ),
+                'label'       => __( 'Formulário de Espetáculos', $d ),
+                'description' => __( 'Insere a tabela de espetáculos no formulário de edição de itens da coleção Espetáculos.', $d ),
             ),
             'metadata_types' => array(
                 'label'       => __( 'Tipo de metadado Slug/ID', $d ),
@@ -210,6 +216,10 @@ final class SettingsPage implements Module
             Features::TABLE_KEY => array(
                 'label'       => __( 'Banco de dados e cache', $d ),
                 'description' => __( 'Cria e popula a tabela de apresentações e usa cache (transients) nas consultas. Ao desligar, o cache é limpo e a tabela é mantida.', $d ),
+            ),
+            Features::SYNC_KEY => array(
+                'label'       => __( 'Sincronização com o Tainacan', $d ),
+                'description' => __( 'Mantém a tabela igual à coleção Espetáculos: atualiza a cada item salvo no Tainacan e confere tudo a cada 3 dias. Requer o banco de dados e a carga inicial (botão abaixo).', $d ),
             ),
         );
     }
@@ -274,8 +284,136 @@ final class SettingsPage implements Module
                 }
                 ?>
             </form>
+
+            <?php
+            if ( $tainacan && $features->is_enabled( 'presentations' ) ) {
+                $this->render_sync_status();
+            }
+            ?>
         </div>
         <?php
+    }
+
+    /**
+     * Estado da sincronização Tainacan → tabela e botão de conferência/carga.
+     */
+    private function render_sync_status(): void
+    {
+        $source     = PresentationsRepository::source();
+        $from_csv   = PresentationsRepository::SOURCE_CSV === $source;
+        $last_hook  = get_option( PresentationsSync::LAST_RUN_OPTION );
+        $next       = wp_next_scheduled( PresentationsReconciler::RECONCILE_EVENT );
+        $log        = array_slice( SyncState::recent_log(), 0, 10 );
+        $format     = get_option( 'date_format' ) . ' H:i';
+
+        ?>
+        <h2><?php esc_html_e( 'Sincronização com o Tainacan', 'customizations-teatromusicadosp' ); ?></h2>
+
+        <table class="widefat striped tmsp-sync-status">
+            <tbody>
+                <tr>
+                    <th scope="row"><?php esc_html_e( 'Fonte dos dados', 'customizations-teatromusicadosp' ); ?></th>
+                    <td><?php echo esc_html( $from_csv ? __( 'Dados de exemplo (CSV)', 'customizations-teatromusicadosp' ) : __( 'Tainacan — coleção Espetáculos', 'customizations-teatromusicadosp' ) ); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e( 'Sincronização automática', 'customizations-teatromusicadosp' ); ?></th>
+                    <td><?php echo esc_html( PresentationsReconciler::sync_active() ? __( 'Ativa', 'customizations-teatromusicadosp' ) : __( 'Inativa', 'customizations-teatromusicadosp' ) ); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e( 'Próxima conferência', 'customizations-teatromusicadosp' ); ?></th>
+                    <td><?php echo esc_html( $next ? wp_date( $format, $next ) : '—' ); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e( 'Última atualização por edição', 'customizations-teatromusicadosp' ); ?></th>
+                    <td><?php echo esc_html( is_array( $last_hook ) ? $this->summarize( $last_hook ) : '—' ); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e( 'Fila / novas tentativas', 'customizations-teatromusicadosp' ); ?></th>
+                    <td><?php echo esc_html( SyncState::queue_size() . ' / ' . SyncState::retry_size() ); ?></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+            <input type="hidden" name="action" value="<?php echo esc_attr( PresentationsReconciler::MANUAL_ACTION ); ?>" />
+            <?php wp_nonce_field( PresentationsReconciler::MANUAL_ACTION ); ?>
+            <?php
+            submit_button(
+                $from_csv
+                    ? __( 'Fazer a carga inicial a partir do Tainacan', 'customizations-teatromusicadosp' )
+                    : __( 'Conferir agora', 'customizations-teatromusicadosp' ),
+                'secondary',
+                'submit',
+                false
+            );
+            ?>
+            <p class="description">
+                <?php
+                echo esc_html(
+                    $from_csv
+                        ? __( 'Substitui os dados de exemplo pelos espetáculos publicados no Tainacan e liga a sincronização. A tabela anterior é guardada.', 'customizations-teatromusicadosp' )
+                        : __( 'Compara a tabela com o Tainacan e corrige as diferenças. Com muitos itens, pode levar alguns segundos.', 'customizations-teatromusicadosp' )
+                );
+                ?>
+            </p>
+        </form>
+
+        <?php if ( $log ) : ?>
+            <h3><?php esc_html_e( 'Últimas execuções', 'customizations-teatromusicadosp' ); ?></h3>
+            <table class="widefat striped">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e( 'Quando (UTC)', 'customizations-teatromusicadosp' ); ?></th>
+                        <th><?php esc_html_e( 'Origem', 'customizations-teatromusicadosp' ); ?></th>
+                        <th><?php esc_html_e( 'Resultado', 'customizations-teatromusicadosp' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ( $log as $entry ) : ?>
+                        <tr>
+                            <td><?php echo esc_html( (string) ( $entry['time'] ?? '' ) ); ?></td>
+                            <td><?php echo esc_html( (string) ( $entry['origin'] ?? '' ) ); ?></td>
+                            <td><?php echo esc_html( $this->summarize( $entry ) ); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+        <?php
+    }
+
+    /**
+     * Resumo em uma linha de uma entrada do log de sincronização.
+     *
+     * @param array<string,mixed> $entry
+     */
+    private function summarize( array $entry ): string
+    {
+        if ( ! empty( $entry['error'] ) ) {
+            return sprintf( __( 'Erro: %s', 'customizations-teatromusicadosp' ), (string) $entry['error'] );
+        }
+        if ( isset( $entry['queued'] ) ) {
+            return sprintf( __( '%d espetáculo(s) enviados para a fila', 'customizations-teatromusicadosp' ), (int) $entry['queued'] );
+        }
+
+        $parts = array();
+        $labels = array(
+            'inserted'   => __( 'inseridos', 'customizations-teatromusicadosp' ),
+            'updated'    => __( 'atualizados', 'customizations-teatromusicadosp' ),
+            'deleted'    => __( 'removidos', 'customizations-teatromusicadosp' ),
+            'unchanged'  => __( 'sem mudança', 'customizations-teatromusicadosp' ),
+            'table_rows' => __( 'linhas na tabela', 'customizations-teatromusicadosp' ),
+        );
+        foreach ( $labels as $key => $label ) {
+            if ( isset( $entry[ $key ] ) && is_scalar( $entry[ $key ] ) ) {
+                $parts[] = $entry[ $key ] . ' ' . $label;
+            }
+        }
+        if ( ! empty( $entry['time'] ) && ! isset( $entry['origin'] ) ) {
+            array_unshift( $parts, (string) $entry['time'] . ' UTC —' );
+        }
+
+        return $parts ? implode( ', ', $parts ) : '—';
     }
 
     /**

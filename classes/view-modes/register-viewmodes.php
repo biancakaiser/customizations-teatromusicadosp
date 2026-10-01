@@ -4,6 +4,7 @@ namespace TeatroMusicadoSP\Customizations\ViewModes;
 
 use TeatroMusicadoSP\Customizations\Contracts\Module;
 use TeatroMusicadoSP\Customizations\Traits\Singleton;
+use TeatroMusicadoSP\Customizations\References\TainacanIds;
 
 // Evita acesso direto ao arquivo
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
@@ -18,6 +19,9 @@ class RegisterViewModes implements Module
     public function register(): void {
         add_action( 'tainacan-register-vuejs-component', array( $this, 'register_viewmode_components' ) );
         add_action( 'wp_print_scripts', array($this, 'viewmode_components_enqueue_styles') );
+        // Os componentes Vue leem os IDs de coleção/metadado de window.TMSP_TAINACAN_IDS.
+        add_action( 'wp_enqueue_scripts', array( TainacanIds::class, 'enqueue_for_js' ) );
+        add_action( 'admin_enqueue_scripts', array( TainacanIds::class, 'enqueue_for_js' ) );
     }
 
     function register_viewmode_components($helper) {

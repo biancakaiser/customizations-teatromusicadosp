@@ -20,6 +20,13 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 final class PresentationsSchema
 {
+    /**
+     * Colunas que abrem a tabela plana (modo "Nenhum"), fora de qualquer grupo
+     * de cabeçalho. Só afeta `flat_columns()`/`flat_column_groups()` — a ordem
+     * de `columns()` (banco, busca, demais consumidores) não muda.
+     */
+    const FLAT_LEADING_COLUMNS = [ 'presentationDate' ];
+
     /** @var array<string,PresentationColumn>|null */
     private static $columns = null;
 
@@ -86,7 +93,7 @@ final class PresentationsSchema
     public static function flat_columns(): array {
         return array_map(
             static fn( PresentationColumn $c ): string => $c->full_label,
-            self::columns()
+            self::flat_ordered_columns()
         );
     }
 
@@ -97,19 +104,36 @@ final class PresentationsSchema
      * `<th colspan>` na 1ª linha e um `short_label` por coluna na 2ª; um grupo
      * com uma única coluna vira um `<th rowspan="2">` sozinho, sem linha de baixo.
      *
+     * As colunas de `FLAT_LEADING_COLUMNS` saem do seu grupo e abrem a tabela
+     * sob o grupo `''`: célula vazia na 1ª linha e `short_label` na 2ª.
+     *
      * @return array<string,array<string,array{short_label:string,full_label:string}>>
      */
     public static function flat_column_groups(): array {
         $groups = [];
 
-        foreach ( self::columns() as $key => $c ) {
-            $groups[ $c->group ][ $key ] = [
+        foreach ( self::flat_ordered_columns() as $key => $c ) {
+            $group = in_array( $key, self::FLAT_LEADING_COLUMNS, true ) ? '' : $c->group;
+            $groups[ $group ][ $key ] = [
                 'short_label' => $c->short_label,
                 'full_label'  => $c->full_label,
             ];
         }
 
         return $groups;
+    }
+
+    /**
+     * `columns()` com as `FLAT_LEADING_COLUMNS` na frente — ordem de exibição
+     * da tabela plana (cabeçalho e células).
+     *
+     * @return array<string,PresentationColumn>
+     */
+    private static function flat_ordered_columns(): array {
+        $columns = self::columns();
+        $leading = array_intersect_key( $columns, array_flip( self::FLAT_LEADING_COLUMNS ) );
+
+        return $leading + $columns;
     }
 
     /**
@@ -179,6 +203,50 @@ final class PresentationsSchema
     }
 
     /**
+     * Colunas técnicas da sincronização com o Tainacan — ficam de propósito
+     * FORA de `columns()`: não são exibidas, não entram na busca livre (LIKE)
+     * nem nos filtros. Servem para upsert (`espetaculo_id`), identidade entre
+     * ambientes (`legacy_id`, o Slug ID), propagação de mudanças em Peça/
+     * Companhia/Teatro (`*_id`) e conferência (`source_hash`).
+     *
+     * `espetaculo_id` aceita NULL só para as linhas do seed mock (CSV), usado
+     * como rollback; toda linha vinda do Tainacan o preenche.
+     *
+     * @return array<string,string> coluna => definição SQL
+     */
+    public static function technical_column_definitions(): array {
+        return [
+            'espetaculo_id' => '`espetaculo_id` BIGINT UNSIGNED NULL',
+            'legacy_id'     => '`legacy_id` BIGINT UNSIGNED NULL',
+            'play_id'       => '`play_id` BIGINT UNSIGNED NULL',
+            'company_id'    => '`company_id` BIGINT UNSIGNED NULL',
+            'theater_id'    => '`theater_id` BIGINT UNSIGNED NULL',
+            'source_hash'   => '`source_hash` CHAR(32) NULL',
+            'synced_at'     => '`synced_at` DATETIME NULL',
+        ];
+    }
+
+    /**
+     * Índices das colunas técnicas (sintaxe aceita pelo `dbDelta`).
+     *
+     * `legacy_id` não é UNIQUE de propósito: o Slug ID é digitado à mão, e um
+     * valor repetido faria o `INSERT … ON DUPLICATE KEY UPDATE` (chaveado por
+     * `espetaculo_id`) sobrescrever a linha de outro espetáculo. Duplicatas são
+     * apontadas pela conferência (`wp tmsp presentations verify`).
+     *
+     * @return list<string>
+     */
+    public static function technical_key_definitions(): array {
+        return [
+            'UNIQUE KEY espetaculo_id (espetaculo_id)',
+            'KEY legacy_id (legacy_id)',
+            'KEY play_id (play_id)',
+            'KEY company_id (company_id)',
+            'KEY theater_id (theater_id)',
+        ];
+    }
+
+    /**
      * @return array<string,PresentationColumn>
      */
     private static function build(): array {
@@ -207,8 +275,8 @@ final class PresentationsSchema
                 'presentationTheater'   => [ 'Teatro', 'Teatro', $s, true, true, true ],
                 'presentationKind'      => [ 'Tipo de Espetáculo', 'Tipo', $s, false, true, true ],
                 'presentationLanguage'  => [ 'Idioma do Espetáculo', 'Idioma', $s, false, true, true, false, true ],
-                'presentationDate'      => [ 'Data da apresentação', 'Data', $d, false, false, false ],
-                'presentationSessionsN' => [ 'Nº de Sessões', 'Sessões', $i, false, false, false ],
+                'presentationDate'      => [ 'Data da apresentação', 'Data', $d, true, false, false ],
+                'presentationSessionsN' => [ 'Sessões', 'Sessões', $i, false, false, false ],
             ],
         ];
 

@@ -38,6 +38,13 @@ require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/traits/singleton.php';
 
 /*
+ * IDs de coleções/taxonomias/metadados do Tainacan — referência única, usada
+ * por todos os módulos abaixo (nenhum outro arquivo deve fixar esses IDs).
+ */
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/references/tainacan-ids.php';
+
+/*
  * Configurações (quais funcionalidades estão ligadas). Precisa vir antes do
  * registro do hook de metadados, mais abaixo, que já consulta esse estado.
  */
@@ -72,6 +79,25 @@ require_once TMSP_CUSTOMIZATIONS_PATH
 
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/presentations/presentations-repository.php';
+
+/*
+ * Sincronização Tainacan (coleção Espetáculos) → tabela de apresentações:
+ * projeção, escrita, estado (log/filas), conferência/backfill e hooks.
+ */
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/sync/espetaculo-projector.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/sync/sync-state.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/sync/presentations-sync-writer.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/sync/presentations-reconciler.php';
+require_once TMSP_CUSTOMIZATIONS_PATH
+    . 'classes/presentations/sync/presentations-sync.php';
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    require_once TMSP_CUSTOMIZATIONS_PATH
+        . 'classes/presentations/sync/presentations-sync-cli.php';
+}
 
 require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/presentations/filters/presentation-facets.php';

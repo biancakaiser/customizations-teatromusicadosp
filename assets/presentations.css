@@ -5,7 +5,7 @@
 .teatro-apresentacoes {
 	--tap-stripe: #f6f7f7;
 	--tap-head-fg: #ffffff;
-	margin: 1.5rem 6rem;
+	margin: 0 6rem 3rem 6rem !important;
 	font-size: 0.95rem;
 }
 
@@ -93,10 +93,25 @@
 	gap: 1rem 0.8rem;
 }
 
-.teatro-apresentacoes__section-title {
+.teatro-apresentacoes__section-title,
+.teatro-apresentacoes__count {
 	margin: 0 0 0.75rem;
 	font-size: 1rem;
 	font-weight: 700;
+}
+
+/* Contador à esquerda, botão "Expandir/Recolher todos" à direita. */
+.teatro-apresentacoes__results-bar {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.5rem 1rem;
+	margin: 0 0 0.75rem;
+}
+
+.teatro-apresentacoes__results-bar .teatro-apresentacoes__count {
+	margin: 0;
 }
 
 .teatro-apresentacoes__section-row {
@@ -389,9 +404,9 @@
 	background: var(--tap-stripe);
 }
 
-/* Colunas numéricas (Nº de Sessões e Total) alinhadas à direita. */
+/* Colunas numéricas (Sessões e Total) alinhadas à direita. */
 .teatro-apresentacoes__table--group thead th:nth-last-child(-n + 2),
-.teatro-apresentacoes__table--group td[data-label="Nº de Sessões"],
+.teatro-apresentacoes__table--group td[data-label="Sessões"],
 .teatro-apresentacoes__table--group td[data-label="Total"] {
 	text-align: right;
 }
@@ -445,8 +460,7 @@
 /* Botão global "Expandir todos / Recolher todos" (injetado por JS). */
 .teatro-apresentacoes__group-actions {
 	display: flex;
-	justify-content: flex-end;
-	margin-bottom: 0.5rem;
+	margin-left: auto;
 }
 
 .teatro-apresentacoes__group-toggle-all {
@@ -539,12 +553,6 @@
 	font-size: 14px;
 }
 
-.teatro-apresentacoes__count {
-	margin-top: 0.75rem;
-	color: #50575e;
-	font-size: 0.85rem;
-}
-
 /* Layout empilhado em telas pequenas -------------------------------------- */
 
 @media (max-width: 640px) {
@@ -614,7 +622,7 @@
 		background: transparent;
 	}
 
-	.teatro-apresentacoes__table--group td[data-label="Nº de Sessões"],
+	.teatro-apresentacoes__table--group td[data-label="Sessões"],
 	.teatro-apresentacoes__table--group td[data-label="Total"] {
 		text-align: left;
 	}
