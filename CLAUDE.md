@@ -91,7 +91,7 @@ loosely, on one Tainacan add-on. Keep these straight, since names are similar:
    `plugins_loaded` cycle — this is deliberate: Tainacan fires
    `tainacan-register-metadata-type` while loading its own main file, before
    `plugins_loaded` runs, so registering it later would miss the hook.
-6. `view-modes/`, `related-items/`, `form/collection-form.php`, `blocks/bibliographic.php`
+6. `view-modes/`, `related-items/`, `blocks/bibliographic.php`
 7. `classes/Plugin.php`, then `Plugin::get_instance()->register()` — this is what
    defers everything else to `plugins_loaded` → `boot()`.
 
@@ -107,7 +107,6 @@ bootstrapping style.
 | `settings/` | `Features` (feature registry + saved state) and `SettingsPage` (Settings > Teatro Musicado SP) |
 | `traits/` | `Singleton` trait |
 | `references/tainacan-ids.php` | Single source of Tainacan collection/taxonomy/metadatum IDs (PHP constants + JS bridge) |
-| `form/collection-form.php` | Injects a custom Vue form (still a mock spike) into Tainacan's admin item-edit screen, for the Espetáculos collection |
 | `metadata-types/slug-id/` | Custom Tainacan metadata type ("Slug/ID"), extends `Tainacan\Metadata_Types\Metadata_Type` |
 | `view-modes/register-viewmodes.php` | Custom Tainacan "extra view modes" (grouped table) for item-relationship display on Pessoa/Companhia collections |
 | `related-items/pessoa-related-items-order.php` | Reorders related-item groups on Tainacan item pages via `tainacan-fetch-args`/`posts_results` filters |

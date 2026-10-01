@@ -4,7 +4,6 @@ namespace TeatroMusicadoSP\Customizations\Settings;
 
 use TeatroMusicadoSP\Customizations\Traits\Singleton;
 use TeatroMusicadoSP\Customizations\Blocks\Bibliographic;
-use TeatroMusicadoSP\Customizations\Form\CollectionForm;
 use TeatroMusicadoSP\Customizations\MetadataTypes\RegisterMetadatas;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsPage;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRepository;
@@ -56,7 +55,6 @@ final class Features
     public function definitions(): array
     {
         return array(
-            'collection_form'     => array( 'modules' => array( CollectionForm::class ) ),
             'metadata_types'      => array( 'modules' => array( RegisterMetadatas::class ) ),
             'view_modes'          => array( 'modules' => array( RegisterViewModes::class ) ),
             'related_items_order' => array( 'modules' => array( PessoaRelatedItemsOrder::class ) ),

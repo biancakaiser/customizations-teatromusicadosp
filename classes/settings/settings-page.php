@@ -177,10 +177,6 @@ final class SettingsPage implements Module
         $d = 'customizations-teatromusicadosp';
 
         return array(
-            'collection_form' => array(
-                'label'       => __( 'Formulário de Espetáculos', $d ),
-                'description' => __( 'Insere a tabela de espetáculos no formulário de edição de itens da coleção Espetáculos.', $d ),
-            ),
             'metadata_types' => array(
                 'label'       => __( 'Tipo de metadado Slug/ID', $d ),
                 'description' => __( 'Registra o tipo de metadado "Slug/ID" e usa o ID cadastrado como slug do item quando o slug é numérico.', $d ),

@@ -152,9 +152,6 @@ require_once TMSP_CUSTOMIZATIONS_PATH
 . 'classes/related-items/pessoa-related-items-order.php';
 
 require_once TMSP_CUSTOMIZATIONS_PATH
-    . 'classes/form/collection-form.php';
-    
-require_once TMSP_CUSTOMIZATIONS_PATH
     . 'classes/blocks/bibliographic.php';
 
 require_once TMSP_CUSTOMIZATIONS_PATH

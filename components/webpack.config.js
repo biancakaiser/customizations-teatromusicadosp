@@ -10,7 +10,6 @@ module.exports = (env) => {
   return {
     entry: {
       components: "./components.js",
-      "espetaculos-form-hook": "./src/espetaculos-form-hook/espetaculos-form-hook.js",
     },
     mode: "development",
     devtool: "eval-source-map",

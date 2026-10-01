@@ -33,19 +33,11 @@ is active too.
 
 ## Developing the Vue components (`components/`)
 
-This folder holds **two independent Vue 3 apps**, built with Webpack 5 — not one
-shared SPA:
-
-- `components.js` (entry) → `PersonViewMode` / `CompanyViewMode`. These register
-  into Tainacan's own component system (`tainacan-register-vuejs-component` /
-  `register_vuejs_component()`) and back the custom "grouped table" view modes on
-  the Pessoa and Companhia collections (`classes/view-modes/register-viewmodes.php`).
-- `src/espetaculos-form-hook/espetaculos-form-hook.js` (entry) → a standalone
-  `createApp` mounted into `#teatro-espetaculos-app`. It's injected into Tainacan's
-  admin item-edit screen for the Montagem collection
-  (`classes/form/collection-form.php`) and self-mounts via a `MutationObserver`,
-  since Tainacan's admin SPA injects that container via `v-html` rather than a
-  normal page load.
+This folder holds a Vue 3 app built with Webpack 5: `components.js` (entry) →
+`PersonViewMode` / `CompanyViewMode`. These register into Tainacan's own component
+system (`tainacan-register-vuejs-component` / `register_vuejs_component()`) and back
+the custom "grouped table" view modes on the Pessoa and Companhia collections
+(`classes/view-modes/register-viewmodes.php`).
 
 `assets/presentations.js` (used by the `[teatro_apresentacoes]` shortcode) is a
 separate, hand-written vanilla JS file at the plugin root — it is **not** part of
@@ -59,9 +51,8 @@ npm install
 npm run build   # webpack production build
 ```
 
-This outputs `build/components.bundle.js` and `build/espetaculos-form-hook.bundle.js`,
-which is exactly what the PHP side enqueues
-(`classes/view-modes/register-viewmodes.php`, `classes/form/collection-form.php`).
+This outputs `build/components.bundle.js`, which is exactly what the PHP side enqueues
+(`classes/view-modes/register-viewmodes.php`).
 
 For hot-reloading while developing:
 
@@ -106,7 +97,6 @@ Existing modules, for quick reference:
 |---|---|
 | `contracts/` | `Module` interface |
 | `traits/` | `Singleton` trait |
-| `form/collection-form.php` | Injects the Espetáculos Vue form into Tainacan's admin item-edit screen (Montagem collection, ID 3922) |
 | `metadata-types/slug-id/` | Custom Tainacan metadata type ("Slug/ID") |
 | `view-modes/register-viewmodes.php` | Custom Tainacan "extra view modes" (grouped table) for Pessoa/Companhia |
 | `related-items/pessoa-related-items-order.php` | Reorders related-item groups on Tainacan item pages |
