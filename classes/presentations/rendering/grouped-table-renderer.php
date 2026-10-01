@@ -29,16 +29,21 @@ final class GroupedTableRenderer
         $identity_label_map = $mode->labels_for( $mode->identity );
         $leaf_label_map     = $mode->leaf_labels();
         $sessions_label     = $leaf_label_map['presentationSessionsN'];
+        $sessions_short     = PresentationsSchema::column( 'presentationSessionsN' )->grouped_label;
         $total_label        = $leaf_label_map[ GroupingMode::SORT_TOTAL ];
         $ncols              = count( $identity_keys ) + count( $leaf_label_map );
 
-        // Colunas-folha do modo: coluna do schema => [ chave na folha, rótulo, é sigla? ].
+        // Colunas-folha do modo: coluna do schema => [ chave na folha, rótulo completo
+        // (`data-label`/`abbr`), texto do `<th>`, é sigla? ]. Uma coluna com
+        // `combined_label` (o "Ano" de `presentationDate`) usa-o nos dois.
         $leaf_columns = [];
         foreach ( $mode->leaf_columns as $column ) {
+            $schema_column           = PresentationsSchema::column( $column );
             $leaf_columns[ $column ] = [
-                'field'   => PresentationGrouper::field_for( $column ),
-                'label'   => $leaf_label_map[ $column ],
-                'acronym' => PresentationsSchema::is_acronym( $column ),
+                'field'         => PresentationGrouper::field_for( $column ),
+                'label'         => $leaf_label_map[ $column ],
+                'grouped_label' => $schema_column->combined_label ?? $schema_column->grouped_label,
+                'acronym'       => PresentationsSchema::is_acronym( $column ),
             ];
         }
 
@@ -55,14 +60,14 @@ final class GroupedTableRenderer
                         $is_acronym = PresentationsSchema::is_acronym( $ikey );
                         $class_attr = $is_acronym ? ' class="teatro-apresentacoes__col--acronym"' : '';
                         ?>
-                        <th scope="col"<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php if ( $is_acronym ) : ?><span class="teatro-apresentacoes__acronym-head"><?php echo esc_html( $identity_label_map[ $ikey ] ); ?></span><?php else : ?><?php echo esc_html( $identity_label_map[ $ikey ] ); ?><?php endif; ?></th>
+                        <th scope="col" abbr="<?php echo esc_attr( PresentationsSchema::column( $ikey )->filters_label ); ?>" data-label="<?php echo esc_attr( $identity_label_map[ $ikey ] ); ?>"<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><span class="teatro-apresentacoes__th-label<?php echo $is_acronym ? ' teatro-apresentacoes__acronym-head' : ''; ?>"><?php echo esc_html( $identity_label_map[ $ikey ] ); ?></span></th>
                     <?php endforeach; ?>
                     <?php foreach ( $leaf_columns as $col ) : ?>
                         <?php $class_attr = $col['acronym'] ? ' class="teatro-apresentacoes__col--acronym"' : ''; ?>
-                        <th scope="col"<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><?php if ( $col['acronym'] ) : ?><span class="teatro-apresentacoes__acronym-head"><?php echo esc_html( $col['label'] ); ?></span><?php else : ?><?php echo esc_html( $col['label'] ); ?><?php endif; ?></th>
+                        <th scope="col" abbr="<?php echo esc_attr( $col['label'] ); ?>" data-label="<?php echo esc_attr( $col['label'] ); ?>"<?php echo $class_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?>><span class="teatro-apresentacoes__th-label<?php echo $col['acronym'] ? ' teatro-apresentacoes__acronym-head' : ''; ?>"><?php echo esc_html( $col['grouped_label'] ); ?></span></th>
                     <?php endforeach; ?>
-                    <th scope="col"><?php echo esc_html( $sessions_label ); ?></th>
-                    <th scope="col"><?php echo esc_html( $total_label ); ?></th>
+                    <th scope="col" abbr="<?php echo esc_attr( $sessions_label ); ?>" data-label="<?php echo esc_attr( $sessions_label ); ?>"><span class="teatro-apresentacoes__th-label"><?php echo esc_html( $sessions_short ); ?></span></th>
+                    <th scope="col" data-label="<?php echo esc_attr( $total_label ); ?>"><span class="teatro-apresentacoes__th-label"><?php echo esc_html( $total_label ); ?></span></th>
                 </tr>
             </thead>
             <?php foreach ( $tree as $l1 ) : ?>
@@ -83,7 +88,7 @@ final class GroupedTableRenderer
                             echo esc_html(
                                 $l1['label']
                                 . ' | ' . $mode->count_label . ': ' . number_format_i18n( $l1_count )
-                                . ' | ' . GroupingMode::GROUP_TOTAL_LABEL . ': ' . number_format_i18n( $l1['total'] )
+                                . ' | ' . GroupingMode::group_total_label() . ': ' . number_format_i18n( $l1['total'] )
                             );
                             ?>
                         </th>

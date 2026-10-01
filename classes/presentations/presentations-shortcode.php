@@ -123,7 +123,7 @@ class PresentationsShortcode implements Module
                     'next'            => __( 'Próxima', 'customizations-teatromusicadosp' ),
                     'expandAll'       => __( 'Expandir todos', 'customizations-teatromusicadosp' ),
                     'collapseAll'     => __( 'Recolher todos', 'customizations-teatromusicadosp' ),
-                    'results'         => __( '%s apresentação(ões)', 'customizations-teatromusicadosp' ),
+                    'results'         => __( '%s apresentações', 'customizations-teatromusicadosp' ),
                 ],
             ]
         );

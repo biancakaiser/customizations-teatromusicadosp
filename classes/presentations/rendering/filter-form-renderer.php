@@ -219,21 +219,6 @@ final class FilterFormRenderer
     }
 
     /**
-     * Rótulo do campo de filtro. As colunas com busca interna usam um rótulo
-     * "Nome da …" (mais claro para o visitante que o rótulo canônico curto).
-     */
-    private function filter_label( string $key, PresentationColumn $column ): string {
-        switch ( $key ) {
-            case 'playName':
-                return __( 'Nome da Peça', 'customizations-teatromusicadosp' );
-            case 'companyName':
-                return __( 'Nome da Companhia', 'customizations-teatromusicadosp' );
-            default:
-                return $column->full_label;
-        }
-    }
-
-    /**
      * "Caixa tipo select" com caixas de seleção: um `<details>` nativo (funciona
      * sem JS — o navegador já sabe abrir/fechar) cujo painel lista um
      * `<input type="checkbox" name="tap_f[col][]">` por valor distinto. Marcar
@@ -248,7 +233,7 @@ final class FilterFormRenderer
         $selected       = array_map( 'strval', $selected );
         $field_id       = 'teatro-apresentacoes-f-' . $key;
         $field_name     = PresentationFilters::QUERY_VAR . '[' . $key . '][]';
-        $label          = $this->filter_label( $key, $column );
+        $label          = $column->filters_label;
         $selected_count = count( $selected );
         $field_class    = 'teatro-apresentacoes__filter-field'
             . ( $column->searchable ? ' teatro-apresentacoes__filter-field--searchable' : '' );

@@ -22,9 +22,6 @@ final class GroupingMode
     /** Chave sintética de ordenação pela coluna "Total" (soma de sessões do grupo de 1º nível). */
     const SORT_TOTAL = '__total';
 
-    /** Rótulo do total na faixa do grupo de 1º nível (texto do botão `group-toggle`); o `<th>` e o `data-label` da coluna seguem com "Total" (`leaf_labels()`). */
-    const GROUP_TOTAL_LABEL = 'Total de Sessões';
-
     /** Colunas-folha padrão (as dos modos de 3 níveis), na ordem de exibição. */
     const DEFAULT_LEAF_COLUMNS = [
         'presentationTheater',
@@ -68,22 +65,37 @@ final class GroupingMode
     }
 
     /**
+     * Rótulo do total na faixa do grupo de 1º nível (texto do botão
+     * `group-toggle`) e da opção correspondente em "Ordenado por": o
+     * `combined_label` de `presentationSessionsN` + " de " + o seu
+     * `filters_label` ("Total de Sessões"). O `<th>` e o `data-label` da coluna
+     * seguem só com o `combined_label` ("Total", ver `leaf_labels()`).
+     */
+    public static function group_total_label(): string {
+        $sessions = PresentationsSchema::column( 'presentationSessionsN' );
+        return $sessions->combined_label . ' de ' . $sessions->filters_label;
+    }
+
+    /**
      * Rótulos das colunas-folha deste modo, na ordem de `leaf_columns`, seguidos
-     * de "Sessões" e "Total". Os de coluna real vêm do schema (fonte
-     * única); "Ano" é o ano extraído de `presentationDate` e "Total" é um
-     * agregado sintético — nenhum dos dois usa o rótulo do schema.
+     * de "Sessões" e "Total". Todos vêm do schema (fonte única): cada folha usa
+     * o `combined_label` da coluna quando ela tem um (o "Ano" extraído de
+     * `presentationDate`), senão o `filters_label`; "Total" é o `combined_label`
+     * de `presentationSessionsN` (soma de sessões da faixa).
+     * São os rótulos completos (`data-label`/`abbr`); o texto do `<th>` usa o
+     * `grouped_label` do schema, resolvido em `GroupedTableRenderer`.
      *
      * @return array<string,string> coluna => rótulo (chaves `presentationSessionsN` e `SORT_TOTAL` no fim)
      */
     public function leaf_labels(): array {
         $labels = [];
         foreach ( $this->leaf_columns as $column ) {
-            $labels[ $column ] = 'presentationDate' === $column
-                ? 'Ano'
-                : PresentationsSchema::column( $column )->full_label;
+            $schema_column     = PresentationsSchema::column( $column );
+            $labels[ $column ] = $schema_column->combined_label ?? $schema_column->filters_label;
         }
-        $labels['presentationSessionsN'] = PresentationsSchema::column( 'presentationSessionsN' )->full_label;
-        $labels[ self::SORT_TOTAL ]      = 'Total';
+        $sessions                        = PresentationsSchema::column( 'presentationSessionsN' );
+        $labels['presentationSessionsN'] = $sessions->filters_label;
+        $labels[ self::SORT_TOTAL ]      = $sessions->combined_label;
 
         return $labels;
     }
@@ -100,8 +112,8 @@ final class GroupingMode
      */
     public function sortable_columns(): array {
         return [
-            'presentationDate' => 'Ano',
-            self::SORT_TOTAL   => 'Total de Sessões',
+            'presentationDate' => PresentationsSchema::column( 'presentationDate' )->combined_label,
+            self::SORT_TOTAL   => self::group_total_label(),
         ];
     }
 
@@ -113,7 +125,7 @@ final class GroupingMode
     }
 
     /**
-     * Mapa `coluna => rótulo curto`, resolvido a partir do schema. Usado tanto
+     * Mapa `coluna => grouped_label`, resolvido a partir do schema. Usado tanto
      * pelo bloco de identidade quanto pela faixa de 1º nível — nenhum dos dois
      * guarda rótulo próprio, o schema é a única fonte de verdade.
      *
@@ -123,13 +135,13 @@ final class GroupingMode
     public function labels_for( array $keys ): array {
         $labels = [];
         foreach ( $keys as $key ) {
-            $labels[ $key ] = $this->column_short_label( $key );
+            $labels[ $key ] = $this->column_grouped_label( $key );
         }
         return $labels;
     }
 
-    private function column_short_label( string $key ): string {
+    private function column_grouped_label( string $key ): string {
         $column = PresentationsSchema::column( $key );
-        return null !== $column ? $column->short_label : $key;
+        return null !== $column ? $column->grouped_label : $key;
     }
 }

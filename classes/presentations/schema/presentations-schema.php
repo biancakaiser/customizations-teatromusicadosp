@@ -21,11 +21,23 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 final class PresentationsSchema
 {
     /**
-     * Colunas que abrem a tabela plana (modo "Nenhum"), fora de qualquer grupo
-     * de cabeçalho. Só afeta `flat_columns()`/`flat_column_groups()` — a ordem
-     * de `columns()` (banco, busca, demais consumidores) não muda.
+     * Layout da tabela plana (modo "Nenhum"): `rótulo do grupo de cabeçalho =>
+     * colunas`, na ordem de exibição. Só afeta `flat_columns()`/
+     * `flat_column_groups()` — a ordem e o `$group` de `columns()` (banco, busca,
+     * modos agrupados, demais consumidores) não mudam.
      */
-    const FLAT_LEADING_COLUMNS = [ 'presentationDate' ];
+    const FLAT_LAYOUT = [
+        'Apresentação' => [ 'presentationDate', 'presentationTheater' ],
+        'Companhia'    => [ 'companyName', 'companyNationality' ],
+        'Peça'         => [ 'playName', 'playGenre', 'playNationality' ],
+        'Espetáculo'   => [ 'presentationLanguage', 'presentationKind', 'presentationSessionsN' ],
+    ];
+
+    /**
+     * Rótulo da contagem da faixa de 1º nível nos modos de 2 níveis, que contam
+     * linhas (espetáculos) — não há coluna "Espetáculo" com `count_label`.
+     */
+    const ROW_COUNT_LABEL = 'Nº Espetáculos';
 
     /** @var array<string,PresentationColumn>|null */
     private static $columns = null;
@@ -65,7 +77,7 @@ final class PresentationsSchema
      * @return array<string,string>
      */
     public static function labels(): array {
-        return array_map( static fn( PresentationColumn $c ): string => $c->full_label, self::columns() );
+        return array_map( static fn( PresentationColumn $c ): string => $c->filters_label, self::columns() );
     }
 
     /**
@@ -83,57 +95,62 @@ final class PresentationsSchema
 
     /**
      * Mapa `coluna => rótulo` da tabela plana do shortcode, na ordem de exibição
-     * (idêntico ao antigo `Shortcode::COLUMNS_FLAT`). Usa o rótulo completo — os
-     * consumidores deste método são `<select>`s e outros lugares que precisam de
-     * contexto (ordenação, `data-label` das células em telas estreitas). Para o
-     * cabeçalho agrupado (curto) da tabela plana, ver `flat_column_groups()`.
+     * (idêntico ao antigo `Shortcode::COLUMNS_FLAT`). Usa o `filters_label` — os
+     * consumidores deste método precisam de contexto (`data-label` das células
+     * em telas estreitas). Para o texto do cabeçalho da tabela plana
+     * (`header_label`), ver `flat_column_groups()`.
      *
      * @return array<string,string>
      */
     public static function flat_columns(): array {
-        return array_map(
-            static fn( PresentationColumn $c ): string => $c->full_label,
-            self::flat_ordered_columns()
-        );
+        $columns = [];
+
+        foreach ( self::flat_column_groups() as $members ) {
+            foreach ( $members as $key => $col ) {
+                $columns[ $key ] = $col['filters_label'];
+            }
+        }
+
+        return $columns;
     }
 
     /**
-     * Cabeçalho de 2 linhas da tabela plana, agrupado por `$group` na ordem de
-     * `columns()` (colunas do mesmo grupo já são contíguas — `$defs` é aninhado
-     * por grupo, ver `build()`). Cada grupo com mais de uma coluna vira um
-     * `<th colspan>` na 1ª linha e um `short_label` por coluna na 2ª; um grupo
-     * com uma única coluna vira um `<th rowspan="2">` sozinho, sem linha de baixo.
+     * Cabeçalho de 2 linhas da tabela plana, na ordem de `FLAT_LAYOUT`. Cada
+     * grupo com mais de uma coluna vira um `<th colspan>` na 1ª linha e um
+     * `header_label` por coluna na 2ª; um grupo com uma única coluna vira um
+     * `<th rowspan="2">` sozinho, sem linha de baixo.
      *
-     * As colunas de `FLAT_LEADING_COLUMNS` saem do seu grupo e abrem a tabela
-     * sob o grupo `''`: célula vazia na 1ª linha e `short_label` na 2ª.
+     * Uma coluna de `columns()` ausente de `FLAT_LAYOUT` entra no fim, sob o
+     * próprio `$group` — assim uma coluna nova não some da tabela.
      *
-     * @return array<string,array<string,array{short_label:string,full_label:string}>>
+     * @return array<string,array<string,array{header_label:string,filters_label:string}>>
      */
     public static function flat_column_groups(): array {
         $groups = [];
+        $placed = [];
 
-        foreach ( self::flat_ordered_columns() as $key => $c ) {
-            $group = in_array( $key, self::FLAT_LEADING_COLUMNS, true ) ? '' : $c->group;
-            $groups[ $group ][ $key ] = [
-                'short_label' => $c->short_label,
-                'full_label'  => $c->full_label,
+        foreach ( self::FLAT_LAYOUT as $group => $keys ) {
+            foreach ( $keys as $key ) {
+                $c = self::column( $key );
+                if ( null === $c ) {
+                    continue;
+                }
+                $groups[ $group ][ $key ] = [
+                    'header_label'  => $c->header_label,
+                    'filters_label' => $c->filters_label,
+                ];
+                $placed[ $key ] = true;
+            }
+        }
+
+        foreach ( array_diff_key( self::columns(), $placed ) as $key => $c ) {
+            $groups[ $c->group ][ $key ] = [
+                'header_label'  => $c->header_label,
+                'filters_label' => $c->filters_label,
             ];
         }
 
         return $groups;
-    }
-
-    /**
-     * `columns()` com as `FLAT_LEADING_COLUMNS` na frente — ordem de exibição
-     * da tabela plana (cabeçalho e células).
-     *
-     * @return array<string,PresentationColumn>
-     */
-    private static function flat_ordered_columns(): array {
-        $columns = self::columns();
-        $leading = array_intersect_key( $columns, array_flip( self::FLAT_LEADING_COLUMNS ) );
-
-        return $leading + $columns;
     }
 
     /**
@@ -260,23 +277,104 @@ final class PresentationsSchema
         // própria ordem de exibição. Não existe campo de ordenação numérica: mover
         // uma linha ou um bloco inteiro aqui já move a coluna/grupo na tabela.
         //
-        // Cada coluna: key => [ full_label, short_label, type, indexed, filterable, facetable, searchable, acronym ]
+        // Cada coluna: key => [ filters_label, header_label, grouped_label, combined_label?,
+        // count_label?, type, indexed?, filterable?, facetable?, searchable?, acronym? ]
+        // (ver `PresentationColumn`). Flags omitidas valem false; rótulos opcionais, null.
         $defs = [
             'Peça' => [
-                'playName'        => [ 'Título da Peça', 'Peça', $s, true, true, true, true ],
-                'playGenre'       => [ 'Gênero da Peça', 'Gênero', $s, false, true, true ],
-                'playNationality' => [ 'Nacionalidade da Peça', 'Nacionalidade', $s, false, true, true, false, true ],
+                'playName' => [
+                    'filters_label' => 'Título da Peça',
+                    'header_label'  => 'Título',
+                    'grouped_label' => 'Peça',
+                    'count_label'   => 'Nº Peças',
+                    'type'          => $s,
+                    'indexed'       => true,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                    'searchable'    => true,
+                ],
+                'playGenre' => [
+                    'filters_label' => 'Gênero da Peça',
+                    'header_label'  => 'Gênero',
+                    'grouped_label' => 'Gênero',
+                    'type'          => $s,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                ],
+                'playNationality' => [
+                    'filters_label' => 'Nacionalidade da Peça',
+                    'header_label'  => 'Nacionalidade',
+                    'grouped_label' => 'Nacionalidade',
+                    'type'          => $s,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                    'acronym'       => true,
+                ],
             ],
             'Companhia' => [
-                'companyName'        => [ 'Nome da Companhia', 'Companhia', $s, true, true, true, true ],
-                'companyNationality' => [ 'Nacionalidade da Companhia', 'Nacionalidade', $s, false, true, true, false, true ],
+                'companyName' => [
+                    'filters_label' => 'Nome da Companhia',
+                    'header_label'  => 'Nome',
+                    'grouped_label' => 'Companhia',
+                    'count_label'   => 'Nº Companhias',
+                    'type'          => $s,
+                    'indexed'       => true,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                    'searchable'    => true,
+                ],
+                'companyNationality' => [
+                    'filters_label' => 'Nacionalidade da Companhia',
+                    'header_label'  => 'Nacionalidade',
+                    'grouped_label' => 'Nacionalidade',
+                    'type'          => $s,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                    'acronym'       => true,
+                ],
             ],
             'Espetáculo' => [
-                'presentationTheater'   => [ 'Teatro', 'Teatro', $s, true, true, true ],
-                'presentationKind'      => [ 'Tipo de Espetáculo', 'Tipo', $s, false, true, true ],
-                'presentationLanguage'  => [ 'Idioma do Espetáculo', 'Idioma', $s, false, true, true, false, true ],
-                'presentationDate'      => [ 'Data da apresentação', 'Data', $d, true, false, false ],
-                'presentationSessionsN' => [ 'Sessões', 'Sessões', $i, false, false, false ],
+                'presentationTheater' => [
+                    'filters_label' => 'Teatro',
+                    'header_label'  => 'Teatro',
+                    'grouped_label' => 'Teatro',
+                    'type'          => $s,
+                    'indexed'       => true,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                ],
+                'presentationKind' => [
+                    'filters_label' => 'Tipo de Espetáculo',
+                    'header_label'  => 'Tipo',
+                    'grouped_label' => 'Tipo',
+                    'type'          => $s,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                ],
+                'presentationLanguage' => [
+                    'filters_label' => 'Idioma do Espetáculo',
+                    'header_label'  => 'Idioma',
+                    'grouped_label' => 'Idioma',
+                    'type'          => $s,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                    'acronym'       => true,
+                ],
+                'presentationDate' => [
+                    'filters_label'  => 'Data da apresentação',
+                    'header_label'   => 'Data',
+                    'grouped_label'  => 'Data',
+                    'combined_label' => 'Ano',
+                    'type'           => $d,
+                    'indexed'        => true,
+                ],
+                'presentationSessionsN' => [
+                    'filters_label'  => 'Sessões',
+                    'header_label'   => 'Sessões',
+                    'grouped_label'  => 'Sessões',
+                    'combined_label' => 'Total',
+                    'type'           => $i,
+                ],
             ],
         ];
 
@@ -284,7 +382,19 @@ final class PresentationsSchema
         foreach ( $defs as $group => $group_defs ) {
             foreach ( $group_defs as $key => $def ) {
                 $columns[ $key ] = new PresentationColumn(
-                    $key, $def[0], $def[1], $group, $def[2], $def[3] ?? false, $def[4] ?? false, $def[5] ?? false, $def[6] ?? false, $def[7] ?? false
+                    key: $key,
+                    filters_label: $def['filters_label'],
+                    header_label: $def['header_label'],
+                    grouped_label: $def['grouped_label'],
+                    group: $group,
+                    type: $def['type'],
+                    indexed: $def['indexed'] ?? false,
+                    filterable: $def['filterable'] ?? false,
+                    facetable: $def['facetable'] ?? false,
+                    searchable: $def['searchable'] ?? false,
+                    acronym: $def['acronym'] ?? false,
+                    combined_label: $def['combined_label'] ?? null,
+                    count_label: $def['count_label'] ?? null
                 );
             }
         }

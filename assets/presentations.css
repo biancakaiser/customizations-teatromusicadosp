@@ -1,10 +1,35 @@
 /**
  * Estilos do shortcode público [teatro_apresentacoes].
+ *
+ * Índice
+ *  1. Container e variáveis
+ *  2. Formulário de busca
+ *     2.1 Seções (cards "Controles de Visualização" / "Filtros Avançados")
+ *     2.2 Busca por texto
+ *     2.3 Intervalo de datas
+ *     2.4 Agrupamento e ordenação
+ *     2.5 Filtros por coluna (dropdowns com checkboxes)
+ *     2.6 Botões "Buscar" / "Limpar"
+ *  3. Estado inicial (antes do primeiro "Buscar")
+ *  4. Barra de resultados (contador + "Expandir/Recolher todos")
+ *  5. Tabela
+ *  6. Agrupamento na tabela (faixas, células mescladas, accordion)
+ *  7. Rodapé (paginação e itens por página)
+ *  8. Acessibilidade: movimento reduzido
+ *  9. Responsivo: layout empilhado em telas pequenas
  */
+
+
+/* ==========================================================================
+   1. Container e variáveis
+   ========================================================================== */
 
 .teatro-apresentacoes {
 	--tap-stripe: #f6f7f7;
 	--tap-head-fg: #ffffff;
+	--tap-col-wide: 130px;          /* colunas de data/teatro/gênero/tipo */
+	--tap-col-narrow: 80px;         /* colunas de sigla e numéricas */
+	--tap-col-narrow-pad: 0.4rem;   /* padding lateral das colunas estreitas */
 	margin: 0 6rem 3rem 6rem !important;
 	font-size: 0.95rem;
 }
@@ -15,7 +40,10 @@
 	box-sizing: border-box;
 }
 
-/* Busca -------------------------------------------------------------------- */
+
+/* ==========================================================================
+   2. Formulário de busca
+   ========================================================================== */
 
 .teatro-apresentacoes__search {
 	display: flex;
@@ -24,54 +52,27 @@
 	margin-bottom: 1rem;
 }
 
-.teatro-apresentacoes__search-field {
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	grid-area: busca;
-}
-
-.teatro-apresentacoes__group-field,
-.teatro-apresentacoes__sort-field {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: end;
-	gap: 0.5rem;
-}
-
-.teatro-apresentacoes__sort-field {
-	width: fit-content;
-}
-
-/* Só aparece com algum agrupamento ativo; `display: flex` acima anularia o `hidden` nativo. */
-.teatro-apresentacoes__sort-field[hidden] {
-	display: none;
-}
-
 .teatro-apresentacoes__search-label {
 	font-weight: 600;
 }
 
-.teatro-apresentacoes__section-row .teatro-apresentacoes__search-label {
-	margin: 0;
-}
-
+/* Selects compartilhados: agrupamento, ordenação e itens por página (rodapé). */
 .teatro-apresentacoes__group-field select,
 .teatro-apresentacoes__sort-field select,
 .teatro-apresentacoes__page-size select {
-	padding: 0.45rem 0.6rem;
+	padding: 2px 12px;
 	border: 1px solid var(--paletteColor6);
 	border-radius: 4px;
 	background: #fff;
 	cursor: pointer;
 	width: fit-content;
-    font-size: 14px;
-    height: auto;
-    padding: 2px 12px;
-    font-weight: 500;
+	height: auto;
+	font-size: 14px;
+	font-weight: 500;
 }
 
-/* Seções com borda e título ("Controles de Visualização" / "Filtros
+/* 2.1 Seções ---------------------------------------------------------------
+   Caixas com borda e título ("Controles de Visualização" / "Filtros
    Avançados") agrupando os campos já existentes — puramente visual. */
 
 .teatro-apresentacoes__section {
@@ -80,10 +81,14 @@
 	padding: 1rem 1.2rem;
 }
 
-.teatro-apresentacoes__section--filters {
-	background: #fff;
+.teatro-apresentacoes__section-title {
+	margin: 0 0 0.75rem;
+	font-size: 1rem;
+	font-weight: 700;
 }
 
+/* Grade dos controles: busca e datas na 1ª linha, agrupamento na 2ª.
+   As áreas são atribuídas em cada campo (2.2, 2.3 e 2.4). */
 .teatro-apresentacoes__section--controls {
 	display: grid;
 	grid-template-columns: 1fr auto;
@@ -93,34 +98,35 @@
 	gap: 1rem 0.8rem;
 }
 
-.teatro-apresentacoes__section-title,
-.teatro-apresentacoes__count {
-	margin: 0 0 0.75rem;
-	font-size: 1rem;
-	font-weight: 700;
+.teatro-apresentacoes__section--filters {
+	background: #fff;
 }
 
-/* Contador à esquerda, botão "Expandir/Recolher todos" à direita. */
-.teatro-apresentacoes__results-bar {
+/* 2.2 Busca por texto ------------------------------------------------------ */
+
+.teatro-apresentacoes__search-field {
 	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-between;
-	align-items: center;
-	gap: 0.5rem 1rem;
-	margin: 0 0 0.75rem;
+	flex-direction: column;
+	align-items: stretch;
+	grid-area: busca;
 }
 
-.teatro-apresentacoes__results-bar .teatro-apresentacoes__count {
-	margin: 0;
+.teatro-apresentacoes__search input[type="search"] {
+	flex: 1 1 16rem;
+	min-width: 0;
+	padding: 0.45rem 0.6rem;
+	border: 1px solid var(--paletteColor6);
+	border-radius: 4px;
+	background: #fff;
 }
 
-.teatro-apresentacoes__section-row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.75rem 1.5rem;
-	grid-area: agrupado;
+/* Dentro do campo de busca o input ocupa toda a largura (sobrepõe a regra acima). */
+.teatro-apresentacoes__search-field input[type="search"] {
+	width: 100%;
+	flex: none;
 }
+
+/* 2.3 Intervalo de datas --------------------------------------------------- */
 
 .teatro-apresentacoes__date-range-field {
 	display: flex;
@@ -142,8 +148,41 @@
 	background: #fff;
 }
 
-/* Filtros por coluna — cada um é um <details> ("caixa tipo select") com uma
-   <input type="checkbox"> por valor distinto; marcar várias filtra em OR. --- */
+/* 2.4 Agrupamento e ordenação ---------------------------------------------- */
+
+/* Linha que reúne os selects de agrupamento e ordenação. */
+.teatro-apresentacoes__section-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem 1.5rem;
+	grid-area: agrupado;
+}
+
+.teatro-apresentacoes__section-row .teatro-apresentacoes__search-label {
+	margin: 0;
+}
+
+.teatro-apresentacoes__group-field,
+.teatro-apresentacoes__sort-field {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: end;
+	gap: 0.5rem;
+}
+
+.teatro-apresentacoes__sort-field {
+	width: fit-content;
+}
+
+/* Só aparece com algum agrupamento ativo; `display: flex` acima anularia o `hidden` nativo. */
+.teatro-apresentacoes__sort-field[hidden] {
+	display: none;
+}
+
+/* 2.5 Filtros por coluna ---------------------------------------------------
+   Cada um é um <details> ("caixa tipo select") com uma
+   <input type="checkbox"> por valor distinto; marcar várias filtra em OR. */
 
 .teatro-apresentacoes__filters {
 	display: flex;
@@ -156,6 +195,7 @@
 	flex: 0 1 auto;
 }
 
+/* Gatilho (<summary>) com seta própria no lugar do marcador nativo. */
 .teatro-apresentacoes__filter-field summary {
 	display: flex;
 	align-items: center;
@@ -181,14 +221,15 @@
 	color: #50575e;
 }
 
-.teatro-apresentacoes__filter-field[open] > summary::after {
-	content: '▴';
-}
-
 .teatro-apresentacoes__filter-field[open] > summary {
 	border-color: var(--paletteColor1);
 }
 
+.teatro-apresentacoes__filter-field[open] > summary::after {
+	content: '▴';
+}
+
+/* Selo com a quantidade de valores marcados. */
 .teatro-apresentacoes__filter-count {
 	display: inline-flex;
 	align-items: center;
@@ -202,6 +243,7 @@
 	font-weight: 700;
 }
 
+/* Painel suspenso com as opções. */
 .teatro-apresentacoes__filter-panel {
 	position: absolute;
 	z-index: 20;
@@ -216,6 +258,7 @@
 	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
+/* Filtros pesquisáveis (combobox): painel mais largo e campo de busca interno. */
 .teatro-apresentacoes__filter-field--searchable .teatro-apresentacoes__filter-panel {
 	min-width: 18rem;
 }
@@ -228,6 +271,7 @@
 	border-radius: 4px;
 }
 
+/* Lista de opções (checkboxes). */
 .teatro-apresentacoes__filter-options {
 	max-height: 16rem;
 	overflow-y: auto;
@@ -254,29 +298,7 @@
 	flex-shrink: 0;
 }
 
-/* Estado inicial, antes do primeiro "Buscar" --------------------------- */
-
-.teatro-apresentacoes__prompt {
-	margin: 1rem 0;
-	padding: 1rem;
-	background: var(--paletteColor8, #f2f2f2);
-	border-radius: 4px;
-	color: #50575e;
-}
-
-.teatro-apresentacoes__search input[type="search"] {
-	flex: 1 1 16rem;
-	min-width: 0;
-	padding: 0.45rem 0.6rem;
-	border: 1px solid var(--paletteColor6);
-	border-radius: 4px;
-	background: #fff;
-}
-
-.teatro-apresentacoes__search-field input[type="search"] {
-	width: 100%;
-	flex: none;
-}
+/* 2.6 Botões "Buscar" / "Limpar" ------------------------------------------- */
 
 .teatro-apresentacoes__submit-field {
 	display: flex;
@@ -302,6 +324,7 @@
 	filter: brightness(0.93);
 }
 
+/* Botão secundário (contornado); a borda sobrepõe o `border: 0` acima. */
 .teatro-apresentacoes__button-clear {
 	background: transparent;
 	color: var(--paletteColor1);
@@ -313,148 +336,42 @@
 	background: var(--paletteColor7, #f3f3f3);
 }
 
-/* Tabela ----------------------------------------------------------------- */
 
-.teatro-apresentacoes__table-wrap {
-	position: relative;
-	overflow-x: auto;
+/* ==========================================================================
+   3. Estado inicial (antes do primeiro "Buscar")
+   ========================================================================== */
+
+.teatro-apresentacoes__prompt {
+	margin: 1rem 0;
+	padding: 1rem;
+	background: var(--paletteColor8, #f2f2f2);
 	border-radius: 4px;
+	color: #50575e;
 }
 
-.teatro-apresentacoes__table-wrap[aria-busy="true"] {
-	opacity: 0.55;
-}
 
-.teatro-apresentacoes__table-wrap[aria-busy="true"]::after {
-	content: attr(data-loading-text);
-	position: absolute;
-	inset: 0;
+/* ==========================================================================
+   4. Barra de resultados
+   Contador à esquerda, botão "Expandir/Recolher todos" à direita.
+   ========================================================================== */
+
+.teatro-apresentacoes__results-bar {
 	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
 	align-items: center;
-	justify-content: center;
-	font-weight: 600;
+	gap: 0.5rem 1rem;
+	margin: 0 0 0.75rem;
 }
 
-.teatro-apresentacoes__table {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 14px;
-	border: 1px solid var(--paletteColor6);
-}
-
-.teatro-apresentacoes__table th,
-.teatro-apresentacoes__table td {
-	padding: 0.55rem 0.75rem;
-	text-align: left;
-	vertical-align: middle;
-	border-bottom: 1px solid var(--paletteColor6);
-	max-width: 240px;
-}
-
-/* Colunas de sigla (Nacionalidade/Idioma): o corpo já é curto (2 letras) e
-   dita a largura da coluna; só o rótulo do cabeçalho, que é mais longo,
-   precisa ser truncado. O limite fica num <span> interno do cabeçalho — e
-   não na própria célula — para não interferir no algoritmo de largura da
-   tabela (table-layout: auto). */
-.teatro-apresentacoes__table th.teatro-apresentacoes__col--acronym .teatro-apresentacoes__acronym-head {
-	display: block;
-	width: 80px;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.teatro-apresentacoes__table thead th {
-	position: sticky;
-	top: 0;
-	background: var(--paletteColor3);
-	color: var(--tap-head-fg);
-	font-weight: 600;
-}
-
-.teatro-apresentacoes__table tbody tr:nth-child(even) {
-	background: var(--tap-stripe);
-}
-
-.teatro-apresentacoes__table tbody tr:hover {
-	background: var(--paletteColor7);
-}
-
-.teatro-apresentacoes__empty {
-	margin: 0;
-	padding: 1.5rem;
-	text-align: center;
-}
-
-/* Agrupamento (tabela única, um <tbody> por grupo) ---------------------- */
-
-/* Faixa do 1º nível: abre cada grupo dentro do <tbody>. */
-.teatro-apresentacoes__group-row th {
-	background: #e0ddd1;
-	color: var(--paletteColor2);
+.teatro-apresentacoes__count {
+	margin: 0 0 0.75rem;
 	font-size: 1rem;
 	font-weight: 700;
-	text-align: left;
-	white-space: normal;
 }
 
-/* Bloco de identidade do 2º nível e "Total" (mesclados com rowspan). */
-.teatro-apresentacoes__group-cell {
-	vertical-align: top;
-	background: var(--tap-stripe);
-}
-
-/* Colunas numéricas (Sessões e Total) alinhadas à direita. */
-.teatro-apresentacoes__table--group thead th:nth-last-child(-n + 2),
-.teatro-apresentacoes__table--group td[data-label="Sessões"],
-.teatro-apresentacoes__table--group td[data-label="Total"] {
-	text-align: right;
-}
-
-.teatro-apresentacoes__table--group td[data-label="Total"] {
-	font-weight: 600;
-	text-align: center;
-    vertical-align: middle;
-}
-
-/* Accordion do grupo: por padrão as linhas ficam ocultas (JS adiciona
-   `is-collapsed` ao <tbody>); sem JS essa classe nunca existe, então a tabela
-   continua 100% visível e navegável. */
-.teatro-apresentacoes__group.is-collapsed > tr:not(.teatro-apresentacoes__group-row) {
-	display: none;
-}
-
-/* Botão injetado por JS dentro do <th> do group-row; herda a aparência que já
-   existia no <th> (não redeclara cor/fundo/peso de fonte). */
-.teatro-apresentacoes__group-toggle {
-	display: block;
-	width: 100%;
-	padding: 0;
-	border: 0;
-	background: none;
-	font: inherit;
-	color: inherit;
-	text-align: left;
-	cursor: pointer;
-}
-
-.teatro-apresentacoes__group-toggle::before {
-	content: '▸ ';
-	display: inline-block;
-	transition: transform 0.15s ease;
-}
-
-.teatro-apresentacoes__group-toggle[aria-expanded="true"]::before {
-	transform: rotate(90deg);
-}
-
-.teatro-apresentacoes__group-toggle:focus-visible {
-	outline: 2px solid var(--paletteColor2);
-	outline-offset: -2px;
-}
-
-.teatro-apresentacoes__group-row th:hover {
-	background: #d6d2c2;
+.teatro-apresentacoes__results-bar .teatro-apresentacoes__count {
+	margin: 0;
 }
 
 /* Botão global "Expandir todos / Recolher todos" (injetado por JS). */
@@ -493,14 +410,188 @@
 	outline-offset: 2px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.teatro-apresentacoes__group-toggle-all::before,
-	.teatro-apresentacoes__group-toggle::before {
-		transition: none;
+
+/* ==========================================================================
+   5. Tabela
+   ========================================================================== */
+
+/* Wrapper com rolagem horizontal e estado de carregamento (aria-busy). */
+.teatro-apresentacoes__table-wrap {
+	position: relative;
+	overflow-x: auto;
+	border-radius: 4px;
+}
+
+.teatro-apresentacoes__table-wrap[aria-busy="true"] {
+	opacity: 0.55;
+}
+
+.teatro-apresentacoes__table-wrap[aria-busy="true"]::after {
+	content: attr(data-loading-text);
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 600;
+}
+
+/* Estrutura base. */
+.teatro-apresentacoes__table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+	border: 1px solid var(--paletteColor6);
+}
+
+.teatro-apresentacoes__table th,
+.teatro-apresentacoes__table td {
+	padding: 0.55rem 0.75rem;
+	text-align: left;
+	vertical-align: middle;
+	border-bottom: 1px solid var(--paletteColor6);
+}
+
+/* Cabeçalho fixo ao rolar. */
+.teatro-apresentacoes__table thead th {
+	position: sticky;
+	top: 0;
+	background: var(--paletteColor3);
+	color: var(--tap-head-fg);
+	font-weight: 600;
+}
+
+/* Larguras de coluna (fora do layout em cartões). Em `table-layout: auto`, as
+   colunas sem largura explícita recebem a sobra e completam os 100% da tabela.
+   Os rótulos de "Ano", "Gênero", "Nacionalidade" e "Total" são os da tabela
+   agrupada. */
+@media (min-width: 641px) {
+	.teatro-apresentacoes__table :is(th, td):is(
+		[data-label="Data da apresentação"],
+		[data-label="Teatro"],
+		[data-label="Gênero da Peça"],
+		[data-label="Gênero"],
+		[data-label="Tipo de Espetáculo"]
+	) {
+		width: var(--tap-col-wide);
+		max-width: var(--tap-col-wide);
+		overflow-wrap: anywhere; /* quebra palavras longas em vez de alargar a coluna */
+	}
+
+	.teatro-apresentacoes__table :is(th, td):is(
+		[data-label="Nacionalidade da Companhia"],
+		[data-label="Nacionalidade da Peça"],
+		[data-label="Nacionalidade"],
+		[data-label="Idioma do Espetáculo"],
+		[data-label="Sessões"],
+		[data-label="Ano"],
+		[data-label="Total"]
+	) {
+		width: var(--tap-col-narrow);
+		max-width: var(--tap-col-narrow);
+		padding-inline: var(--tap-col-narrow-pad);
+		text-align: center;
+	}
+
+	/* Header estreito: reticências no rótulo. O max-width explícito no span
+	   impede que o texto `nowrap` alargue a coluna. */
+	.teatro-apresentacoes__table th:is(
+		[data-label="Nacionalidade da Companhia"],
+		[data-label="Nacionalidade da Peça"],
+		[data-label="Nacionalidade"],
+		[data-label="Sessões"],
+	) > .teatro-apresentacoes__th-label {
+		display: block;
+		max-width: calc(var(--tap-col-narrow) - 2 * var(--tap-col-narrow-pad));
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 }
 
-/* Rodapé --------------------------------------------------------------------- */
+/* Linhas zebradas e destaque ao passar o mouse. */
+.teatro-apresentacoes__table tbody tr:nth-child(even) {
+	background: var(--tap-stripe);
+}
+
+.teatro-apresentacoes__table tbody tr:hover {
+	background: var(--paletteColor7);
+}
+
+/* Mensagem de "nenhum resultado". */
+.teatro-apresentacoes__empty {
+	margin: 0;
+	padding: 1.5rem;
+	text-align: center;
+}
+
+
+/* ==========================================================================
+   6. Agrupamento na tabela
+   Tabela única, um <tbody> por grupo.
+   ========================================================================== */
+
+/* Faixa do 1º nível: abre cada grupo dentro do <tbody>. */
+.teatro-apresentacoes__group-row th {
+	background: #e0ddd1;
+	color: var(--paletteColor2);
+	font-size: 1rem;
+	font-weight: 700;
+	text-align: left;
+	white-space: normal;
+}
+
+.teatro-apresentacoes__group-row th:hover {
+	background: #d6d2c2;
+}
+
+/* Bloco de identidade do 2º nível e "Total" (mesclados com rowspan). */
+.teatro-apresentacoes__group-cell {
+	vertical-align: top;
+	background: var(--tap-stripe);
+}
+
+/* Accordion do grupo: por padrão as linhas ficam ocultas (JS adiciona
+   `is-collapsed` ao <tbody>); sem JS essa classe nunca existe, então a tabela
+   continua 100% visível e navegável. */
+.teatro-apresentacoes__group.is-collapsed > tr:not(.teatro-apresentacoes__group-row) {
+	display: none;
+}
+
+/* Botão injetado por JS dentro do <th> do group-row; herda a aparência que já
+   existia no <th> (não redeclara cor/fundo/peso de fonte). */
+.teatro-apresentacoes__group-toggle {
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: none;
+	font: inherit;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.teatro-apresentacoes__group-toggle::before {
+	content: '▸ ';
+	display: inline-block;
+	transition: transform 0.15s ease;
+}
+
+.teatro-apresentacoes__group-toggle[aria-expanded="true"]::before {
+	transform: rotate(90deg);
+}
+
+.teatro-apresentacoes__group-toggle:focus-visible {
+	outline: 2px solid var(--paletteColor2);
+	outline-offset: -2px;
+}
+
+
+/* ==========================================================================
+   7. Rodapé
+   Paginação à esquerda, seletor de itens por página à direita.
+   ========================================================================== */
 
 .teatro-apresentacoes__pagination-bar {
 	display: flex;
@@ -511,6 +602,7 @@
 	margin-top: 1rem;
 }
 
+/* Paginação (markup de paginate_links()). */
 .teatro-apresentacoes__pagination {
 	display: flex;
 	flex-wrap: wrap;
@@ -536,6 +628,7 @@
 	border-color: transparent;
 }
 
+/* Itens por página (o <select> usa o estilo compartilhado da seção 2). */
 .teatro-apresentacoes__page-size {
 	display: flex;
 	flex-wrap: wrap;
@@ -553,9 +646,27 @@
 	font-size: 14px;
 }
 
-/* Layout empilhado em telas pequenas -------------------------------------- */
+
+/* ==========================================================================
+   8. Acessibilidade: movimento reduzido
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+	.teatro-apresentacoes__group-toggle-all::before,
+	.teatro-apresentacoes__group-toggle::before {
+		transition: none;
+	}
+}
+
+
+/* ==========================================================================
+   9. Responsivo: layout empilhado em telas pequenas
+   Mantido no fim do arquivo para sobrepor as regras base de mesma
+   especificidade.
+   ========================================================================== */
 
 @media (max-width: 640px) {
+	/* Formulário */
 	.teatro-apresentacoes__section {
 		padding: 0.75rem;
 	}
@@ -574,6 +685,8 @@
 		max-width: none;
 	}
 
+	/* Tabela em cartões: cabeçalho oculto visualmente (segue acessível) e
+	   cada célula exibe seu rótulo via data-label. */
 	.teatro-apresentacoes__table thead {
 		position: absolute;
 		width: 1px;
@@ -620,10 +733,5 @@
 
 	.teatro-apresentacoes__group-cell {
 		background: transparent;
-	}
-
-	.teatro-apresentacoes__table--group td[data-label="Sessões"],
-	.teatro-apresentacoes__table--group td[data-label="Total"] {
-		text-align: left;
 	}
 }

@@ -26,28 +26,29 @@ final class GroupingModes
             self::$modes = [
                 'company' => new GroupingMode(
                     key: 'company',
-                    select_label: 'Companhia',
+                    select_label: PresentationsSchema::column( 'companyName' )->grouped_label,
                     l1_key: 'companyName',
                     l2_key: 'playName',
-                    count_label: 'Nº Peças',
+                    count_label: PresentationsSchema::column( 'playName' )->count_label,
                     identity: [ 'playName', 'playGenre', 'playNationality' ],
                     l1_label_fields: [ 'companyName', 'companyNationality' ]
                 ),
                 'play' => new GroupingMode(
                     key: 'play',
-                    select_label: 'Peça',
+                    select_label: PresentationsSchema::column( 'playName' )->grouped_label,
                     l1_key: 'playName',
                     l2_key: 'companyName',
-                    count_label: 'Nº Companhias',
+                    count_label: PresentationsSchema::column( 'companyName' )->count_label,
                     identity: [ 'companyName', 'companyNationality' ],
                     l1_label_fields: [ 'playName', 'playGenre', 'playNationality' ]
                 ),
                 // Modos de 2 níveis: faixa do valor > um espetáculo por linha
                 // (sem bloco de identidade). Ver `two_level()`.
-                'genre'       => self::two_level( 'genre', 'playGenre' ),
-                'nationality' => self::two_level( 'nationality', 'playNationality' ),
-                'theater'     => self::two_level( 'theater', 'presentationTheater' ),
-                'language'    => self::two_level( 'language', 'presentationLanguage' ),
+                'genre'               => self::two_level( 'genre', 'playGenre' ),
+                'play_nationality'    => self::two_level( 'play_nationality', 'playNationality' ),
+                'company_nationality' => self::two_level( 'company_nationality', 'companyNationality' ),
+                'theater'             => self::two_level( 'theater', 'presentationTheater' ),
+                'language'            => self::two_level( 'language', 'presentationLanguage' ),
             ];
         }
 
@@ -55,8 +56,8 @@ final class GroupingModes
     }
 
     /**
-     * Modo de 2 níveis agrupado por uma única coluna do schema, cujo rótulo
-     * completo vira o do `<option>`.
+     * Modo de 2 níveis agrupado por uma única coluna do schema, cujo
+     * `filters_label` vira o do `<option>`.
      *
      * Cada linha traz todos os dados da tabela plana (Peça, Companhia e
      * Espetáculo, com a data reduzida ao ano) menos a coluna que agrupa — ela já
@@ -75,10 +76,10 @@ final class GroupingModes
 
         return new GroupingMode(
             key: $key,
-            select_label: PresentationsSchema::column( $column )->full_label,
+            select_label: PresentationsSchema::column( $column )->filters_label,
             l1_key: $column,
             l2_key: null,
-            count_label: 'Nº Espetáculos',
+            count_label: PresentationsSchema::ROW_COUNT_LABEL,
             identity: [],
             l1_label_fields: [ $column ],
             leaf_columns: $leaf_columns
