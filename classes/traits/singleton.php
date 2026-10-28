@@ -21,7 +21,7 @@ trait Singleton
 		$this->init();
 	}
 
-    final private function __clone()
+    private function __clone()
     {
     }
 
