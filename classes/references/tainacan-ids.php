@@ -27,6 +27,7 @@ final class TainacanIds
     const PESSOA      = 9289;
     const MEMBROS     = 9566;
     const FUNCOES     = 9596;
+    const MONTAGEM    = 44383;
 
     // Taxonomias.
     const TAX_IDIOMA        = 9202;
@@ -35,17 +36,25 @@ final class TainacanIds
     const TAX_ESPECIALIDADE = 9348;
 
     // Metadados de Espetáculos.
-    const META_ESPETACULO_PECA      = 9508; // Relacionamento → Peça
-    const META_ESPETACULO_COMPANHIA = 9511; // Relacionamento → Companhia
-    const META_ESPETACULO_IDIOMA    = 9514; // Taxonomia Idioma
-    const META_ESPETACULO_TEATRO    = 9554; // Relacionamento → Teatro
-    const META_ESPETACULO_TIPO      = 9557; // Selectbox (Completo / Sessões / Palco e Tela)
-    const META_ESPETACULO_DATA      = 9560; // Data (Y-m-d)
-    const META_ESPETACULO_SESSOES   = 9563; // Numérico
+    const META_ESPETACULO_MONTAGEM = 44408; // Relacionamento → Montagem
+    const META_ESPETACULO_TEATRO   = 9554; // Relacionamento → Teatro
+    const META_ESPETACULO_DATA     = 9560; // Data (Y-m-d)
+    const META_ESPETACULO_SESSOES  = 9563; // Numérico
+
+    // Metadados de Montagens.
+    const META_MONTAGEM_PECA        = 44390; // Relacionamento → Peça
+    const META_MONTAGEM_COMPANHIA   = 44393; // Relacionamento → Companhia
+    const META_MONTAGEM_IDIOMA      = 44403; // Taxonomia Idioma
+    const META_MONTAGEM_TIPO        = 44416; // Selectbox (Completo / Sessões / Palco e Tela)
+    const META_MONTAGEM_TRADUTORES  = 44396; // Relacionamento → Pessoa (múltiplo)
+    const META_MONTAGEM_ADAPTADORES = 44399; // Relacionamento → Pessoa (múltiplo)
 
     // Metadados de Peça e Companhia.
     const META_PECA_GENERO             = 9460; // Taxonomia Gênero
     const META_PECA_NACIONALIDADE      = 9464; // Taxonomia Nacionalidade
+    const META_PECA_AUTORES_MUSICA     = 9469; // Relacionamento → Pessoa (múltiplo)
+    const META_PECA_AUTORES_TEXTO      = 10863; // Relacionamento → Pessoa (múltiplo)
+    const META_PECA_ARRANJADORES       = 9476; // Relacionamento → Pessoa (múltiplo)
     const META_COMPANHIA_NACIONALIDADE = 9388; // Taxonomia Nacionalidade
 
     // Metadados de Membros (filhos do composto "Elenco").
@@ -87,6 +96,7 @@ final class TainacanIds
                 'pessoa'      => self::PESSOA,
                 'membros'     => self::MEMBROS,
                 'funcoes'     => self::FUNCOES,
+                'montagem'    => self::MONTAGEM,
             ],
             'metadata'    => [
                 'membrosElencoPessoa' => self::META_MEMBROS_ELENCO_PESSOA,

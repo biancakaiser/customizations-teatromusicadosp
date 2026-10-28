@@ -3,7 +3,8 @@
  * Sincronização incremental Tainacan → tabela plana, por hooks.
  *
  * Os hooks só anotam IDs "sujos" durante a requisição; no `shutdown` eles são
- * resolvidos para IDs de espetáculos e recalculados uma única vez cada
+ * resolvidos para IDs de espetáculos (Pessoa → Peça/Montagem; Peça/Companhia →
+ * Montagem → Espetáculo; Teatro → Espetáculo) e recalculados uma única vez cada
  * (`PresentationsSyncWriter`). Assim, salvar um item — que no Tainacan
  * dispara um evento por metadado — custa uma projeção, e a ordem entre a
  * gravação do item e a dos seus metadados não importa.
@@ -36,7 +37,7 @@ class PresentationsSync implements Module
     const LAST_RUN_OPTION = 'tmsp_pres_sync_last_hook';
 
     /** @var array<string,array<int,true>> bucket => [ID => true] */
-    private $dirty = [ 'espetaculos' => [], 'peca' => [], 'companhia' => [], 'teatro' => [], 'terms' => [] ];
+    private $dirty = [ 'espetaculos' => [], 'montagem' => [], 'peca' => [], 'companhia' => [], 'teatro' => [], 'pessoa' => [], 'terms' => [] ];
 
     /** @var bool */
     private $shutdown_registered = false;
@@ -156,7 +157,8 @@ class PresentationsSync implements Module
     }
 
     /**
-     * Anota um post se ele for item de Espetáculos, Peça, Companhia ou Teatro.
+     * Anota um post se ele for item de Espetáculos, Montagem, Peça, Companhia,
+     * Teatro ou Pessoa.
      */
     private function mark_post( int $post_id, ?string $post_type = null ): void {
         if ( $post_id <= 0 ) {
@@ -228,11 +230,11 @@ class PresentationsSync implements Module
      */
     private function resolve_dirty(): array {
         $dirty       = $this->dirty;
-        $this->dirty = [ 'espetaculos' => [], 'peca' => [], 'companhia' => [], 'teatro' => [], 'terms' => [] ];
+        $this->dirty = [ 'espetaculos' => [], 'montagem' => [], 'peca' => [], 'companhia' => [], 'teatro' => [], 'pessoa' => [], 'terms' => [] ];
 
         $projector = new EspetaculoProjector();
 
-        // Termos renomeados → itens vinculados (espetáculos, peças ou companhias).
+        // Termos renomeados → itens vinculados (montagens, peças ou companhias).
         if ( $dirty['terms'] ) {
             $types = self::watched_post_types();
             foreach ( $projector->objects_with_terms( array_keys( $dirty['terms'] ) ) as $post_type => $object_ids ) {
@@ -244,16 +246,46 @@ class PresentationsSync implements Module
             }
         }
 
+        // Pessoa → peças e montagens que a citam (autores, arranjadores,
+        // tradutores, adaptadores); seguem a cadeia abaixo até os espetáculos.
+        if ( $dirty['pessoa'] ) {
+            $person_ids       = array_keys( $dirty['pessoa'] );
+            $person_relations = [
+                'peca'     => [ TainacanIds::PECA, [ TainacanIds::META_PECA_AUTORES_TEXTO, TainacanIds::META_PECA_AUTORES_MUSICA, TainacanIds::META_PECA_ARRANJADORES ] ],
+                'montagem' => [ TainacanIds::MONTAGEM, [ TainacanIds::META_MONTAGEM_TRADUTORES, TainacanIds::META_MONTAGEM_ADAPTADORES ] ],
+            ];
+            foreach ( $person_relations as $bucket => [ $collection_id, $meta_ids ] ) {
+                foreach ( $meta_ids as $meta_id ) {
+                    foreach ( $projector->items_referencing( $collection_id, $meta_id, $person_ids ) as $id ) {
+                        $dirty[ $bucket ][ $id ] = true;
+                    }
+                }
+            }
+        }
+
+        // Peça/Companhia → montagens que as referenciam (2º nível da cadeia).
+        $montagem_relations = [
+            'peca'      => TainacanIds::META_MONTAGEM_PECA,
+            'companhia' => TainacanIds::META_MONTAGEM_COMPANHIA,
+        ];
+        foreach ( $montagem_relations as $bucket => $meta_id ) {
+            if ( $dirty[ $bucket ] ) {
+                foreach ( $projector->items_referencing( TainacanIds::MONTAGEM, $meta_id, array_keys( $dirty[ $bucket ] ) ) as $id ) {
+                    $dirty['montagem'][ $id ] = true;
+                }
+            }
+        }
+
         $ids = array_keys( $dirty['espetaculos'] );
 
-        $relations = [
-            'peca'      => TainacanIds::META_ESPETACULO_PECA,
-            'companhia' => TainacanIds::META_ESPETACULO_COMPANHIA,
-            'teatro'    => TainacanIds::META_ESPETACULO_TEATRO,
+        // Montagem/Teatro → espetáculos que os referenciam.
+        $espetaculo_relations = [
+            'montagem' => TainacanIds::META_ESPETACULO_MONTAGEM,
+            'teatro'   => TainacanIds::META_ESPETACULO_TEATRO,
         ];
-        foreach ( $relations as $bucket => $meta_id ) {
+        foreach ( $espetaculo_relations as $bucket => $meta_id ) {
             if ( $dirty[ $bucket ] ) {
-                $ids = array_merge( $ids, $projector->espetaculos_referencing( $meta_id, array_keys( $dirty[ $bucket ] ) ) );
+                $ids = array_merge( $ids, $projector->items_referencing( TainacanIds::ESPETACULOS, $meta_id, array_keys( $dirty[ $bucket ] ) ) );
             }
         }
 
@@ -266,9 +298,11 @@ class PresentationsSync implements Module
     private static function watched_post_types(): array {
         return [
             TainacanIds::item_post_type( TainacanIds::ESPETACULOS ) => 'espetaculos',
+            TainacanIds::item_post_type( TainacanIds::MONTAGEM )    => 'montagem',
             TainacanIds::item_post_type( TainacanIds::PECA )        => 'peca',
             TainacanIds::item_post_type( TainacanIds::COMPANHIA )   => 'companhia',
             TainacanIds::item_post_type( TainacanIds::TEATRO )      => 'teatro',
+            TainacanIds::item_post_type( TainacanIds::PESSOA )      => 'pessoa',
         ];
     }
 

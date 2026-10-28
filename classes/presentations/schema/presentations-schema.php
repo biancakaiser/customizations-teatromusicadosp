@@ -29,8 +29,8 @@ final class PresentationsSchema
     const FLAT_LAYOUT = [
         'Apresentação' => [ 'presentationDate', 'presentationTheater' ],
         'Companhia'    => [ 'companyName', 'companyNationality' ],
-        'Peça'         => [ 'playName', 'playGenre', 'playNationality' ],
-        'Espetáculo'   => [ 'presentationLanguage', 'presentationKind', 'presentationSessionsN' ],
+        'Peça'         => [ 'playName', 'playGenre', 'playNationality', 'playTextAuthors', 'playMusicAuthors', 'playArrangers' ],
+        'Espetáculo'   => [ 'presentationLanguage', 'presentationKind', 'presentationSessionsN', 'presentationTranslators', 'presentationAdapters' ],
     ];
 
     /**
@@ -63,12 +63,42 @@ final class PresentationsSchema
     }
 
     /**
-     * Nomes de todas as colunas — o conjunto varrido pela busca livre (LIKE).
+     * Nomes de todas as colunas.
      *
      * @return list<string>
      */
     public static function keys(): array {
         return array_keys( self::columns() );
+    }
+
+    /**
+     * Colunas varridas pela busca livre (LIKE): todas menos as `multi_value`
+     * (nomes de pessoas só entram pelos filtros dedicados).
+     *
+     * @return list<string>
+     */
+    public static function text_search_keys(): array {
+        return array_keys(
+            array_filter(
+                self::columns(),
+                static fn( PresentationColumn $c ): bool => ! $c->multi_value
+            )
+        );
+    }
+
+    /**
+     * Mapa `coluna multi_value => coluna oculta com a lista JSON`.
+     *
+     * @return array<string,string>
+     */
+    public static function list_columns(): array {
+        $lists = [];
+        foreach ( self::columns() as $key => $column ) {
+            if ( $column->multi_value ) {
+                $lists[ $key ] = $column->list_key();
+            }
+        }
+        return $lists;
     }
 
     /**
@@ -206,25 +236,29 @@ final class PresentationsSchema
     }
 
     /**
-     * Definições de coluna para o `CREATE TABLE`, na ordem do banco.
+     * Definições de coluna para o `CREATE TABLE`, na ordem do banco; cada
+     * coluna `multi_value` vem seguida da sua lista JSON oculta.
      *
      * @return list<string>
      */
     public static function sql_column_definitions(): array {
-        return array_values(
-            array_map(
-                static fn( PresentationColumn $c ): string => $c->sql_definition(),
-                self::columns()
-            )
-        );
+        $definitions = [];
+        foreach ( self::columns() as $column ) {
+            $definitions[] = $column->sql_definition();
+            if ( $column->multi_value ) {
+                $definitions[] = $column->list_sql_definition();
+            }
+        }
+        return $definitions;
     }
 
     /**
      * Colunas técnicas da sincronização com o Tainacan — ficam de propósito
      * FORA de `columns()`: não são exibidas, não entram na busca livre (LIKE)
      * nem nos filtros. Servem para upsert (`espetaculo_id`), identidade entre
-     * ambientes (`legacy_id`, o Slug ID), propagação de mudanças em Peça/
-     * Companhia/Teatro (`*_id`) e conferência (`source_hash`).
+     * ambientes (`legacy_id`, o Slug ID; `montagem_legacy_id`, o da Montagem),
+     * propagação de mudanças em Montagem/Peça/Companhia/Teatro (`*_id`) e
+     * conferência (`source_hash`).
      *
      * `espetaculo_id` aceita NULL só para as linhas do seed mock (CSV), usado
      * como rollback; toda linha vinda do Tainacan o preenche.
@@ -233,13 +267,15 @@ final class PresentationsSchema
      */
     public static function technical_column_definitions(): array {
         return [
-            'espetaculo_id' => '`espetaculo_id` BIGINT UNSIGNED NULL',
-            'legacy_id'     => '`legacy_id` BIGINT UNSIGNED NULL',
-            'play_id'       => '`play_id` BIGINT UNSIGNED NULL',
-            'company_id'    => '`company_id` BIGINT UNSIGNED NULL',
-            'theater_id'    => '`theater_id` BIGINT UNSIGNED NULL',
-            'source_hash'   => '`source_hash` CHAR(32) NULL',
-            'synced_at'     => '`synced_at` DATETIME NULL',
+            'espetaculo_id'      => '`espetaculo_id` BIGINT UNSIGNED NULL',
+            'legacy_id'        => '`legacy_id` BIGINT UNSIGNED NULL',
+            'montagem_id'        => '`montagem_id` BIGINT UNSIGNED NULL',
+            'montagem_legacy_id' => '`montagem_legacy_id` BIGINT UNSIGNED NULL',
+            'play_id'            => '`play_id` BIGINT UNSIGNED NULL',
+            'company_id'         => '`company_id` BIGINT UNSIGNED NULL',
+            'theater_id'         => '`theater_id` BIGINT UNSIGNED NULL',
+            'source_hash'        => '`source_hash` CHAR(32) NULL',
+            'synced_at'          => '`synced_at` DATETIME NULL',
         ];
     }
 
@@ -257,6 +293,7 @@ final class PresentationsSchema
         return [
             'UNIQUE KEY espetaculo_id (espetaculo_id)',
             'KEY legacy_id (legacy_id)',
+            'KEY montagem_id (montagem_id)',
             'KEY play_id (play_id)',
             'KEY company_id (company_id)',
             'KEY theater_id (theater_id)',
@@ -278,7 +315,7 @@ final class PresentationsSchema
         // uma linha ou um bloco inteiro aqui já move a coluna/grupo na tabela.
         //
         // Cada coluna: key => [ filters_label, header_label, grouped_label, combined_label?,
-        // count_label?, type, indexed?, filterable?, facetable?, searchable?, acronym? ]
+        // count_label?, type, indexed?, filterable?, facetable?, searchable?, acronym?, multi_value? ]
         // (ver `PresentationColumn`). Flags omitidas valem false; rótulos opcionais, null.
         $defs = [
             'Peça' => [
@@ -309,6 +346,36 @@ final class PresentationsSchema
                     'filterable'    => true,
                     'facetable'     => true,
                     'acronym'       => true,
+                ],
+                'playTextAuthors' => [
+                    'filters_label' => 'Autoria do Texto',
+                    'header_label'  => 'Autoria do Texto',
+                    'grouped_label' => 'Autoria do Texto',
+                    'type'          => $s,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                    'searchable'    => true,
+                    'multi_value'   => true,
+                ],
+                'playMusicAuthors' => [
+                    'filters_label' => 'Autoria da Música',
+                    'header_label'  => 'Autoria da Música',
+                    'grouped_label' => 'Autoria da Música',
+                    'type'          => $s,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                    'searchable'    => true,
+                    'multi_value'   => true,
+                ],
+                'playArrangers' => [
+                    'filters_label' => 'Arranjadores',
+                    'header_label'  => 'Arranjadores',
+                    'grouped_label' => 'Arranjadores',
+                    'type'          => $s,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                    'searchable'    => true,
+                    'multi_value'   => true,
                 ],
             ],
             'Companhia' => [
@@ -375,6 +442,26 @@ final class PresentationsSchema
                     'combined_label' => 'Total',
                     'type'           => $i,
                 ],
+                'presentationTranslators' => [
+                    'filters_label' => 'Tradutores',
+                    'header_label'  => 'Tradutores',
+                    'grouped_label' => 'Tradutores',
+                    'type'          => $s,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                    'searchable'    => true,
+                    'multi_value'   => true,
+                ],
+                'presentationAdapters' => [
+                    'filters_label' => 'Adaptadores',
+                    'header_label'  => 'Adaptadores',
+                    'grouped_label' => 'Adaptadores',
+                    'type'          => $s,
+                    'filterable'    => true,
+                    'facetable'     => true,
+                    'searchable'    => true,
+                    'multi_value'   => true,
+                ],
             ],
         ];
 
@@ -394,7 +481,8 @@ final class PresentationsSchema
                     searchable: $def['searchable'] ?? false,
                     acronym: $def['acronym'] ?? false,
                     combined_label: $def['combined_label'] ?? null,
-                    count_label: $def['count_label'] ?? null
+                    count_label: $def['count_label'] ?? null,
+                    multi_value: $def['multi_value'] ?? false
                 );
             }
         }

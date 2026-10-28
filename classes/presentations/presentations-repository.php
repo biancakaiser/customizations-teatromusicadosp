@@ -50,7 +50,12 @@ class PresentationsRepository implements Module
     // 2.0.0: colunas técnicas da sincronização com o Tainacan
     //        (PresentationsSchema::technical_column_definitions()) e índice em
     //        presentationDate.
-    const SCHEMA_VERSION = '2.0.0';
+    // 2.1.0: Peça/Companhia/Idioma/Tipo passam a vir da Montagem (Espetáculo →
+    //        Montagem → Peça/Companhia); colunas técnicas montagem_id e
+    //        montagem_legacy_id.
+    // 2.2.0: colunas de pessoas (autores, arranjadores, tradutores, adaptadores)
+    //        com texto exibido + lista JSON `{col}_list` para os filtros.
+    const SCHEMA_VERSION = '2.2.0';
 
     /** Opção com a fonte dos dados da tabela: SOURCE_CSV | SOURCE_TAINACAN. */
     const SOURCE_OPTION   = 'tmsp_presentations_source';
@@ -778,15 +783,25 @@ class PresentationsRepository implements Module
 
         global $wpdb;
 
-        $table   = self::table_name();
-        $numeric = PresentationsSchema::column( $column )->is_numeric();
-        $order   = $numeric ? "`{$column}`+0 ASC" : "`{$column}` ASC";
+        $table         = self::table_name();
+        $schema_column = PresentationsSchema::column( $column );
+        $numeric       = $schema_column->is_numeric();
+        $order         = $numeric ? "`{$column}`+0 ASC" : "`{$column}` ASC";
+
+        if ( $schema_column->multi_value ) {
+            // Cada nome da lista JSON vira uma linha; a collation explícita dá a
+            // mesma ordem alfabética (com acentos) das demais colunas.
+            $list = $schema_column->list_key();
+            $sql  = "SELECT DISTINCT jt.v FROM {$table},"
+                . " JSON_TABLE(`{$list}`, '$[*]' COLUMNS (v VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci PATH '$')) jt"
+                . " WHERE jt.v IS NOT NULL AND jt.v <> '' ORDER BY jt.v ASC";
+        } else {
+            $sql = "SELECT DISTINCT `{$column}` FROM {$table} WHERE `{$column}` IS NOT NULL AND `{$column}` <> '' ORDER BY {$order}";
+        }
 
         // $column vem da whitelist do schema; não há valor de usuário na query.
         // phpcs:ignore WordPress.DB.PreparedSQL, WordPress.DB.DirectDatabaseQuery
-        $raw = $wpdb->get_col(
-            "SELECT DISTINCT `{$column}` FROM {$table} WHERE `{$column}` IS NOT NULL AND `{$column}` <> '' ORDER BY {$order}"
-        );
+        $raw = $wpdb->get_col( $sql );
 
         $values = array_map(
             static fn( $value ) => $numeric ? (int) $value : (string) $value,

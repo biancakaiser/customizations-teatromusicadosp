@@ -57,6 +57,11 @@ final class PresentationColumn
      *                                    sessões da faixa ("Total").
      * @param string|null $count_label    Texto exato da contagem da faixa de 1º nível quando a
      *                                    coluna é o 2º nível de um modo (ex.: "Nº Peças").
+     * @param bool        $multi_value Lista de valores (ex.: autores de uma peça). A coluna guarda
+     *                                 o texto exibido ("A; B"), e a coluna oculta `list_key()`
+     *                                 guarda a mesma lista em JSON, usada pelo filtro
+     *                                 (`JSON_OVERLAPS`) e pelos valores distintos (`JSON_TABLE`).
+     *                                 Fica fora da busca livre (`text_search_keys()`).
      */
     public function __construct(
         public string $key,
@@ -71,7 +76,8 @@ final class PresentationColumn
         public bool $searchable = false,
         public bool $acronym = false,
         public ?string $combined_label = null,
-        public ?string $count_label = null
+        public ?string $count_label = null,
+        public bool $multi_value = false
     ) {}
 
     public function is_numeric(): bool {
@@ -93,7 +99,21 @@ final class PresentationColumn
         if ( $this->is_date() ) {
             return "`{$this->key}` DATETIME NULL";
         }
+        if ( $this->multi_value ) {
+            return "`{$this->key}` TEXT NULL";
+        }
         return "`{$this->key}` VARCHAR(255) NULL";
+    }
+
+    /**
+     * Coluna oculta com a lista JSON de uma coluna `multi_value`.
+     */
+    public function list_key(): string {
+        return "{$this->key}_list";
+    }
+
+    public function list_sql_definition(): string {
+        return "`{$this->list_key()}` JSON NULL";
     }
 
     /**

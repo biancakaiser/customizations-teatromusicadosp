@@ -471,7 +471,12 @@
 		[data-label="Teatro"],
 		[data-label="Gênero da Peça"],
 		[data-label="Gênero"],
-		[data-label="Tipo de Espetáculo"]
+		[data-label="Tipo de Espetáculo"],
+		[data-label="Autoria do Texto"],
+		[data-label="Autoria da Música"],
+		[data-label="Arranjadores"],
+		[data-label="Tradutores"],
+		[data-label="Adaptadores"]
 	) {
 		width: var(--tap-col-wide);
 		max-width: var(--tap-col-wide);

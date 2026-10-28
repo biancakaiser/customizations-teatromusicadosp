@@ -7,7 +7,10 @@
  * valores entram sempre como placeholders (`%s`/`%d`) — nunca interpolados.
  *
  * Cada coluna filtrada vira `\`col\` IN (%s, %s, ...)` — múltiplos valores numa
- * mesma coluna são combinados em OR; colunas diferentes continuam em AND. O
+ * mesma coluna são combinados em OR; colunas diferentes continuam em AND.
+ * Colunas `multi_value` (pessoas) comparam a lista JSON oculta com os valores
+ * pedidos via `JSON_OVERLAPS` — também OR entre os valores. A busca livre não
+ * varre essas colunas (ver `PresentationsSchema::text_search_keys()`). O
  * intervalo de datas de `PresentationFilters` (`date_from`/`date_to`) vira
  * `\`presentationDate\` >= %s` / `<= %s`, também em AND com o resto.
  */
@@ -38,7 +41,7 @@ final class PresentationFilterClause
         if ( '' !== $search ) {
             $like = '%' . $this->wpdb->esc_like( $search ) . '%';
             $sub  = [];
-            foreach ( PresentationsSchema::keys() as $column ) {
+            foreach ( PresentationsSchema::text_search_keys() as $column ) {
                 $sub[]    = "`{$column}` LIKE %s";
                 $params[] = $like;
             }
@@ -48,6 +51,11 @@ final class PresentationFilterClause
         foreach ( $filters->values() as $column => $values ) {
             $schema_column = PresentationsSchema::column( (string) $column );
             if ( null === $schema_column || ! $schema_column->facetable || ! $values ) {
+                continue;
+            }
+            if ( $schema_column->multi_value ) {
+                $clauses[] = "JSON_OVERLAPS(`{$schema_column->list_key()}`, CAST(%s AS JSON))";
+                $params[]  = (string) wp_json_encode( array_map( 'strval', $values ) );
                 continue;
             }
             $placeholders = implode( ', ', array_fill( 0, count( $values ), $schema_column->placeholder() ) );

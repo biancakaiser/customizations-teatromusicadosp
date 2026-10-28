@@ -12,12 +12,14 @@ specific archive.
 presentations ("apresentações") in São Paulo. The data model, expressed as Tainacan
 collections, links:
 
-- **Peça** — play (name, genre, nationality)
+- **Peça** — play (name, genre, nationality, text/music authors and arrangers → Pessoa)
 - **Companhia** — theatrical company/troupe (name, nationality)
 - **Teatro** — venue
-- **Espetáculos** — one presentation: relationships to Peça, Companhia and Teatro,
-  plus language (taxonomy), kind, date and session count. **One published item =
-  one row** of the `[teatro_apresentacoes]` table.
+- **Montagens** — a production (intermediate level): relationships to Peça and
+  Companhia, plus language (taxonomy), kind, translators and adapters.
+- **Espetáculos** — one presentation: relationships to Montagem and Teatro, plus
+  date and session count. **One published item = one row** of the
+  `[teatro_apresentacoes]` table (Espetáculo → Montagem → Peça/Companhia).
 - **Pessoa**, **Membros** (company casts), **Funções**
 
 **Tainacan IDs live in exactly one place:** `classes/references/tainacan-ids.php`
@@ -175,22 +177,36 @@ query Tainacan live. They read the flat, read-only projection table
 `{$wpdb->prefix}teatro_presentations`, whose source is the option
 `tmsp_presentations_source` (`PresentationsRepository::source()`):
 
-- `tainacan` — one row per **published** Espetáculos item whose Peça, Companhia and
-  Teatro are also published (otherwise the row is left out). Column mapping lives in
-  `sync/espetaculo-projector.php` (one set-based SQL per batch over postmeta keyed by
-  metadatum ID + term_relationships; `presentationKind` stores the Tainacan value as
-  is). Technical columns (`espetaculo_id` UNIQUE upsert key, `legacy_id` = Slug ID,
-  `play_id`/`company_id`/`theater_id`, `source_hash`, `synced_at`) come from
+- `tainacan` — one row per **published** Espetáculos item whose Montagem, Peça,
+  Companhia and Teatro are also published (otherwise the row is left out). Column
+  mapping lives in `sync/espetaculo-projector.php` (one set-based SQL per batch over
+  postmeta keyed by metadatum ID + term_relationships, joining Espetáculo → Montagem →
+  Peça/Companhia and Espetáculo → Teatro; Idioma and Tipo are read from the Montagem;
+  `presentationKind` stores the Tainacan value as is). Technical columns
+  (`espetaculo_id` UNIQUE upsert key, `legacy_id` = Slug ID, `montagem_id`/
+  `montagem_legacy_id`, `play_id`/`company_id`/`theater_id`, `source_hash`,
+  `synced_at`; the source IDs are listed once in `EspetaculoProjector::SOURCE_KEYS`) come from
   `PresentationsSchema::technical_column_definitions()` and are deliberately **not**
   in `columns()` (not displayed, not LIKE-searched).
+  **Person columns** (`playTextAuthors`, `playMusicAuthors`, `playArrangers` from the
+  Peça; `presentationTranslators`, `presentationAdapters` from the Montagem) are
+  `multi_value` columns: the displayed `TEXT` (`"A; B"`, published Pessoas' Nome
+  Artístico = post title, alphabetical; unpublished Pessoas are just omitted) plus a
+  hidden `{col}_list` JSON array. Filters on them use `JSON_OVERLAPS` on the list
+  (`PresentationFilterClause`), their distinct values come from `JSON_TABLE`
+  (`facet_values()`), and they are excluded from the free-text LIKE search
+  (`PresentationsSchema::text_search_keys()`). Shown only in the flat table (not in
+  grouped modes). Requires MySQL 8.0.17+.
 - `csv` — the mock `data/flat-table.csv` (`seed_from_csv()`), kept as the rollback path.
 
 Sync pieces (`classes/presentations/sync/`):
 - `PresentationsSync` — hooks (`tainacan-insert`, `tainacan-deleted`,
   `tainacan-deleted-Item_Metadata_Entity`, plus WP `transition_post_status`,
   `untrashed_post`, `deleted_post`, `set_object_terms`, `edited_term`,
-  `pre_delete_term`) only mark dirty IDs; `shutdown` resolves Peça/Companhia/Teatro/
-  term changes to espetáculos and recomputes them (>200 IDs → persistent queue +
+  `pre_delete_term`) only mark dirty IDs; `shutdown` resolves term changes to items,
+  Pessoa → Peças/Montagens, Peça/Companhia → Montagens → espetáculos and Teatro →
+  espetáculos (via
+  `EspetaculoProjector::items_referencing()`), and recomputes them (>200 IDs → persistent queue +
   `tmsp_presentations_process_queue` single event). Never throws into Tainacan:
   failures go to the retry option.
 - `PresentationsSyncWriter` — always recomputes from source and upserts by

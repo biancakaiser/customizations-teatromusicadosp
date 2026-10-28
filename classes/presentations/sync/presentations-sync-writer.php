@@ -141,7 +141,9 @@ final class PresentationsSyncWriter
 
         $columns = array_merge(
             PresentationsSchema::keys(),
-            [ 'espetaculo_id', 'legacy_id', 'play_id', 'company_id', 'theater_id', 'source_hash', 'synced_at' ]
+            array_values( PresentationsSchema::list_columns() ),
+            EspetaculoProjector::SOURCE_KEYS,
+            [ 'source_hash', 'synced_at' ]
         );
         $now = current_time( 'mysql', true );
 
