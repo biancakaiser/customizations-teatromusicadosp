@@ -160,6 +160,14 @@ class PresentationsRepository implements Module
         update_option( self::SOURCE_OPTION, self::SOURCE_TAINACAN === $source ? self::SOURCE_TAINACAN : self::SOURCE_CSV );
     }
 
+    /**
+     * A tabela oficial já está no schema atual? Fica `false` entre o deploy de
+     * uma mudança de schema (fonte Tainacan) e o fim do backfill que a recria.
+     */
+    public static function schema_is_current(): bool {
+        return get_option( self::SCHEMA_OPTION ) === self::SCHEMA_VERSION;
+    }
+
     public static function data_version(): string {
         return (string) get_option( self::DATA_VERSION_OPTION, '0' );
     }

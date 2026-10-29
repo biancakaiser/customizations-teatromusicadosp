@@ -45,6 +45,14 @@ final class PresentationsSyncWriter
         $table  = $table ?? PresentationsRepository::table_name();
         $result = [ 'inserted' => [], 'updated' => [], 'deleted' => [], 'unchanged' => 0 ];
 
+        // Com o schema mudado e o backfill ainda pendente, a tabela oficial não
+        // tem as colunas novas que o upsert grava. Os hooks/fila/conferência
+        // falham aqui (IDs vão para retry) e a conferência que encerra o
+        // backfill recalcula tudo.
+        if ( ! $dry_run && $table === PresentationsRepository::table_name() && ! PresentationsRepository::schema_is_current() ) {
+            throw new \RuntimeException( 'Tabela oficial no schema antigo: aguardando o backfill (wp tmsp presentations backfill).' );
+        }
+
         foreach ( array_chunk( EspetaculoProjector::clean_ids( $espetaculo_ids ), self::BATCH ) as $batch ) {
             $rows     = $this->projector->project( $batch );
             $existing = $this->existing_hashes( $table, $batch );
