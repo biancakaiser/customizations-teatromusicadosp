@@ -243,6 +243,7 @@
 		var resultsPerPageSelect = root.querySelector('#teatro-apresentacoes-results-per-page');
 		var wrap = root.querySelector('#teatro-apresentacoes-table-wrap');
 		var countEl = root.querySelector('#teatro-apresentacoes-count');
+		var groupCountEl = root.querySelector('#teatro-apresentacoes-group-count');
 		if (!wrap) {
 			return;
 		}
@@ -564,8 +565,8 @@
 		}
 
 		// Agrupamento ativo: o servidor monta a árvore e devolve o HTML da
-		// tabela pronto (`{ html, total }`); aqui só trocamos o innerHTML do
-		// wrapper (a paginação some).
+		// tabela pronto (`{ html, total, group_count_text, total_pages }`); aqui só
+		// trocamos o innerHTML do wrapper (a paginação some).
 		function loadGrouped() {
 			setBusy(true);
 			wrap.classList.add('teatro-apresentacoes__table-wrap--grouped');
@@ -596,6 +597,11 @@
 					if (countEl && i18n.results) {
 						countEl.hidden = false;
 						countEl.textContent = i18n.results.replace('%s', (payload.total || 0).toLocaleString());
+					}
+					// Nº de itens do agrupamento, já formatado pelo servidor ("12 companhias").
+					if (groupCountEl) {
+						groupCountEl.textContent = payload.group_count_text || '';
+						groupCountEl.hidden = !payload.group_count_text;
 					}
 					syncHistory();
 				})
@@ -632,6 +638,9 @@
 					if (countEl && i18n.results) {
 						countEl.hidden = false;
 						countEl.textContent = i18n.results.replace('%s', (payload.total || 0).toLocaleString());
+					}
+					if (groupCountEl) {
+						groupCountEl.hidden = true;
 					}
 					syncHistory();
 				})

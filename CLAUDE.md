@@ -184,20 +184,44 @@ query Tainacan live. They read the flat, read-only projection table
   Peça/Companhia and Espetáculo → Teatro; Idioma and Tipo are read from the Montagem;
   `presentationKind` stores the Tainacan value as is). Technical columns
   (`espetaculo_id` UNIQUE upsert key, `legacy_id` = Slug ID, `montagem_id`/
-  `montagem_legacy_id`, `play_id`/`company_id`/`theater_id`, `source_hash`,
-  `synced_at`; the source IDs are listed once in `EspetaculoProjector::SOURCE_KEYS`) come from
+  `montagem_legacy_id`, `play_id`/`company_id`/`theater_id`, `play_slug`/`company_slug`/
+  `theater_slug`, `source_hash`, `synced_at`; the source IDs are listed once in
+  `EspetaculoProjector::SOURCE_KEYS`) come from
   `PresentationsSchema::technical_column_definitions()` and are deliberately **not**
   in `columns()` (not displayed, not LIKE-searched).
   **Person columns** (`playTextAuthors`, `playMusicAuthors`, `playArrangers` from the
   Peça; `presentationTranslators`, `presentationAdapters` from the Montagem) are
   `multi_value` columns: the displayed `TEXT` (`"A; B"`, published Pessoas' Nome
   Artístico = post title, alphabetical; unpublished Pessoas are just omitted) plus a
-  hidden `{col}_list` JSON array. Filters on them use `JSON_OVERLAPS` on the list
+  hidden `{col}_list` JSON array of names and a hidden `{col}_links` JSON array of
+  `[post_name, name]` pairs (only for the links). Filters on them use `JSON_OVERLAPS` on the list
   (`PresentationFilterClause`), their distinct values come from `JSON_TABLE`
   (`facet_values()`), and they are excluded from the free-text LIKE search
-  (`PresentationsSchema::text_search_keys()`). Shown only in the flat table (not in
-  grouped modes). Requires MySQL 8.0.17+.
+  (`PresentationsSchema::text_search_keys()`). Requires MySQL 8.0.17+.
+  They are **not displayed on their own** (only their 5 filters are): two **composite
+  columns** (`PresentationColumn::$composite_of`, virtual — no DB column, excluded from
+  `keys()`, which lists stored columns only) show them: `playConception` "Concepção"
+  (A.T = Autoria do Texto, A.M = Autoria da Música, Ar = Arranjadores) and
+  `presentationAdaptation` "Adaptação" (Tr = Tradutores, Ad = Adaptadores), formatted
+  `A.T: Nome, Nome; A.M: Nome` with `<abbr title>` siglas, roles without people omitted,
+  "—" when empty (`PresentationValue::composite_html()/composite_text()`). Flat table:
+  end of the Peça / Espetáculo header groups. Grouped: Concepção in the Peça identity
+  block in the Companhia mode, a leaf column elsewhere; Adaptação a leaf column in every
+  mode (pre-rendered HTML travels in the tree as `l2['html']` / `leaf['html']`).
+  Columns flagged `acronym` (both Nacionalidades, Idioma) show only the sigla, also as
+  `<abbr title="full value">PO</abbr>` (`PresentationValue::acronym_html()`) — in the flat
+  table, grouped cells and the grouped band label (`l1['label_html']`).
+
 - `csv` — the mock `data/flat-table.csv` (`seed_from_csv()`), kept as the rollback path.
+
+**Links to item pages**: Peça, Companhia, Teatro and person cells render as `<a>` to the
+Tainacan item page, `/{collection slug}/{item post_name}/` (`TainacanIds::COLLECTION_SLUGS`
++ `TainacanIds::item_url()`). The item's `post_name` **is** its Slug ID — the WP post ID
+(`play_id` etc.) 404s there, which is why the `*_slug` columns exist. Column → collection
+map: `PresentationsSchema::ITEM_LINKS`; HTML built by `PresentationValue::item_link()`/
+`composite_html()` (plain text fallback when there's no slug, e.g. CSV rows). Grouped
+modes carry the slugs in the tree (`l2['links']`, `leaf['links']`); the level-1 band
+label is never linked (the JS turns that `<th>` into an accordion `<button>`).
 
 Sync pieces (`classes/presentations/sync/`):
 - `PresentationsSync` — hooks (`tainacan-insert`, `tainacan-deleted`,
@@ -227,7 +251,9 @@ A schema bump (`SCHEMA_VERSION`) with source `tainacan` never drops data in
 are capped at `PresentationsRepository::MAX_ROWS` (30000; ~25k espetáculos
 expected) and results above `CACHE_MAX_ROWS` are not cached.
 
-**Filters**: values within one column are OR'd (`col IN (...)`), different columns
+**Filters**: the form shows them in two cards, "Peça" and "Espetáculo", in the fixed
+order of `PresentationsSchema::FILTER_LAYOUT` (`filter_column_groups()`; side by side
+from 1000px, stacked below). Values within one column are OR'd (`col IN (...)`), different columns
 are AND'd, plus a `presentationDate` range (`tap_from`/`tap_to` on the page,
 `date_from`/`date_to` over REST). Only columns whitelisted via
 `PresentationsSchema::facetable_columns()` are accepted. The same `PresentationFilters`

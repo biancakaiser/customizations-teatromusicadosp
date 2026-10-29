@@ -142,6 +142,7 @@ final class PresentationsSyncWriter
         $columns = array_merge(
             PresentationsSchema::keys(),
             array_values( PresentationsSchema::list_columns() ),
+            array_values( PresentationsSchema::link_columns() ),
             EspetaculoProjector::SOURCE_KEYS,
             [ 'source_hash', 'synced_at' ]
         );

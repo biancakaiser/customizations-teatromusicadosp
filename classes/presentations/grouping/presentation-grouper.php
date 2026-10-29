@@ -6,11 +6,16 @@
  *
  * Estrutura devolvida (por nível 1):
  *   [ '<l1 name>' => [
- *       'label'  => 'Companhia: X - Nacionalidade: Y',
+ *       'label'  => 'Companhia: X | Nacionalidade: IT' (texto puro),
+ *       'label_html' => o mesmo em HTML escapado, com `<abbr>` nas siglas,
  *       'total'  => (int) soma de presentationSessionsN do grupo inteiro,
  *       'sort'   => [ '<col>' => '<valor>' , ... ]  (campos da faixa de 1º nível),
  *       'l2'     => [ '<l2 name>' => [
  *           'identity' => [ '<col>' => '<valor>' , ... ],
+ *           'links'    => [ '<col>' => '<post_name>' , ... ] (colunas de identidade
+ *                         em `PresentationsSchema::ITEM_LINKS`),
+ *           'html'     => [ '<col>' => '<HTML escapado>' , ... ] (colunas de identidade
+ *                         compostas, ex.: Concepção — o texto puro fica em `identity`),
  *           'total'    => (int) soma de presentationSessionsN do bloco l2,
  *           'leaves'   => [ '<valores das leaf_columns, unidos por |>' => [
  *               '<campo>' => ..., (só os de `leaf_columns`, ver `field_for()`:
@@ -18,6 +23,10 @@
  *                             também play|genre|play_nationality|company|
  *                             company_nationality nos de 2 níveis)
  *               'sessions' => (int) soma das sessões dessa combinação,
+ *               'links'    => [ '<campo>' => '<post_name>' , ... ] (campos de
+ *                             colunas em `PresentationsSchema::ITEM_LINKS`),
+ *               'html'     => [ '<campo>' => '<HTML escapado>' , ... ] (campos de
+ *                             colunas compostas: conception|adaptation),
  *           ] ],
  *       ] ],
  *   ] ]
@@ -55,11 +64,12 @@ final class PresentationGrouper
 {
     /** Coluna do schema => chave no array da linha folha. */
     const LEAF_FIELDS = [
-        'presentationTheater'   => 'theater',
-        'presentationKind'      => 'kind',
-        'presentationLanguage'  => 'language',
-        'presentationDate'      => 'year',
-        'presentationSessionsN' => 'sessions',
+        'presentationTheater'    => 'theater',
+        'presentationKind'       => 'kind',
+        'presentationLanguage'   => 'language',
+        'presentationDate'       => 'year',
+        'presentationSessionsN'  => 'sessions',
+        'presentationAdaptation' => 'adaptation',
     ];
 
     /**
@@ -72,6 +82,7 @@ final class PresentationGrouper
         'playName'           => 'play',
         'playGenre'          => 'genre',
         'playNationality'    => 'play_nationality',
+        'playConception'     => 'conception',
         'companyName'        => 'company',
         'companyNationality' => 'company_nationality',
     ];
@@ -103,39 +114,60 @@ final class PresentationGrouper
                 : '';
             $sessions = (int) ( $row['presentationSessionsN'] ?? 0 );
 
-            $leaf = [];
+            $leaf      = [];
+            $leaf_html = [];
             foreach ( $leaf_fields as $column => $field ) {
+                $composite = PresentationsSchema::column( $column );
+                if ( null !== $composite && $composite->is_composite() ) {
+                    $leaf[ $field ]      = PresentationValue::non_empty( PresentationValue::composite_text( $row, $composite ) );
+                    $leaf_html[ $field ] = PresentationValue::composite_html( $row, $composite );
+                    continue;
+                }
                 $leaf[ $field ] = 'year' === $field
                     ? PresentationValue::year_of( $row[ $column ] ?? null )
                     : PresentationValue::non_empty( $row[ $column ] ?? '' );
             }
 
             if ( ! isset( $tree[ $l1_name ] ) ) {
-                $parts     = [];
-                $l1_sort   = [];
-                $l1_labels = $mode->labels_for( $mode->l1_label_fields );
+                $parts      = [];
+                $parts_html = [];
+                $l1_sort    = [];
+                $l1_labels  = $mode->labels_for( $mode->l1_label_fields );
                 foreach ( $mode->l1_label_fields as $field ) {
-                    $raw               = $row[ $field ] ?? '';
-                    $parts[]           = $l1_labels[ $field ] . ': ' . ( PresentationsSchema::is_acronym( $field ) ? PresentationValue::acronym( $raw ) : PresentationValue::non_empty( $raw ) );
+                    $raw          = $row[ $field ] ?? '';
+                    $is_acronym   = PresentationsSchema::is_acronym( $field );
+                    $parts[]      = $l1_labels[ $field ] . ': ' . ( $is_acronym ? PresentationValue::acronym( $raw ) : PresentationValue::non_empty( $raw ) );
+                    $parts_html[] = esc_html( $l1_labels[ $field ] . ': ' )
+                        . ( $is_acronym ? PresentationValue::acronym_html( $raw ) : esc_html( PresentationValue::non_empty( $raw ) ) );
                     $l1_sort[ $field ] = trim( (string) $raw );
                 }
                 $l1_sort[ $mode->l1_key ] = $l1_name;
                 $tree[ $l1_name ] = [
-                    'label' => implode( ' | ', $parts ),
-                    'total' => 0,
-                    'sort'  => $l1_sort,
-                    'l2'    => [],
+                    'label'      => implode( ' | ', $parts ),
+                    'label_html' => implode( esc_html( ' | ' ), $parts_html ),
+                    'total'      => 0,
+                    'sort'       => $l1_sort,
+                    'l2'         => [],
                 ];
             }
             $tree[ $l1_name ]['total'] += $sessions;
 
             if ( ! isset( $tree[ $l1_name ]['l2'][ $l2_name ] ) ) {
-                $identity = [];
+                $identity      = [];
+                $identity_html = [];
                 foreach ( $mode->identity as $field ) {
+                    $composite = PresentationsSchema::column( $field );
+                    if ( null !== $composite && $composite->is_composite() ) {
+                        $identity[ $field ]      = PresentationValue::composite_text( $row, $composite );
+                        $identity_html[ $field ] = PresentationValue::composite_html( $row, $composite );
+                        continue;
+                    }
                     $identity[ $field ] = trim( (string) ( $row[ $field ] ?? '' ) );
                 }
                 $tree[ $l1_name ]['l2'][ $l2_name ] = [
                     'identity' => $identity,
+                    'links'    => self::links_of( $row, array_combine( $mode->identity, $mode->identity ) ),
+                    'html'     => $identity_html,
                     'total'    => 0,
                     'leaves'   => [],
                 ];
@@ -144,7 +176,11 @@ final class PresentationGrouper
 
             $leaf_key = implode( '|', $leaf );
             if ( ! isset( $tree[ $l1_name ]['l2'][ $l2_name ]['leaves'][ $leaf_key ] ) ) {
-                $tree[ $l1_name ]['l2'][ $l2_name ]['leaves'][ $leaf_key ] = $leaf + [ 'sessions' => 0 ];
+                $tree[ $l1_name ]['l2'][ $l2_name ]['leaves'][ $leaf_key ] = $leaf + [
+                    'sessions' => 0,
+                    'links'    => self::links_of( $row, $leaf_fields ),
+                    'html'     => $leaf_html,
+                ];
             }
             $tree[ $l1_name ]['l2'][ $l2_name ]['leaves'][ $leaf_key ]['sessions'] += $sessions;
         }
@@ -266,6 +302,24 @@ final class PresentationGrouper
             }
         }
         return 0;
+    }
+
+    /**
+     * `post_name` dos itens linkáveis (`PresentationsSchema::ITEM_LINKS`) entre
+     * as colunas dadas, indexado pela chave correspondente em `$fields`.
+     *
+     * @param array<string,mixed>  $row
+     * @param array<string,string> $fields coluna do schema => chave no resultado
+     * @return array<string,string>
+     */
+    private static function links_of( array $row, array $fields ): array {
+        $links = [];
+        foreach ( $fields as $column => $field ) {
+            if ( isset( PresentationsSchema::ITEM_LINKS[ $column ] ) ) {
+                $links[ $field ] = (string) ( $row[ PresentationsSchema::ITEM_LINKS[ $column ][1] ] ?? '' );
+            }
+        }
+        return $links;
     }
 
     /**

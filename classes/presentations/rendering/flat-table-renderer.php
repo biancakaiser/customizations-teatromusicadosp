@@ -67,10 +67,8 @@ final class FlatTableRenderer
                         <?php foreach ( array_keys( $columns ) as $key ) : ?>
                             <?php $value = $row[ $key ] ?? null; ?>
                             <?php if ( 'presentationDate' === $key ) { $value = PresentationValue::date_br( $value ); } ?>
-                            <?php $is_acronym = PresentationsSchema::is_acronym( $key ); ?>
-                            <?php if ( $is_acronym ) { $value = PresentationValue::acronym( $value ); } ?>
                             <td data-label="<?php echo esc_attr( $columns[ $key ] ); ?>">
-                                <?php echo esc_html( ( null === $value || '' === $value ) ? '—' : (string) $value ); ?>
+                                <?php echo $this->cell_html( $key, $value, $row ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
                             </td>
                         <?php endforeach; ?>
                     </tr>
@@ -79,5 +77,31 @@ final class FlatTableRenderer
         </table>
         <?php
         return (string) ob_get_clean();
+    }
+
+    /**
+     * HTML (já escapado) de uma célula: link para a ficha nas colunas de
+     * `PresentationsSchema::ITEM_LINKS`, pessoas nas compostas (Concepção,
+     * Adaptação), `<abbr>` nas de sigla (nacionalidades, idioma); texto nas demais.
+     *
+     * @param mixed               $value Valor já formatado (data).
+     * @param array<string,mixed> $row
+     */
+    private function cell_html( string $key, $value, array $row ): string {
+        if ( isset( PresentationsSchema::ITEM_LINKS[ $key ] ) ) {
+            [ $collection, $slug_column ] = PresentationsSchema::ITEM_LINKS[ $key ];
+            return PresentationValue::item_link( $value, $row[ $slug_column ] ?? '', $collection );
+        }
+
+        $column = PresentationsSchema::column( $key );
+        if ( null !== $column && $column->is_composite() ) {
+            return PresentationValue::composite_html( $row, $column );
+        }
+
+        if ( PresentationsSchema::is_acronym( $key ) ) {
+            return PresentationValue::acronym_html( $value );
+        }
+
+        return esc_html( ( null === $value || '' === $value ) ? '—' : (string) $value );
     }
 }

@@ -16,6 +16,8 @@
 
 namespace TeatroMusicadoSP\Customizations\Presentations\Schema;
 
+use TeatroMusicadoSP\Customizations\References\TainacanIds;
+
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 final class PresentationsSchema
@@ -29,8 +31,18 @@ final class PresentationsSchema
     const FLAT_LAYOUT = [
         'Apresentação' => [ 'presentationDate', 'presentationTheater' ],
         'Companhia'    => [ 'companyName', 'companyNationality' ],
-        'Peça'         => [ 'playName', 'playGenre', 'playNationality', 'playTextAuthors', 'playMusicAuthors', 'playArrangers' ],
-        'Espetáculo'   => [ 'presentationLanguage', 'presentationKind', 'presentationSessionsN', 'presentationTranslators', 'presentationAdapters' ],
+        'Peça'         => [ 'playName', 'playGenre', 'playNationality', 'playConception' ],
+        'Espetáculo'   => [ 'presentationLanguage', 'presentationKind', 'presentationSessionsN', 'presentationAdaptation' ],
+    ];
+
+    /**
+     * Cards de filtros do formulário: `título do card => colunas`, na ordem de
+     * exibição. Os contextos de busca não são os `$group` do schema (Companhia
+     * e Teatro entram em "Espetáculo"). Só afeta `filter_column_groups()`.
+     */
+    const FILTER_LAYOUT = [
+        'Peça'       => [ 'playName', 'playGenre', 'playNationality', 'playMusicAuthors', 'playTextAuthors', 'playArrangers' ],
+        'Espetáculo' => [ 'companyName', 'companyNationality', 'presentationLanguage', 'presentationTranslators', 'presentationAdapters', 'presentationTheater', 'presentationKind' ],
     ];
 
     /**
@@ -39,11 +51,24 @@ final class PresentationsSchema
      */
     const ROW_COUNT_LABEL = 'Nº Espetáculos';
 
+    /**
+     * Colunas exibidas como link para a ficha do item no Tainacan: `coluna =>
+     * [ coleção, coluna técnica com o post_name do item ]` (ver
+     * `TainacanIds::item_url()`). As colunas `multi_value` linkam para Pessoa
+     * pela sua coluna oculta `links_key()`.
+     */
+    const ITEM_LINKS = [
+        'playName'            => [ TainacanIds::PECA, 'play_slug' ],
+        'companyName'         => [ TainacanIds::COMPANHIA, 'company_slug' ],
+        'presentationTheater' => [ TainacanIds::TEATRO, 'theater_slug' ],
+    ];
+
     /** @var array<string,PresentationColumn>|null */
     private static $columns = null;
 
     /**
-     * Todas as colunas, na ordem do banco (== ordem de exibição/seed original).
+     * Todas as colunas, na ordem do banco (== ordem de exibição/seed original),
+     * incluindo as compostas (virtuais, só de exibição — ver `keys()`).
      *
      * @return array<string,PresentationColumn>
      */
@@ -63,25 +88,44 @@ final class PresentationsSchema
     }
 
     /**
-     * Nomes de todas as colunas.
+     * Nomes das colunas gravadas no banco (sem as compostas, que só existem na
+     * exibição) — usado pelo writer, hash, seed CSV e ORDER BY.
      *
      * @return list<string>
      */
     public static function keys(): array {
-        return array_keys( self::columns() );
+        return array_keys(
+            array_filter(
+                self::columns(),
+                static fn( PresentationColumn $c ): bool => ! $c->is_composite()
+            )
+        );
     }
 
     /**
-     * Colunas varridas pela busca livre (LIKE): todas menos as `multi_value`
-     * (nomes de pessoas só entram pelos filtros dedicados).
+     * A coluna é uma das que alguma coluna composta junta (ex.: `playTextAuthors`
+     * em "Concepção")? Essas não são exibidas sozinhas.
+     */
+    public static function is_composite_part( string $key ): bool {
+        foreach ( self::columns() as $column ) {
+            if ( isset( $column->composite_of[ $key ] ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Colunas varridas pela busca livre (LIKE): as gravadas menos as
+     * `multi_value` (nomes de pessoas só entram pelos filtros dedicados).
      *
      * @return list<string>
      */
     public static function text_search_keys(): array {
-        return array_keys(
+        return array_values(
             array_filter(
-                self::columns(),
-                static fn( PresentationColumn $c ): bool => ! $c->multi_value
+                self::keys(),
+                static fn( string $key ): bool => ! self::column( $key )->multi_value
             )
         );
     }
@@ -99,6 +143,21 @@ final class PresentationsSchema
             }
         }
         return $lists;
+    }
+
+    /**
+     * Mapa `coluna multi_value => coluna oculta com os links JSON das Pessoas`.
+     *
+     * @return array<string,string>
+     */
+    public static function link_columns(): array {
+        $links = [];
+        foreach ( self::columns() as $key => $column ) {
+            if ( $column->multi_value ) {
+                $links[ $key ] = $column->links_key();
+            }
+        }
+        return $links;
     }
 
     /**
@@ -151,7 +210,8 @@ final class PresentationsSchema
      * `<th rowspan="2">` sozinho, sem linha de baixo.
      *
      * Uma coluna de `columns()` ausente de `FLAT_LAYOUT` entra no fim, sob o
-     * próprio `$group` — assim uma coluna nova não some da tabela.
+     * próprio `$group` — assim uma coluna nova não some da tabela. As colunas
+     * de pessoas ficam de fora: aparecem pelas compostas que as juntam.
      *
      * @return array<string,array<string,array{header_label:string,filters_label:string}>>
      */
@@ -174,6 +234,9 @@ final class PresentationsSchema
         }
 
         foreach ( array_diff_key( self::columns(), $placed ) as $key => $c ) {
+            if ( self::is_composite_part( $key ) ) {
+                continue;
+            }
             $groups[ $c->group ][ $key ] = [
                 'header_label'  => $c->header_label,
                 'filters_label' => $c->filters_label,
@@ -210,17 +273,30 @@ final class PresentationsSchema
     }
 
     /**
-     * Colunas facetáveis na ordem de exibição do formulário de filtros: primeiro
-     * as com busca interna (`searchable`), depois as demais.
+     * Colunas facetáveis agrupadas nos cards do formulário de filtros, na ordem
+     * de `FILTER_LAYOUT`. Uma coluna facetável ausente do layout entra no fim,
+     * sob o próprio `$group` — assim um filtro novo não some do formulário.
      *
-     * @return array<string,PresentationColumn>
+     * @return array<string,array<string,PresentationColumn>>
      */
-    public static function filter_columns_ordered(): array {
-        $facetable  = self::facetable_columns();
-        $searchable = array_filter( $facetable, static fn( PresentationColumn $c ): bool => $c->searchable );
-        $plain      = array_filter( $facetable, static fn( PresentationColumn $c ): bool => ! $c->searchable );
+    public static function filter_column_groups(): array {
+        $facetable = self::facetable_columns();
+        $groups    = [];
 
-        return $searchable + $plain;
+        foreach ( self::FILTER_LAYOUT as $group => $keys ) {
+            foreach ( $keys as $key ) {
+                if ( isset( $facetable[ $key ] ) ) {
+                    $groups[ $group ][ $key ] = $facetable[ $key ];
+                    unset( $facetable[ $key ] );
+                }
+            }
+        }
+
+        foreach ( $facetable as $key => $c ) {
+            $groups[ $c->group ][ $key ] = $c;
+        }
+
+        return $groups;
     }
 
     /**
@@ -237,16 +313,20 @@ final class PresentationsSchema
 
     /**
      * Definições de coluna para o `CREATE TABLE`, na ordem do banco; cada
-     * coluna `multi_value` vem seguida da sua lista JSON oculta.
+     * coluna `multi_value` vem seguida da sua lista JSON e dos seus links ocultos.
      *
      * @return list<string>
      */
     public static function sql_column_definitions(): array {
         $definitions = [];
         foreach ( self::columns() as $column ) {
+            if ( $column->is_composite() ) {
+                continue;
+            }
             $definitions[] = $column->sql_definition();
             if ( $column->multi_value ) {
                 $definitions[] = $column->list_sql_definition();
+                $definitions[] = $column->links_sql_definition();
             }
         }
         return $definitions;
@@ -257,8 +337,9 @@ final class PresentationsSchema
      * FORA de `columns()`: não são exibidas, não entram na busca livre (LIKE)
      * nem nos filtros. Servem para upsert (`espetaculo_id`), identidade entre
      * ambientes (`legacy_id`, o Slug ID; `montagem_legacy_id`, o da Montagem),
-     * propagação de mudanças em Montagem/Peça/Companhia/Teatro (`*_id`) e
-     * conferência (`source_hash`).
+     * propagação de mudanças em Montagem/Peça/Companhia/Teatro (`*_id`),
+     * links para as fichas (`*_slug`, o `post_name` do item — ver `ITEM_LINKS`)
+     * e conferência (`source_hash`).
      *
      * `espetaculo_id` aceita NULL só para as linhas do seed mock (CSV), usado
      * como rollback; toda linha vinda do Tainacan o preenche.
@@ -274,6 +355,9 @@ final class PresentationsSchema
             'play_id'            => '`play_id` BIGINT UNSIGNED NULL',
             'company_id'         => '`company_id` BIGINT UNSIGNED NULL',
             'theater_id'         => '`theater_id` BIGINT UNSIGNED NULL',
+            'play_slug'          => '`play_slug` VARCHAR(200) NULL',
+            'company_slug'       => '`company_slug` VARCHAR(200) NULL',
+            'theater_slug'       => '`theater_slug` VARCHAR(200) NULL',
             'source_hash'        => '`source_hash` CHAR(32) NULL',
             'synced_at'          => '`synced_at` DATETIME NULL',
         ];
@@ -315,7 +399,8 @@ final class PresentationsSchema
         // uma linha ou um bloco inteiro aqui já move a coluna/grupo na tabela.
         //
         // Cada coluna: key => [ filters_label, header_label, grouped_label, combined_label?,
-        // count_label?, type, indexed?, filterable?, facetable?, searchable?, acronym?, multi_value? ]
+        // count_label?, type, indexed?, filterable?, facetable?, searchable?, acronym?, multi_value?,
+        // composite_of? ]
         // (ver `PresentationColumn`). Flags omitidas valem false; rótulos opcionais, null.
         $defs = [
             'Peça' => [
@@ -376,6 +461,18 @@ final class PresentationsSchema
                     'facetable'     => true,
                     'searchable'    => true,
                     'multi_value'   => true,
+                ],
+                // Composta: só exibição (ver `PresentationColumn::$composite_of`).
+                'playConception' => [
+                    'filters_label' => 'Concepção',
+                    'header_label'  => 'Concepção',
+                    'grouped_label' => 'Concepção',
+                    'type'          => $s,
+                    'composite_of'  => [
+                        'playTextAuthors'  => 'A.T',
+                        'playMusicAuthors' => 'A.M',
+                        'playArrangers'    => 'Ar',
+                    ],
                 ],
             ],
             'Companhia' => [
@@ -462,6 +559,17 @@ final class PresentationsSchema
                     'searchable'    => true,
                     'multi_value'   => true,
                 ],
+                // Composta: só exibição (ver `PresentationColumn::$composite_of`).
+                'presentationAdaptation' => [
+                    'filters_label' => 'Adaptação',
+                    'header_label'  => 'Adaptação',
+                    'grouped_label' => 'Adaptação',
+                    'type'          => $s,
+                    'composite_of'  => [
+                        'presentationTranslators' => 'Tr',
+                        'presentationAdapters'    => 'Ad',
+                    ],
+                ],
             ],
         ];
 
@@ -482,7 +590,8 @@ final class PresentationsSchema
                     acronym: $def['acronym'] ?? false,
                     combined_label: $def['combined_label'] ?? null,
                     count_label: $def['count_label'] ?? null,
-                    multi_value: $def['multi_value'] ?? false
+                    multi_value: $def['multi_value'] ?? false,
+                    composite_of: $def['composite_of'] ?? []
                 );
             }
         }

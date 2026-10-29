@@ -28,6 +28,7 @@ final class GroupingMode
         'presentationKind',
         'presentationLanguage',
         'presentationDate',
+        'presentationAdaptation',
     ];
 
     /**
@@ -45,6 +46,9 @@ final class GroupingMode
      *                                      são somadas por essa combinação. Cada uma
      *                                      vira uma coluna da tabela, antes de
      *                                      "Sessões" e "Total".
+     * @param array{0:string,1:string} $count_nouns Substantivo [singular, plural] do item
+     *                                      agrupado, usado na contagem de faixas da barra
+     *                                      de resultados ("12 companhias"; ver `count_text()`).
      */
     public function __construct(
         public string $key,
@@ -54,8 +58,27 @@ final class GroupingMode
         public string $count_label,
         public array $identity,
         public array $l1_label_fields,
-        public array $leaf_columns = self::DEFAULT_LEAF_COLUMNS
+        public array $leaf_columns = self::DEFAULT_LEAF_COLUMNS,
+        public array $count_nouns = [ 'grupo', 'grupos' ]
     ) {}
+
+    /**
+     * Nº de itens distintos do agrupamento no resultado: as faixas de 1º nível
+     * da árvore completa (antes do `GroupedPager`), menos a faixa de valor
+     * vazio ("—", ver `PresentationValue::non_empty()`) — ela não é um item.
+     *
+     * @param array<string,mixed> $tree Saída de `PresentationGrouper::build()`.
+     */
+    public static function group_count( array $tree ): int {
+        return count( array_diff( array_map( 'strval', array_keys( $tree ) ), [ '—' ] ) );
+    }
+
+    /**
+     * Texto da contagem de faixas na barra de resultados, ex.: "12 companhias".
+     */
+    public function count_text( int $n ): string {
+        return number_format_i18n( $n ) . ' ' . ( 1 === $n ? $this->count_nouns[0] : $this->count_nouns[1] );
+    }
 
     /**
      * Tem o bloco de identidade de 2º nível (modo de 3 níveis)?

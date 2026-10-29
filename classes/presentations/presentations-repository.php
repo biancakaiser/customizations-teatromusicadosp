@@ -55,7 +55,9 @@ class PresentationsRepository implements Module
     //        montagem_legacy_id.
     // 2.2.0: colunas de pessoas (autores, arranjadores, tradutores, adaptadores)
     //        com texto exibido + lista JSON `{col}_list` para os filtros.
-    const SCHEMA_VERSION = '2.2.0';
+    // 2.3.0: links para as fichas do Tainacan — colunas técnicas play_slug/
+    //        company_slug/theater_slug e links JSON `{col}_links` das pessoas.
+    const SCHEMA_VERSION = '2.3.0';
 
     /** Opção com a fonte dos dados da tabela: SOURCE_CSV | SOURCE_TAINACAN. */
     const SOURCE_OPTION   = 'tmsp_presentations_source';
@@ -530,6 +532,8 @@ class PresentationsRepository implements Module
             [
                 'html'        => $html,
                 'total'       => count( $rows ),
+                // Itens distintos do agrupamento no resultado filtrado inteiro (não só na página).
+                'group_count_text' => $mode->count_text( GroupingMode::group_count( $tree ) ),
                 'total_pages' => $paged['total_pages'],
             ],
             200

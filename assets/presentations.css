@@ -4,7 +4,7 @@
  * Índice
  *  1. Container e variáveis
  *  2. Formulário de busca
- *     2.1 Seções (cards "Controles de Visualização" / "Filtros Avançados")
+ *     2.1 Seções (cards de controles e de filtros "Peça" / "Espetáculo")
  *     2.2 Busca por texto
  *     2.3 Intervalo de datas
  *     2.4 Agrupamento e ordenação
@@ -72,8 +72,8 @@
 }
 
 /* 2.1 Seções ---------------------------------------------------------------
-   Caixas com borda e título ("Controles de Visualização" / "Filtros
-   Avançados") agrupando os campos já existentes — puramente visual. */
+   Caixas com borda e título (controles; filtros "Peça" / "Espetáculo")
+   agrupando os campos já existentes — puramente visual. */
 
 .teatro-apresentacoes__section {
 	border: 1px solid var(--paletteColor6);
@@ -100,6 +100,20 @@
 
 .teatro-apresentacoes__section--filters {
 	background: #fff;
+}
+
+/* Cards de filtros por contexto (Peça / Espetáculo): empilhados até tablet,
+   lado a lado a partir do breakpoint de desktop do Blocksy (1000px). */
+.teatro-apresentacoes__filter-groups {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.6rem;
+}
+
+@media (min-width: 1000px) {
+	.teatro-apresentacoes__filter-groups {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 
 /* 2.2 Busca por texto ------------------------------------------------------ */
@@ -472,11 +486,8 @@
 		[data-label="Gênero da Peça"],
 		[data-label="Gênero"],
 		[data-label="Tipo de Espetáculo"],
-		[data-label="Autoria do Texto"],
-		[data-label="Autoria da Música"],
-		[data-label="Arranjadores"],
-		[data-label="Tradutores"],
-		[data-label="Adaptadores"]
+		[data-label="Concepção"],
+		[data-label="Adaptação"]
 	) {
 		width: var(--tap-col-wide);
 		max-width: var(--tap-col-wide);
@@ -512,6 +523,14 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
+}
+
+/* Siglas (papéis em Concepção/Adaptação, nacionalidades, idioma — também na
+   faixa dos agrupados): o valor completo vem no `title` do <abbr>; sem o
+   sublinhado pontilhado padrão. */
+.teatro-apresentacoes__table abbr[title] {
+	text-decoration: none;
+	cursor: help;
 }
 
 /* Linhas zebradas e destaque ao passar o mouse. */

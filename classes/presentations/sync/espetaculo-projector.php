@@ -23,7 +23,9 @@
  *     `meta_id` / `term_taxonomy_id`;
  *   - pessoas (autores/arranjadores da Peça, tradutores/adaptadores da
  *     Montagem): Nome Artístico (título) das Pessoas `publish`, em ordem
- *     alfabética — Pessoa não publicada é omitida, sem tirar o espetáculo.
+ *     alfabética — Pessoa não publicada é omitida, sem tirar o espetáculo;
+ *   - links para as fichas: guarda o `post_name` (= Slug ID, o segmento da
+ *     URL do item) de Peça/Companhia/Teatro e de cada Pessoa.
  */
 
 namespace TeatroMusicadoSP\Customizations\Presentations\Sync;
@@ -39,13 +41,16 @@ final class EspetaculoProjector
      * Colunas técnicas de origem gravadas em cada linha (ver
      * `PresentationsSchema::technical_column_definitions()`); entram no hash.
      */
-    const SOURCE_KEYS = [ 'espetaculo_id', 'legacy_id', 'montagem_id', 'montagem_legacy_id', 'play_id', 'company_id', 'theater_id' ];
+    const SOURCE_KEYS = [ 'espetaculo_id', 'legacy_id', 'montagem_id', 'montagem_legacy_id', 'play_id', 'company_id', 'theater_id', 'play_slug', 'company_slug', 'theater_slug' ];
 
     /**
      * Separador dos nomes no `GROUP_CONCAT` das colunas de pessoas (caractere de
      * controle que não ocorre em títulos); vira "; " no texto exibido.
      */
     const LIST_SEPARATOR = "\x1F";
+
+    /** Separa o `post_name` do nome de cada Pessoa dentro de um item da lista. */
+    const PAIR_SEPARATOR = "\x1E";
 
     /**
      * Linhas projetadas dos espetáculos pedidos, indexadas por `espetaculo_id`.
@@ -78,12 +83,14 @@ final class EspetaculoProjector
                 . " ORDER BY tt.term_taxonomy_id ASC LIMIT 1)";
         };
 
-        // Nomes das Pessoas publicadas que `$post_alias` referencia pelo metadado
-        // (múltiplo) `$meta_id`, em ordem alfabética, separados por LIST_SEPARATOR.
+        // Pessoas publicadas que `$post_alias` referencia pelo metadado (múltiplo)
+        // `$meta_id`, em ordem alfabética: "post_name PAIR_SEPARATOR nome",
+        // separadas por LIST_SEPARATOR.
         $people = static function ( string $post_alias, int $meta_id ) use ( $wpdb ): string {
-            $pessoas = TainacanIds::item_post_type( TainacanIds::PESSOA );
+            $pessoas   = TainacanIds::item_post_type( TainacanIds::PESSOA );
             $separator = self::LIST_SEPARATOR;
-            return "(SELECT GROUP_CONCAT(DISTINCT pe.post_title ORDER BY pe.post_title ASC SEPARATOR '{$separator}')"
+            $pair      = self::PAIR_SEPARATOR;
+            return "(SELECT GROUP_CONCAT(DISTINCT CONCAT(pe.post_name, '{$pair}', pe.post_title) ORDER BY pe.post_title ASC, pe.post_name ASC SEPARATOR '{$separator}')"
                 . " FROM {$wpdb->postmeta} pm"
                 . " JOIN {$wpdb->posts} pe ON pe.ID = CAST(pm.meta_value AS UNSIGNED)"
                 . " AND pe.post_type = '{$pessoas}' AND pe.post_status = 'publish'"
@@ -107,6 +114,7 @@ final class EspetaculoProjector
                 mo.ID AS montagem_id,
                 {$meta( 'mo', TainacanIds::META_SLUG_ID )} AS montagem_legacy_id,
                 pc.ID AS play_id,
+                pc.post_name AS play_slug,
                 pc.post_title AS playName,
                 {$term( 'pc', TainacanIds::TAX_GENERO )} AS playGenre,
                 {$term( 'pc', TainacanIds::TAX_NACIONALIDADE )} AS playNationality,
@@ -114,9 +122,11 @@ final class EspetaculoProjector
                 {$people( 'pc', TainacanIds::META_PECA_AUTORES_MUSICA )} AS playMusicAuthors,
                 {$people( 'pc', TainacanIds::META_PECA_ARRANJADORES )} AS playArrangers,
                 co.ID AS company_id,
+                co.post_name AS company_slug,
                 co.post_title AS companyName,
                 {$term( 'co', TainacanIds::TAX_NACIONALIDADE )} AS companyNationality,
                 te.ID AS theater_id,
+                te.post_name AS theater_slug,
                 te.post_title AS presentationTheater,
                 {$meta( 'mo', TainacanIds::META_MONTAGEM_TIPO )} AS presentationKind,
                 {$term( 'mo', TainacanIds::TAX_IDIOMA )} AS presentationLanguage,
@@ -167,15 +177,24 @@ final class EspetaculoProjector
             'play_id'            => (int) $r['play_id'],
             'company_id'         => (int) $r['company_id'],
             'theater_id'         => (int) $r['theater_id'],
+            'play_slug'          => self::to_text( $r['play_slug'] ),
+            'company_slug'       => self::to_text( $r['company_slug'] ),
+            'theater_slug'       => self::to_text( $r['theater_slug'] ),
         ];
 
         foreach ( PresentationsSchema::columns() as $key => $column ) {
+            if ( $column->is_composite() ) {
+                continue; // Só de exibição; não existe no banco.
+            }
+
             $value = $r[ $key ] ?? null;
 
             if ( $column->multi_value ) {
-                $names                      = self::to_list( $value );
-                $row[ $key ]                = $names ? implode( '; ', $names ) : null;
-                $row[ $column->list_key() ] = $names ? (string) wp_json_encode( $names, JSON_UNESCAPED_UNICODE ) : null;
+                $people                      = self::to_people( $value );
+                $names                       = array_column( $people, 1 );
+                $row[ $key ]                 = $names ? implode( '; ', $names ) : null;
+                $row[ $column->list_key() ]  = $names ? (string) wp_json_encode( $names, JSON_UNESCAPED_UNICODE ) : null;
+                $row[ $column->links_key() ] = $people ? (string) wp_json_encode( $people, JSON_UNESCAPED_UNICODE ) : null;
             } elseif ( $column->is_numeric() ) {
                 $row[ $key ] = self::to_int( $value );
             } elseif ( $column->is_date() ) {
@@ -191,13 +210,13 @@ final class EspetaculoProjector
     }
 
     /**
-     * Hash do conteúdo (colunas exibidas + IDs de origem), usado pela
-     * conferência para detectar linhas divergentes.
+     * Hash do conteúdo (colunas exibidas + IDs de origem + links das Pessoas),
+     * usado pela conferência para detectar linhas divergentes.
      *
      * @param array<string,mixed> $row
      */
     public static function hash( array $row ): string {
-        $keys = array_merge( self::SOURCE_KEYS, PresentationsSchema::keys() );
+        $keys = array_merge( self::SOURCE_KEYS, PresentationsSchema::keys(), array_values( PresentationsSchema::link_columns() ) );
 
         $values = [];
         foreach ( $keys as $key ) {
@@ -216,18 +235,24 @@ final class EspetaculoProjector
     }
 
     /**
-     * Lista do `GROUP_CONCAT` de pessoas → nomes limpos, sem vazios.
+     * Lista do `GROUP_CONCAT` de pessoas → pares `[post_name, nome]` limpos,
+     * sem nome vazio (`post_name` vazio vira '' e a pessoa sai sem link).
      *
-     * @return list<string>
+     * @return list<array{0:string,1:string}>
      */
-    private static function to_list( $value ): array {
+    private static function to_people( $value ): array {
         if ( null === $value ) {
             return [];
         }
-        return array_values( array_filter(
-            array_map( [ self::class, 'to_text' ], explode( self::LIST_SEPARATOR, (string) $value ) ),
-            static fn( ?string $name ): bool => null !== $name
-        ) );
+        $people = [];
+        foreach ( explode( self::LIST_SEPARATOR, (string) $value ) as $item ) {
+            [ $slug, $name ] = array_pad( explode( self::PAIR_SEPARATOR, $item, 2 ), 2, '' );
+            $name            = self::to_text( $name );
+            if ( null !== $name ) {
+                $people[] = [ (string) self::to_text( $slug ), $name ];
+            }
+        }
+        return $people;
     }
 
     private static function to_int( $value ): ?int {

@@ -34,8 +34,9 @@ final class GroupedTableRenderer
         $ncols              = count( $identity_keys ) + count( $leaf_label_map );
 
         // Colunas-folha do modo: coluna do schema => [ chave na folha, rótulo completo
-        // (`data-label`/`abbr`), texto do `<th>`, é sigla? ]. Uma coluna com
-        // `combined_label` (o "Ano" de `presentationDate`) usa-o nos dois.
+        // (`data-label`/`abbr`), texto do `<th>`, é sigla?, coleção do link para a
+        // ficha (null = texto) ]. Uma coluna com `combined_label` (o "Ano" de
+        // `presentationDate`) usa-o nos dois.
         $leaf_columns = [];
         foreach ( $mode->leaf_columns as $column ) {
             $schema_column           = PresentationsSchema::column( $column );
@@ -44,6 +45,7 @@ final class GroupedTableRenderer
                 'label'         => $leaf_label_map[ $column ],
                 'grouped_label' => $schema_column->combined_label ?? $schema_column->grouped_label,
                 'acronym'       => PresentationsSchema::is_acronym( $column ),
+                'collection'    => PresentationsSchema::ITEM_LINKS[ $column ][0] ?? null,
             ];
         }
 
@@ -85,11 +87,12 @@ final class GroupedTableRenderer
                     <tr class="teatro-apresentacoes__group-row">
                         <th scope="colgroup" colspan="<?php echo esc_attr( (string) $ncols ); ?>">
                             <?php
-                            echo esc_html(
-                                $l1['label']
-                                . ' | ' . $mode->count_label . ': ' . number_format_i18n( $l1_count )
-                                . ' | ' . GroupingMode::group_total_label() . ': ' . number_format_i18n( $l1['total'] )
-                            );
+                            // `label_html` já vem escapado (com `<abbr>` nas siglas).
+                            echo $l1['label_html'] // phpcs:ignore WordPress.Security.EscapeOutput
+                                . esc_html(
+                                    ' | ' . $mode->count_label . ': ' . number_format_i18n( $l1_count )
+                                    . ' | ' . GroupingMode::group_total_label() . ': ' . number_format_i18n( $l1['total'] )
+                                );
                             ?>
                         </th>
                     </tr>
@@ -105,16 +108,36 @@ final class GroupedTableRenderer
                                     <?php foreach ( $identity_keys as $ikey ) : ?>
                                         <?php $value = $l2['identity'][ $ikey ] ?? ''; ?>
                                         <?php $is_acronym = PresentationsSchema::is_acronym( $ikey ); ?>
-                                        <?php $value = $is_acronym ? PresentationValue::acronym( $value ) : ( '' !== $value ? $value : '—' ); ?>
+                                        <?php
+                                        if ( isset( $l2['html'][ $ikey ] ) ) {
+                                            $cell_html = $l2['html'][ $ikey ]; // Composta, já escapada.
+                                        } elseif ( $is_acronym ) {
+                                            $cell_html = PresentationValue::acronym_html( $value );
+                                        } elseif ( isset( PresentationsSchema::ITEM_LINKS[ $ikey ] ) ) {
+                                            $cell_html = PresentationValue::item_link( $value, $l2['links'][ $ikey ] ?? '', PresentationsSchema::ITEM_LINKS[ $ikey ][0] );
+                                        } else {
+                                            $cell_html = esc_html( '' !== $value ? $value : '—' );
+                                        }
+                                        ?>
                                         <td class="teatro-apresentacoes__group-cell"<?php echo $span_attr; // phpcs:ignore WordPress.Security.EscapeOutput ?> data-label="<?php echo esc_attr( $identity_label_map[ $ikey ] ); ?>">
-                                            <?php echo esc_html( $value ); ?>
+                                            <?php echo $cell_html; // phpcs:ignore WordPress.Security.EscapeOutput ?>
                                         </td>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                                 <?php foreach ( $leaf_columns as $col ) : ?>
                                     <?php $value = (string) $leaf[ $col['field'] ]; ?>
-                                    <?php $value = $col['acronym'] ? PresentationValue::acronym( $value ) : $value; ?>
-                                    <td data-label="<?php echo esc_attr( $col['label'] ); ?>"><?php echo esc_html( $value ); ?></td>
+                                    <?php
+                                    if ( isset( $leaf['html'][ $col['field'] ] ) ) {
+                                        $cell_html = $leaf['html'][ $col['field'] ]; // Composta, já escapada.
+                                    } elseif ( $col['acronym'] ) {
+                                        $cell_html = PresentationValue::acronym_html( $value );
+                                    } elseif ( null !== $col['collection'] ) {
+                                        $cell_html = PresentationValue::item_link( $value, $leaf['links'][ $col['field'] ] ?? '', $col['collection'] );
+                                    } else {
+                                        $cell_html = esc_html( $value );
+                                    }
+                                    ?>
+                                    <td data-label="<?php echo esc_attr( $col['label'] ); ?>"><?php echo $cell_html; // phpcs:ignore WordPress.Security.EscapeOutput ?></td>
                                 <?php endforeach; ?>
                                 <td data-label="<?php echo esc_attr( $sessions_label ); ?>"><?php echo esc_html( number_format_i18n( $leaf['sessions'] ) ); ?></td>
                                 <?php if ( ! $l1_total_shown ) : ?>

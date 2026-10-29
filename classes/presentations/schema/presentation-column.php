@@ -61,7 +61,13 @@ final class PresentationColumn
      *                                 o texto exibido ("A; B"), e a coluna oculta `list_key()`
      *                                 guarda a mesma lista em JSON, usada pelo filtro
      *                                 (`JSON_OVERLAPS`) e pelos valores distintos (`JSON_TABLE`).
-     *                                 Fica fora da busca livre (`text_search_keys()`).
+     *                                 Fica fora da busca livre (`text_search_keys()`). A coluna
+     *                                 oculta `links_key()` guarda os links das fichas.
+     * @param array<string,string> $composite_of Coluna composta (virtual): `coluna multi_value =>
+     *                                 sigla`, na ordem de exibição. Não existe no banco nem
+     *                                 nos filtros/busca — só junta as colunas de pessoas numa
+     *                                 célula "Sigla: Nome, Nome; Sigla: Nome" (ver
+     *                                 `PresentationValue::composite_html()`).
      */
     public function __construct(
         public string $key,
@@ -77,8 +83,16 @@ final class PresentationColumn
         public bool $acronym = false,
         public ?string $combined_label = null,
         public ?string $count_label = null,
-        public bool $multi_value = false
+        public bool $multi_value = false,
+        public array $composite_of = []
     ) {}
+
+    /**
+     * Coluna virtual, só de exibição (ver `$composite_of`)?
+     */
+    public function is_composite(): bool {
+        return [] !== $this->composite_of;
+    }
 
     public function is_numeric(): bool {
         return self::TYPE_INT === $this->type;
@@ -114,6 +128,18 @@ final class PresentationColumn
 
     public function list_sql_definition(): string {
         return "`{$this->list_key()}` JSON NULL";
+    }
+
+    /**
+     * Coluna oculta de uma coluna `multi_value` com os links para as fichas das
+     * Pessoas: JSON `[[post_name, nome], ...]`, na ordem do texto exibido.
+     */
+    public function links_key(): string {
+        return "{$this->key}_links";
+    }
+
+    public function links_sql_definition(): string {
+        return "`{$this->links_key()}` JSON NULL";
     }
 
     /**

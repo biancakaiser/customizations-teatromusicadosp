@@ -41,6 +41,7 @@ use TeatroMusicadoSP\Customizations\Settings\Features;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRepository;
 use TeatroMusicadoSP\Customizations\Presentations\PresentationsRequest;
 use TeatroMusicadoSP\Customizations\Presentations\Filters\PresentationsFacets;
+use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingMode;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupingModes;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\GroupedPager;
 use TeatroMusicadoSP\Customizations\Presentations\Grouping\PresentationGrouper;
@@ -167,6 +168,8 @@ class PresentationsShortcode implements Module
         $total       = 0;
         $total_pages = 0;
         $table_html  = '';
+        // Contagem de itens do agrupamento ("12 companhias"); vazia no modo plano.
+        $group_count_text = '';
 
         // Sem primeiro carregamento: a tabela só consulta o banco depois do 1º
         // submit do formulário (marcador `tap_go`).
@@ -189,6 +192,7 @@ class PresentationsShortcode implements Module
             $paged       = ( new GroupedPager() )->paginate( $tree, $request->results_per_page(), $request->page() );
             $total_pages = $paged['total_pages'];
             $table_html  = ResultsContentRenderer::grouped( $rows, $paged['tree'], $mode );
+            $group_count_text = $mode->count_text( GroupingMode::group_count( $tree ) );
         } elseif ( $submitted ) {
             $per_page = $request->results_per_page();
 
@@ -245,6 +249,7 @@ class PresentationsShortcode implements Module
                 'submitted'          => $submitted,
                 'rows'               => $rows,
                 'total'              => $total,
+                'group_count_text'   => $group_count_text,
                 'total_pages'        => $total_pages,
                 'paged'              => $request->page(),
                 'results_per_page'   => $request->results_per_page(),

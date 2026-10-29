@@ -64,6 +64,17 @@ final class TainacanIds
     // Metadado de repositório (todas as coleções): ID numérico legado.
     const META_SLUG_ID = 9610;
 
+    /**
+     * Slug (singular, minúsculo) das coleções cujas fichas são linkadas; é o
+     * 1º segmento da URL do item (`/{slug da coleção}/{post_name do item}/`).
+     */
+    const COLLECTION_SLUGS = [
+        self::PECA      => 'peca',
+        self::COMPANHIA => 'companhia',
+        self::TEATRO    => 'teatro',
+        self::PESSOA    => 'pessoa',
+    ];
+
     /** Handle do script inline que expõe os IDs ao JS. */
     const JS_HANDLE = 'tmsp-tainacan-ids';
 
@@ -79,6 +90,20 @@ final class TainacanIds
      */
     public static function taxonomy( int $taxonomy_id ): string {
         return "tnc_tax_{$taxonomy_id}";
+    }
+
+    /**
+     * URL da ficha de um item: `/{slug da coleção}/{post_name do item}/` (o
+     * `post_name` dos itens é o Slug ID). '' se a coleção não tem slug mapeado
+     * em `COLLECTION_SLUGS` ou o item não tem `post_name`.
+     */
+    public static function item_url( int $collection_id, string $item_slug ): string {
+        $collection = self::COLLECTION_SLUGS[ $collection_id ] ?? '';
+        $item_slug  = trim( $item_slug );
+        if ( '' === $collection || '' === $item_slug ) {
+            return '';
+        }
+        return home_url( '/' . $collection . '/' . rawurlencode( $item_slug ) . '/' );
     }
 
     /**

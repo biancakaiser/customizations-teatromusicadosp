@@ -4,7 +4,9 @@
  * outras query vars, o campo de busca, o `<select>` "Agrupado por" e um
  * `<details>` por coluna facetável — uma "caixa tipo select" com uma caixa de
  * seleção por valor distinto, permitindo marcar vários valores por coluna
- * (combinados em OR na consulta; ver `checkbox_field()`).
+ * (combinados em OR na consulta; ver `checkbox_field()`). Os filtros ficam em
+ * um card por contexto de busca (Peça / Espetáculo — ver
+ * `PresentationsSchema::FILTER_LAYOUT`).
  *
  * Um único botão de submit no fim do formulário; nenhum campo dispara busca
  * sozinho — tudo entra na mesma consulta ao clicar em "Buscar".
@@ -84,16 +86,20 @@ final class FilterFormRenderer
                     <?php echo $this->sort_field( $group, $orderby, $order ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
                 </div>
             </div>
-            <div class="teatro-apresentacoes__section teatro-apresentacoes__section--filters">
-                <h3 class="teatro-apresentacoes__section-title" id="teatro-apresentacoes-filters-title">
-                    <?php esc_html_e( 'Filtros Avançados', 'customizations-teatromusicadosp' ); ?>
-                </h3>
-                
-                <div class="teatro-apresentacoes__filters" role="group" aria-labelledby="teatro-apresentacoes-filters-title">
-                    <?php foreach ( PresentationsSchema::filter_columns_ordered() as $key => $column ) : ?>
-                        <?php echo $this->checkbox_field( $key, $column, $filters->get( $key ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-                    <?php endforeach; ?>
-                </div>
+            <div class="teatro-apresentacoes__filter-groups">
+                <?php foreach ( PresentationsSchema::filter_column_groups() as $group => $columns ) : ?>
+                    <?php $title_id = 'teatro-apresentacoes-filters-title-' . sanitize_title( $group ); ?>
+                    <div class="teatro-apresentacoes__section teatro-apresentacoes__section--filters">
+                        <h3 class="teatro-apresentacoes__section-title" id="<?php echo esc_attr( $title_id ); ?>">
+                            <?php echo esc_html( $group ); ?>
+                        </h3>
+                        <div class="teatro-apresentacoes__filters" role="group" aria-labelledby="<?php echo esc_attr( $title_id ); ?>">
+                            <?php foreach ( $columns as $key => $column ) : ?>
+                                <?php echo $this->checkbox_field( $key, $column, $filters->get( $key ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
             <div class="teatro-apresentacoes__submit-field">
                 <button type="submit" class="teatro-apresentacoes__button-search"><?php esc_html_e( 'Buscar', 'customizations-teatromusicadosp' ); ?></button>

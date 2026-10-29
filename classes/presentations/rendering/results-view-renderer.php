@@ -35,6 +35,7 @@ final class ResultsViewRenderer
      *   submitted:bool,
      *   rows:array<int,array<string,mixed>>,
      *   total:int,
+     *   group_count_text:string,
      *   total_pages:int,
      *   paged:int,
      *   results_per_page:int,
@@ -83,6 +84,10 @@ final class ResultsViewRenderer
                         )
                     );
                     ?>
+                </h3>
+                <?php // Nº de itens do agrupamento ("12 companhias"); só no modo agrupado. ?>
+                <h3 id="teatro-apresentacoes-group-count" class="teatro-apresentacoes__count" role="status"<?php echo $submitted && $is_grouped ? '' : ' hidden'; ?>>
+                    <?php echo esc_html( (string) ( $ctx['group_count_text'] ?? '' ) ); ?>
                 </h3>
                 <?php // Slot do botão "Expandir/Recolher todos" — preenchido por assets/presentations.js no modo agrupado. ?>
                 <div class="teatro-apresentacoes__group-actions"></div>
