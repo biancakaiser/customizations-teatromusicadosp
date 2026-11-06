@@ -91,7 +91,7 @@ final class FilterFormRenderer
                     <?php $title_id = 'teatro-apresentacoes-filters-title-' . sanitize_title( $group ); ?>
                     <div class="teatro-apresentacoes__section teatro-apresentacoes__section--filters">
                         <h3 class="teatro-apresentacoes__section-title" id="<?php echo esc_attr( $title_id ); ?>">
-                            <?php echo esc_html( $group ); ?>
+                            Filtrar por <?php echo esc_html( $group ); ?>:
                         </h3>
                         <div class="teatro-apresentacoes__filters" role="group" aria-labelledby="<?php echo esc_attr( $title_id ); ?>">
                             <?php foreach ( $columns as $key => $column ) : ?>

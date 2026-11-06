@@ -98,10 +98,6 @@
 	gap: 1rem 0.8rem;
 }
 
-.teatro-apresentacoes__section--filters {
-	background: #fff;
-}
-
 /* Cards de filtros por contexto (Peça / Espetáculo): empilhados até tablet,
    lado a lado a partir do breakpoint de desktop do Blocksy (1000px). */
 .teatro-apresentacoes__filter-groups {
@@ -486,8 +482,7 @@
 		[data-label="Gênero da Peça"],
 		[data-label="Gênero"],
 		[data-label="Tipo de Espetáculo"],
-		[data-label="Concepção"],
-		[data-label="Adaptação"]
+		/* [data-label="Autoria"] */
 	) {
 		width: var(--tap-col-wide);
 		max-width: var(--tap-col-wide);
@@ -498,7 +493,7 @@
 		[data-label="Nacionalidade da Companhia"],
 		[data-label="Nacionalidade da Peça"],
 		[data-label="Nacionalidade"],
-		[data-label="Idioma do Espetáculo"],
+		[data-label="Idioma da Montagem"],
 		[data-label="Sessões"],
 		[data-label="Ano"],
 		[data-label="Total"]
@@ -515,6 +510,7 @@
 		[data-label="Nacionalidade da Companhia"],
 		[data-label="Nacionalidade da Peça"],
 		[data-label="Nacionalidade"],
+		[data-label="Idioma da Montagem"],
 		[data-label="Sessões"],
 	) > .teatro-apresentacoes__th-label {
 		display: block;

@@ -571,9 +571,9 @@ final class PresentationsSchema
                 ],
                 // Composta: só exibição (ver `PresentationColumn::$composite_of`).
                 'presentationAdaptation' => [
-                    'filters_label' => 'Adaptação',
-                    'header_label'  => 'Adaptação',
-                    'grouped_label' => 'Adaptação',
+                    'filters_label' => 'Autoria',
+                    'header_label'  => 'Autoria',
+                    'grouped_label' => 'Autoria',
                     'type'          => $s,
                     'composite_of'  => [
                         'presentationTranslators' => 'Tradução',
