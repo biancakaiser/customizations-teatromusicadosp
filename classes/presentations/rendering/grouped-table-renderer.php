@@ -5,8 +5,11 @@
  * por uma faixa (`<tr>` com `<th colspan>`). As colunas de identidade do 2º nível
  * e a coluna "Total" são mescladas com `rowspan`.
  *
- * As colunas-folha vêm de `GroupingMode::leaf_columns` (variam por modo); nos
- * modos de 2 níveis não há colunas de identidade.
+ * Ordem das colunas, igual em todos os modos (2 ou 3 níveis): identidade
+ * (`GroupingMode::identity`; vazia nos modos de 2 níveis) → folhas
+ * (`GroupingMode::leaf_columns`, variam por modo) → Sessões → Total. Sessões e
+ * Total são sempre as duas últimas; a ordem das demais vem de
+ * `PresentationGrouper::display_order()` (ROW_FIELDS + LEAF_FIELDS).
  *
  * Movido de `PresentationsShortcode::group_table_html()`.
  */

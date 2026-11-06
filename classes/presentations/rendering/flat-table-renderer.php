@@ -4,8 +4,9 @@
  *
  * O cabeçalho tem 2 linhas: a 1ª agrupa as colunas pelos grupos de
  * `PresentationsSchema::FLAT_LAYOUT` (um `<th colspan>` por grupo com mais de 1
- * coluna); a 2ª mostra o `header_label` de cada coluna agrupada. Colunas sozinhas
- * no seu grupo viram um `<th rowspan="2">` na 1ª linha. O `filters_label` completo
+ * coluna); a 2ª mostra o `header_label` de cada coluna agrupada. Colunas avulsas
+ * do `FLAT_LAYOUT` (ex.: Data, Teatro) e colunas sozinhas no seu grupo viram um
+ * `<th rowspan="2">` na 1ª linha, sem cabeçalho de grupo. O `filters_label` completo
  * fica nos atributos `abbr`/`data-label` de cada `<th>` de coluna, para
  * acessibilidade e para os cartões em telas estreitas.
  */

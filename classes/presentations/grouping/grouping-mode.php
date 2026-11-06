@@ -22,14 +22,11 @@ final class GroupingMode
     /** Chave sintética de ordenação pela coluna "Total" (soma de sessões do grupo de 1º nível). */
     const SORT_TOTAL = '__total';
 
-    /** Colunas-folha padrão (as dos modos de 3 níveis), na ordem de exibição. */
-    const DEFAULT_LEAF_COLUMNS = [
-        'presentationTheater',
-        'presentationKind',
-        'presentationLanguage',
-        'presentationDate',
-        'presentationAdaptation',
-    ];
+    /** Colunas do bloco de identidade do 2º nível, na ordem de exibição. @var list<string> */
+    public array $identity;
+
+    /** Colunas-folha, na ordem de exibição (sem Sessões e Total). @var list<string> */
+    public array $leaf_columns;
 
     /**
      * @param string       $key             Chave do modo (`tap_group`), ex.: 'company'.
@@ -39,13 +36,18 @@ final class GroupingMode
      * @param string       $count_label     Rótulo da contagem da faixa: blocos de 2º nível
      *                                      (3 níveis) ou linhas-folha (2 níveis).
      * @param list<string> $identity        Colunas do bloco de identidade do 2º nível.
+     *                                      Só o conjunto: a ordem vem de
+     *                                      `PresentationGrouper::display_order()`.
      * @param list<string> $l1_label_fields Colunas que compõem o texto da faixa de 1º nível.
-     * @param list<string> $leaf_columns    Colunas do schema (as de `PresentationGrouper::
+     * @param list<string>|null $leaf_columns Colunas do schema (as de `PresentationGrouper::
      *                                      ROW_FIELDS`/`LEAF_FIELDS`, sem Sessões)
      *                                      que distinguem as linhas-folha — as sessões
      *                                      são somadas por essa combinação. Cada uma
      *                                      vira uma coluna da tabela, antes de
-     *                                      "Sessões" e "Total".
+     *                                      "Sessões" e "Total". Só o conjunto: a ordem
+     *                                      vem de `PresentationGrouper::display_order()`
+     *                                      e Sessões/Total são descartadas se vierem
+     *                                      aqui. null = `default_leaf_columns()`.
      * @param array{0:string,1:string} $count_nouns Substantivo [singular, plural] do item
      *                                      agrupado, usado na contagem de faixas da barra
      *                                      de resultados ("12 companhias"; ver `count_text()`).
@@ -56,11 +58,24 @@ final class GroupingMode
         public string $l1_key,
         public ?string $l2_key,
         public string $count_label,
-        public array $identity,
+        array $identity,
         public array $l1_label_fields,
-        public array $leaf_columns = self::DEFAULT_LEAF_COLUMNS,
+        ?array $leaf_columns = null,
         public array $count_nouns = [ 'grupo', 'grupos' ]
-    ) {}
+    ) {
+        $this->identity     = PresentationGrouper::ordered( $identity );
+        $this->leaf_columns = PresentationGrouper::ordered( $leaf_columns ?? self::default_leaf_columns() );
+    }
+
+    /**
+     * Colunas-folha padrão (as dos modos de 3 níveis): as de
+     * `PresentationGrouper::LEAF_FIELDS`, na ordem dele, sem Sessões.
+     *
+     * @return list<string>
+     */
+    public static function default_leaf_columns(): array {
+        return array_values( array_diff( array_keys( PresentationGrouper::LEAF_FIELDS ), [ 'presentationSessionsN' ] ) );
+    }
 
     /**
      * Nº de itens distintos do agrupamento no resultado: as faixas de 1º nível

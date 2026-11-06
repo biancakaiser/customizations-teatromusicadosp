@@ -19,7 +19,7 @@
  *           'total'    => (int) soma de presentationSessionsN do bloco l2,
  *           'leaves'   => [ '<valores das leaf_columns, unidos por |>' => [
  *               '<campo>' => ..., (só os de `leaf_columns`, ver `field_for()`:
- *                             theater|kind|language|year nos modos de 3 níveis;
+ *                             theater|kind|language|adaptation|year nos modos de 3 níveis;
  *                             também play|genre|play_nationality|company|
  *                             company_nationality nos de 2 níveis)
  *               'sessions' => (int) soma das sessões dessa combinação,
@@ -62,14 +62,22 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 final class PresentationGrouper
 {
-    /** Coluna do schema => chave no array da linha folha. */
+    /**
+     * Coluna do schema => chave no array da linha folha.
+     *
+     * A ordem das chaves é a ordem de exibição das colunas-folha na tabela
+     * agrupada, depois das de `ROW_FIELDS` (ver `display_order()`).
+     * `presentationSessionsN` fica por último e nunca é coluna-folha: Sessões e
+     * Total são sempre as duas últimas colunas, postas pelo renderer em todos
+     * os modos.
+     */
     const LEAF_FIELDS = [
         'presentationTheater'    => 'theater',
         'presentationKind'       => 'kind',
         'presentationLanguage'   => 'language',
+        'presentationAdaptation' => 'adaptation',
         'presentationDate'       => 'year',
         'presentationSessionsN'  => 'sessions',
-        'presentationAdaptation' => 'adaptation',
     ];
 
     /**
@@ -77,6 +85,10 @@ final class PresentationGrouper
      * nos modos de 2 níveis cada linha repete esses dados, como na tabela plana.
      * Separadas de `LEAF_FIELDS` porque este também decide o nível de ordenação
      * (`sort_level()`), e essas colunas não são ordenáveis na folha.
+     *
+     * A ordem das chaves é a ordem de exibição dessas colunas, tanto no bloco
+     * de identidade (modos de 3 níveis) quanto nas folhas — sempre antes das
+     * de `LEAF_FIELDS`.
      */
     const ROW_FIELDS = [
         'playName'           => 'play',
@@ -88,10 +100,76 @@ final class PresentationGrouper
     ];
 
     /**
+     * Ordem de desempate das linhas-folha das colunas de `LEAF_FIELDS`
+     * (depois das de `ROW_FIELDS`, na ordem delas), independente da ordem de
+     * exibição: o Ano vem antes da Adaptação para que linhas do mesmo Teatro/
+     * Tipo/Idioma fiquem em ordem cronológica. Só faz diferença quando a
+     * ordenação não é por uma coluna-folha (ex.: "Total de Sessões"); com
+     * "Ano" o ano já é o critério principal.
+     */
+    const LEAF_TIEBREAK = [
+        'presentationTheater',
+        'presentationKind',
+        'presentationLanguage',
+        'presentationDate',
+        'presentationAdaptation',
+    ];
+
+    /**
      * Chave, no array da linha folha, de uma coluna de `GroupingMode::leaf_columns`.
      */
     public static function field_for( string $column ): string {
         return self::ROW_FIELDS[ $column ] ?? self::LEAF_FIELDS[ $column ];
+    }
+
+    /**
+     * Ordem de exibição das colunas da tabela agrupada: `ROW_FIELDS` e depois
+     * `LEAF_FIELDS`, na ordem das chaves.
+     *
+     * @return list<string>
+     */
+    public static function display_order(): array {
+        return array_keys( self::ROW_FIELDS + self::LEAF_FIELDS );
+    }
+
+    /**
+     * As colunas dadas na ordem de `display_order()`, sem Sessões e Total (que o
+     * renderer sempre põe no fim). Uma coluna fora de `display_order()` vai para
+     * o fim, mantendo a ordem relativa.
+     *
+     * @param list<string> $columns
+     * @return list<string>
+     */
+    public static function ordered( array $columns ): array {
+        return self::sort_by( $columns, self::display_order() );
+    }
+
+    /**
+     * `$columns` sem duplicatas, Sessões e Total, ordenadas pela posição em
+     * `$order` (as ausentes dele vão para o fim, na ordem relativa).
+     *
+     * @param list<string> $columns
+     * @param list<string> $order
+     * @return list<string>
+     */
+    private static function sort_by( array $columns, array $order ): array {
+        $rank    = array_flip( $order );
+        $columns = array_values(
+            array_diff(
+                array_unique( $columns ),
+                [ 'presentationSessionsN', GroupingMode::SORT_TOTAL ]
+            )
+        );
+
+        $positions = array_flip( $columns );
+        usort(
+            $columns,
+            static fn( string $a, string $b ): int =>
+                [ $rank[ $a ] ?? PHP_INT_MAX, $positions[ $a ] ]
+                <=> [ $rank[ $b ] ?? PHP_INT_MAX, $positions[ $b ] ]
+        );
+
+        return $columns;
     }
 
     /**
@@ -104,8 +182,9 @@ final class PresentationGrouper
         $order   = 'DESC' === strtoupper( (string) ( $sort['order'] ?? 'ASC' ) ) ? 'DESC' : 'ASC';
         $dir     = 'DESC' === $order ? -1 : 1;
 
-        $tree        = [];
-        $leaf_fields = $this->leaf_fields( $mode );
+        $tree            = [];
+        $leaf_fields     = $this->leaf_fields( $mode );
+        $tiebreak_fields = self::tiebreak_fields( $leaf_fields );
 
         foreach ( $rows as $row ) {
             $l1_name  = PresentationValue::non_empty( $row[ $mode->l1_key ] ?? '' );
@@ -207,11 +286,11 @@ final class PresentationGrouper
             foreach ( $l1['l2'] as &$l2 ) {
                 // Linhas folha.
                 if ( 'leaf' === $level ) {
-                    uasort( $l2['leaves'], $this->leaf_comparator( $orderby, $dir, $leaf_fields ) );
+                    uasort( $l2['leaves'], $this->leaf_comparator( $orderby, $dir, $tiebreak_fields ) );
                 } else {
                     uasort(
                         $l2['leaves'],
-                        static fn( array $a, array $b ): int => self::compare_leaf_fields( $a, $b, $leaf_fields )
+                        static fn( array $a, array $b ): int => self::compare_leaf_fields( $a, $b, $tiebreak_fields )
                     );
                 }
             }
@@ -271,7 +350,7 @@ final class PresentationGrouper
     }
 
     /**
-     * @param array<string,string> $leaf_fields Ver `leaf_fields()`.
+     * @param array<string,string> $leaf_fields Ver `tiebreak_fields()`.
      */
     private function leaf_comparator( string $orderby, int $dir, array $leaf_fields ): callable {
         $field   = self::LEAF_FIELDS[ $orderby ];
@@ -287,12 +366,13 @@ final class PresentationGrouper
     }
 
     /**
-     * Ordem natural das folhas: compara campo a campo, na ordem das
-     * `leaf_columns` do modo (ex.: teatro, tipo, idioma, ano).
+     * Ordem natural das folhas: compara campo a campo, na ordem de desempate
+     * (`tiebreak_fields()`: ex.: teatro, tipo, idioma, ano, adaptação) — não na
+     * ordem de exibição das colunas.
      *
      * @param array<string,mixed>  $a
      * @param array<string,mixed>  $b
-     * @param array<string,string> $leaf_fields
+     * @param array<string,string> $leaf_fields Ver `tiebreak_fields()`.
      */
     private static function compare_leaf_fields( array $a, array $b, array $leaf_fields ): int {
         foreach ( $leaf_fields as $field ) {
@@ -331,6 +411,22 @@ final class PresentationGrouper
         $fields = [];
         foreach ( $mode->leaf_columns as $column ) {
             $fields[ $column ] = self::field_for( $column );
+        }
+        return $fields;
+    }
+
+    /**
+     * Os `$leaf_fields` reordenados para o desempate: `ROW_FIELDS` e depois
+     * `LEAF_TIEBREAK` (ver este).
+     *
+     * @param array<string,string> $leaf_fields Ver `leaf_fields()`.
+     * @return array<string,string>
+     */
+    private static function tiebreak_fields( array $leaf_fields ): array {
+        $order  = array_merge( array_keys( self::ROW_FIELDS ), self::LEAF_TIEBREAK );
+        $fields = [];
+        foreach ( self::sort_by( array_keys( $leaf_fields ), $order ) as $column ) {
+            $fields[ $column ] = $leaf_fields[ $column ];
         }
         return $fields;
     }

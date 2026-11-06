@@ -5,6 +5,11 @@
  * O agrupamento (`PresentationGrouper` + `GroupedTableRenderer`) roda só no
  * servidor; o cliente (`assets/presentations.js`) consome o HTML já pronto da
  * rota REST `/presentations/grouped`, então não precisa mais desta config.
+ *
+ * Cada modo escolhe só o conjunto de colunas (`identity`, `leaf_columns`): a
+ * ordem de exibição vem sempre de `PresentationGrouper::ROW_FIELDS` +
+ * `LEAF_FIELDS` (aplicada pelo construtor de `GroupingMode`), e Sessões e
+ * Total fecham a linha em todos os modos.
  */
 
 namespace TeatroMusicadoSP\Customizations\Presentations\Grouping;
@@ -43,7 +48,7 @@ final class GroupingModes
                     count_label: PresentationsSchema::column( 'companyName' )->count_label,
                     identity: [ 'companyName', 'companyNationality' ],
                     l1_label_fields: [ 'playName', 'playGenre', 'playNationality' ],
-                    leaf_columns: array_merge( [ 'playConception' ], GroupingMode::DEFAULT_LEAF_COLUMNS ),
+                    leaf_columns: array_merge( [ 'playConception' ], GroupingMode::default_leaf_columns() ),
                     count_nouns: [ 'peça', 'peças' ]
                 ),
                 // Modos de 2 níveis: faixa do valor > um espetáculo por linha
@@ -74,7 +79,7 @@ final class GroupingModes
             array_diff(
                 array_merge(
                     array_keys( PresentationGrouper::ROW_FIELDS ),
-                    GroupingMode::DEFAULT_LEAF_COLUMNS
+                    GroupingMode::default_leaf_columns()
                 ),
                 [ $column ]
             )

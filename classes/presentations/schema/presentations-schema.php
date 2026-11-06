@@ -24,25 +24,28 @@ final class PresentationsSchema
 {
     /**
      * Layout da tabela plana (modo "Nenhum"): `rótulo do grupo de cabeçalho =>
-     * colunas`, na ordem de exibição. Só afeta `flat_columns()`/
+     * colunas`, na ordem de exibição. Uma entrada sem rótulo (chave numérica,
+     * valor = uma coluna) é uma coluna avulsa: sem cabeçalho de grupo, ocupa as
+     * duas linhas do cabeçalho (`<th rowspan="2">`). Só afeta `flat_columns()`/
      * `flat_column_groups()` — a ordem e o `$group` de `columns()` (banco, busca,
      * modos agrupados, demais consumidores) não mudam.
      */
     const FLAT_LAYOUT = [
-        'Apresentação' => [ 'presentationDate', 'presentationTheater' ],
+        'presentationDate',
+        'presentationTheater',
         'Companhia'    => [ 'companyName', 'companyNationality' ],
         'Peça'         => [ 'playName', 'playGenre', 'playNationality', 'playConception' ],
-        'Espetáculo'   => [ 'presentationLanguage', 'presentationKind', 'presentationSessionsN', 'presentationAdaptation' ],
+        'Montagem'   => [ 'presentationLanguage', 'presentationAdaptation', 'presentationKind', 'presentationSessionsN' ],
     ];
 
     /**
      * Cards de filtros do formulário: `título do card => colunas`, na ordem de
      * exibição. Os contextos de busca não são os `$group` do schema (Companhia
-     * e Teatro entram em "Espetáculo"). Só afeta `filter_column_groups()`.
+     * e Teatro entram em "Montagem"). Só afeta `filter_column_groups()`.
      */
     const FILTER_LAYOUT = [
         'Peça'       => [ 'playName', 'playGenre', 'playNationality', 'playMusicAuthors', 'playTextAuthors', 'playArrangers' ],
-        'Espetáculo' => [ 'companyName', 'companyNationality', 'presentationLanguage', 'presentationTranslators', 'presentationAdapters', 'presentationTheater', 'presentationKind' ],
+        'Montagem' => [ 'companyName', 'companyNationality', 'presentationLanguage', 'presentationTranslators', 'presentationAdapters', 'presentationTheater', 'presentationKind' ],
     ];
 
     /**
@@ -207,7 +210,9 @@ final class PresentationsSchema
      * Cabeçalho de 2 linhas da tabela plana, na ordem de `FLAT_LAYOUT`. Cada
      * grupo com mais de uma coluna vira um `<th colspan>` na 1ª linha e um
      * `header_label` por coluna na 2ª; um grupo com uma única coluna vira um
-     * `<th rowspan="2">` sozinho, sem linha de baixo.
+     * `<th rowspan="2">` sozinho, sem linha de baixo. As colunas avulsas de
+     * `FLAT_LAYOUT` (chave numérica) viram um grupo de um membro cuja chave é a
+     * própria coluna — sem rótulo de grupo exibido.
      *
      * Uma coluna de `columns()` ausente de `FLAT_LAYOUT` entra no fim, sob o
      * próprio `$group` — assim uma coluna nova não some da tabela. As colunas
@@ -220,6 +225,11 @@ final class PresentationsSchema
         $placed = [];
 
         foreach ( self::FLAT_LAYOUT as $group => $keys ) {
+            if ( is_int( $group ) ) {
+                // Coluna avulsa: grupo de um membro, sem rótulo (rowspan="2").
+                $group = (string) $keys;
+                $keys  = [ $keys ];
+            }
             foreach ( $keys as $key ) {
                 $c = self::column( $key );
                 if ( null === $c ) {
@@ -392,11 +402,11 @@ final class PresentationsSchema
         $i = PresentationColumn::TYPE_INT;
         $d = PresentationColumn::TYPE_DATE;
 
-        // Aninhado por grupo: a chave externa é o `$group` exibido no cabeçalho da
-        // tabela plana (colspan comum a todas as colunas dentro dela) e a ordem de
-        // inserção — dos grupos entre si e das colunas dentro de cada grupo — é a
-        // própria ordem de exibição. Não existe campo de ordenação numérica: mover
-        // uma linha ou um bloco inteiro aqui já move a coluna/grupo na tabela.
+        // Aninhado por grupo: a chave externa é o `$group` da coluna. A ordem de
+        // inserção aqui é a de `columns()` (banco, busca, seed CSV) e NÃO a de
+        // exibição: a tabela plana segue `FLAT_LAYOUT` (esta ordem só vale para
+        // colunas ausentes dele, ver `flat_column_groups()`) e a agrupada segue
+        // `PresentationGrouper::ROW_FIELDS` + `LEAF_FIELDS`.
         //
         // Cada coluna: key => [ filters_label, header_label, grouped_label, combined_label?,
         // count_label?, type, indexed?, filterable?, facetable?, searchable?, acronym?, multi_value?,
@@ -464,14 +474,14 @@ final class PresentationsSchema
                 ],
                 // Composta: só exibição (ver `PresentationColumn::$composite_of`).
                 'playConception' => [
-                    'filters_label' => 'Concepção',
-                    'header_label'  => 'Concepção',
-                    'grouped_label' => 'Concepção',
+                    'filters_label' => 'Autoria',
+                    'header_label'  => 'Autoria',
+                    'grouped_label' => 'Autoria',
                     'type'          => $s,
                     'composite_of'  => [
-                        'playTextAuthors'  => 'A.T',
-                        'playMusicAuthors' => 'A.M',
-                        'playArrangers'    => 'Ar',
+                        'playTextAuthors'  => 'Texto',
+                        'playMusicAuthors' => 'Música',
+                        'playArrangers'    => 'Arranjo',
                     ],
                 ],
             ],
@@ -508,7 +518,7 @@ final class PresentationsSchema
                     'facetable'     => true,
                 ],
                 'presentationKind' => [
-                    'filters_label' => 'Tipo de Espetáculo',
+                    'filters_label' => 'Tipo de Montagem',
                     'header_label'  => 'Tipo',
                     'grouped_label' => 'Tipo',
                     'type'          => $s,
@@ -516,7 +526,7 @@ final class PresentationsSchema
                     'facetable'     => true,
                 ],
                 'presentationLanguage' => [
-                    'filters_label' => 'Idioma do Espetáculo',
+                    'filters_label' => 'Idioma da Montagem',
                     'header_label'  => 'Idioma',
                     'grouped_label' => 'Idioma',
                     'type'          => $s,
@@ -566,8 +576,8 @@ final class PresentationsSchema
                     'grouped_label' => 'Adaptação',
                     'type'          => $s,
                     'composite_of'  => [
-                        'presentationTranslators' => 'Tr',
-                        'presentationAdapters'    => 'Ad',
+                        'presentationTranslators' => 'Tradução',
+                        'presentationAdapters'    => 'Adaptação',
                     ],
                 ],
             ],

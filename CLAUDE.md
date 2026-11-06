@@ -208,6 +208,11 @@ query Tainacan live. They read the flat, read-only projection table
   end of the Peça / Espetáculo header groups. Grouped: Concepção in the Peça identity
   block in the Companhia mode, a leaf column elsewhere; Adaptação a leaf column in every
   mode (pre-rendered HTML travels in the tree as `l2['html']` / `leaf['html']`).
+  **Column order** — flat: `PresentationsSchema::FLAT_LAYOUT`; grouped: modes only pick
+  the column *set*, the `GroupingMode` constructor orders `identity`/`leaf_columns` by
+  `PresentationGrouper::ROW_FIELDS` + `LEAF_FIELDS` key order, and Sessões + Total are
+  always the last two columns (renderer). Leaf-row tiebreak is a separate list,
+  `PresentationGrouper::LEAF_TIEBREAK` (Ano before Adaptação, chronological).
   Columns flagged `acronym` (both Nacionalidades, Idioma) show only the sigla, also as
   `<abbr title="full value">PO</abbr>` (`PresentationValue::acronym_html()`) — in the flat
   table, grouped cells and the grouped band label (`l1['label_html']`).
