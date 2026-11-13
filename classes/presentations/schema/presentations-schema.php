@@ -528,8 +528,8 @@ final class PresentationsSchema
                 ],
                 'presentationLanguage' => [
                     'filters_label' => 'Idioma',
-                    'header_label'  => 'Idioma',
-                    'grouped_label' => 'Idioma',
+                    'header_label'  => 'Idio.',
+                    'grouped_label' => 'Idio.',
                     'type'          => $s,
                     'filterable'    => true,
                     'facetable'     => true,
@@ -544,7 +544,7 @@ final class PresentationsSchema
                     'indexed'        => true,
                 ],
                 'presentationSessionsN' => [
-                    'filters_label'  => 'Rep.',
+                    'filters_label'  => 'Representações',
                     'header_label'   => 'Rep.',
                     'grouped_label'  => 'Rep.',
                     'combined_label' => 'Total',

@@ -27,10 +27,10 @@
 .teatro-apresentacoes {
 	--tap-stripe: #f6f7f7;
 	--tap-head-fg: #ffffff;
-	--tap-col-wide: 130px;          /* colunas de data/teatro/gênero/tipo */
-	--tap-col-narrow: 80px;         /* colunas de sigla e numéricas */
-	--tap-col-narrow-pad: 0.4rem;   /* padding lateral das colunas estreitas */
-	margin: 0 6rem 3rem 6rem !important;
+	--tap-col-wide: 115px;          /* colunas de data/teatro/gênero/tipo */
+	--tap-col-narrow: 45px;         /* colunas de sigla e numéricas */
+	--tap-col-narrow-pad: 0;   /* padding lateral das colunas estreitas */
+	margin: 0 3rem 3rem !important;
 	font-size: 0.95rem;
 }
 
@@ -38,6 +38,12 @@
 .teatro-apresentacoes *::before,
 .teatro-apresentacoes *::after {
 	box-sizing: border-box;
+}
+
+.teatro-apresentacoes td {
+  word-wrap: break-word; /* Nome antigo */
+  overflow-wrap: break-word; /* Padrão moderno recomendado */
+  word-break: break-word;
 }
 
 
@@ -477,24 +483,28 @@
    agrupada. */
 @media (min-width: 641px) {
 	.teatro-apresentacoes__table :is(th, td):is(
-		[data-label="Data da apresentação"],
+		[data-label="Data da apresentação"]
+	) {
+		width: 45px;
+		max-width: var(--tap-col-wide);
+		white-space: nowrap;
+	}
+
+	.teatro-apresentacoes__table :is(th, td):is(
 		[data-label="Teatro"],
-		[data-label="Gênero da Peça"],
 		[data-label="Gênero"],
-		[data-label="Tipo de Espetáculo"],
-		/* [data-label="Autoria"] */
 	) {
 		width: var(--tap-col-wide);
 		max-width: var(--tap-col-wide);
-		overflow-wrap: anywhere; /* quebra palavras longas em vez de alargar a coluna */
 	}
 
 	.teatro-apresentacoes__table :is(th, td):is(
 		[data-label="Nacionalidade da Companhia"],
 		[data-label="Nacionalidade da Peça"],
+		[data-label="Idioma"],
+		[data-label="Tipo de espetáculo"],
 		[data-label="Nacionalidade"],
-		[data-label="Idioma da Montagem"],
-		[data-label="Sessões"],
+		[data-label="Representações"],
 		[data-label="Ano"],
 		[data-label="Total"]
 	) {
@@ -510,8 +520,8 @@
 		[data-label="Nacionalidade da Companhia"],
 		[data-label="Nacionalidade da Peça"],
 		[data-label="Nacionalidade"],
-		[data-label="Idioma da Montagem"],
-		[data-label="Sessões"],
+		[data-label="Idioma"],
+		[data-label="Representações"],
 	) > .teatro-apresentacoes__th-label {
 		display: block;
 		max-width: calc(var(--tap-col-narrow) - 2 * var(--tap-col-narrow-pad));
