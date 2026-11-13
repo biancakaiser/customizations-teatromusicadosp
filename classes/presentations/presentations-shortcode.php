@@ -118,13 +118,13 @@ class PresentationsShortcode implements Module
                 'i18n'         => [
                     'loading'         => __( 'Carregando…', 'customizations-teatromusicadosp' ),
                     'empty'           => __( 'Nenhuma apresentação encontrada.', 'customizations-teatromusicadosp' ),
-                    'error'           => __( 'Não foi possível carregar as apresentações.', 'customizations-teatromusicadosp' ),
-                    'prompt'          => __( 'Use os filtros acima e clique em Buscar para listar as apresentações.', 'customizations-teatromusicadosp' ),
+                    'error'           => __( 'Não foi possível carregar os espetáculos.', 'customizations-teatromusicadosp' ),
+                    'prompt'          => __( 'Use os filtros acima e clique em Buscar para listar os espetáculos.', 'customizations-teatromusicadosp' ),
                     'prev'            => __( 'Anterior', 'customizations-teatromusicadosp' ),
                     'next'            => __( 'Próxima', 'customizations-teatromusicadosp' ),
                     'expandAll'       => __( 'Expandir todos', 'customizations-teatromusicadosp' ),
                     'collapseAll'     => __( 'Recolher todos', 'customizations-teatromusicadosp' ),
-                    'results'         => __( '%s apresentações', 'customizations-teatromusicadosp' ),
+                    'results'         => __( '%s representações', 'customizations-teatromusicadosp' ),
                 ],
             ]
         );

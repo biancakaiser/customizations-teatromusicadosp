@@ -30,7 +30,7 @@ final class FlatTableRenderer
         ?>
         <table class="teatro-apresentacoes__table">
             <caption class="screen-reader-text">
-                <?php esc_html_e( 'Lista de apresentações', 'customizations-teatromusicadosp' ); ?>
+                <?php esc_html_e( 'Lista de espetáculos', 'customizations-teatromusicadosp' ); ?>
             </caption>
             <thead>
                 <tr>

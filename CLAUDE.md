@@ -213,7 +213,7 @@ query Tainacan live. They read the flat, read-only projection table
   `PresentationGrouper::ROW_FIELDS` + `LEAF_FIELDS` key order, and Sessões + Total are
   always the last two columns (renderer). Leaf-row tiebreak is a separate list,
   `PresentationGrouper::LEAF_TIEBREAK` (Ano before Adaptação, chronological).
-  Columns flagged `acronym` (both Nacionalidades, Idioma) show only the sigla, also as
+  Columns flagged `acronym` (both Nacionalidades, Idioma, Tipo) show only the sigla, also as
   `<abbr title="full value">PO</abbr>` (`PresentationValue::acronym_html()`) — in the flat
   table, grouped cells and the grouped band label (`l1['label_html']`).
 

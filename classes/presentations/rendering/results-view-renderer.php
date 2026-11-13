@@ -79,7 +79,7 @@ final class ResultsViewRenderer
                     echo esc_html(
                         sprintf(
                             /* translators: %s: total de apresentações. */
-                            _n( '%s apresentação', '%s apresentações', $total, 'customizations-teatromusicadosp' ),
+                            _n( '%s representação', '%s representações', $total, 'customizations-teatromusicadosp' ),
                             number_format_i18n( $total )
                         )
                     );
@@ -96,7 +96,7 @@ final class ResultsViewRenderer
             <div id="teatro-apresentacoes-table-wrap" class="teatro-apresentacoes__table-wrap<?php echo $is_grouped ? ' teatro-apresentacoes__table-wrap--grouped' : ''; ?>" aria-live="polite">
                 <?php if ( ! $submitted ) : ?>
                     <p class="teatro-apresentacoes__prompt">
-                        <?php esc_html_e( 'Use os filtros acima e clique em Buscar para listar as apresentações.', 'customizations-teatromusicadosp' ); ?>
+                        <?php esc_html_e( 'Use os filtros acima e clique em Buscar para listar os espetáculos.', 'customizations-teatromusicadosp' ); ?>
                     </p>
                 <?php else : ?>
                     <?php // table_html já traz a mensagem de "nada encontrado" quando $rows está vazio (ver ResultsContentRenderer). ?>

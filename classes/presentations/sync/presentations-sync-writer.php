@@ -192,7 +192,7 @@ final class PresentationsSyncWriter
     private static function assert_no_error(): void {
         global $wpdb;
         if ( '' !== $wpdb->last_error ) {
-            throw new \RuntimeException( 'Escrita na tabela de apresentações falhou: ' . $wpdb->last_error );
+            throw new \RuntimeException( 'Escrita na tabela de espetáculos falhou: ' . $wpdb->last_error );
         }
     }
 }
